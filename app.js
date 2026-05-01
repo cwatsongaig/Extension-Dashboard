@@ -1,4 +1,4 @@
-﻿/* ========================================
+/* ========================================
    BondBox Prototype - Application Logic
    Underwriting-focused layout
    All sample data + render + navigation
@@ -115,9 +115,9 @@ const sampleMyAccounts = [
     { name: 'Brasfield & Gorrie LLC', branch: 'Cincinnati', status: 'Active', customerNumber: '0008534410', accountId: '1020134', accountGrade: 'B', assignee: 'Jake Miller' },
     { name: 'Austin Industries', branch: 'Cincinnati', status: 'Active', customerNumber: '0008540990', accountId: '1020388', accountGrade: 'B-', assignee: 'Jake Miller' },
     { name: 'Mortenson Construction', branch: 'Cincinnati', status: 'Active', customerNumber: '0008551770', accountId: '1020645', accountGrade: 'A', assignee: 'Jake Miller' },
-    { name: 'Cadell Construction Co', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008410550', accountId: '1017201', accountGrade: 'C-', assignee: 'Jake Miller', suspendedReason: 'Financial deterioration â€” negative working capital and Z-Score below threshold for 3 consecutive quarters' },
-    { name: 'Traylor Bros Inc', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008425880', accountId: '1017590', accountGrade: 'C-', assignee: 'Jake Miller', suspendedReason: 'LOA expired 12/31/2023 â€” pending annual review completion and updated financials' },
-    { name: 'Primoris Services Corp', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008438220', accountId: '1017845', accountGrade: 'C', assignee: 'Jake Miller', suspendedReason: 'Outstanding claim (CL-2024-0102) exceeds 10% of bonding program â€” account under claims review hold' }
+    { name: 'Cadell Construction Co', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008410550', accountId: '1017201', accountGrade: 'C-', assignee: 'Jake Miller', suspendedReason: 'Financial deterioration — negative working capital and Z-Score below threshold for 3 consecutive quarters' },
+    { name: 'Traylor Bros Inc', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008425880', accountId: '1017590', accountGrade: 'C-', assignee: 'Jake Miller', suspendedReason: 'LOA expired 12/31/2023 — pending annual review completion and updated financials' },
+    { name: 'Primoris Services Corp', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008438220', accountId: '1017845', accountGrade: 'C', assignee: 'Jake Miller', suspendedReason: 'Outstanding claim (CL-2024-0102) exceeds 10% of bonding program — account under claims review hold' }
 ];
 
 const sampleRedFlagData = {
@@ -218,11 +218,11 @@ const sampleBidLog = [
 // ==================== REMINDERS ====================
 const sampleReminders = [
     { id: 1, title: 'Follow up on Hensel Phelps WIP schedule', date: '04/15/2024', time: '09:00 AM', account: 'Hensel Phelps Construction Co', notes: 'Request updated WIP by May deadline', alertOnDashboard: true, status: 'Active' },
-    { id: 2, title: 'Review Clark Construction LOA renewal', date: '04/18/2024', time: '10:30 AM', account: 'Clark Construction Group', notes: 'LOA expires in 45 days â€” schedule renewal discussion', alertOnDashboard: true, status: 'Active' },
-    { id: 3, title: 'Call Granite Construction re: backlog decline', date: '04/16/2024', time: '02:00 PM', account: 'Granite Construction Inc', notes: 'Backlog down 15% YoY per last visit â€” get updated figures', alertOnDashboard: true, status: 'Active' },
-    { id: 4, title: 'Submit Austin Industries bond conversion', date: '04/22/2024', time: '08:00 AM', account: 'Austin Industries', notes: 'Airport Runway Repair bid won â€” convert to performance bond', alertOnDashboard: true, status: 'Active' },
+    { id: 2, title: 'Review Clark Construction LOA renewal', date: '04/18/2024', time: '10:30 AM', account: 'Clark Construction Group', notes: 'LOA expires in 45 days — schedule renewal discussion', alertOnDashboard: true, status: 'Active' },
+    { id: 3, title: 'Call Granite Construction re: backlog decline', date: '04/16/2024', time: '02:00 PM', account: 'Granite Construction Inc', notes: 'Backlog down 15% YoY per last visit — get updated figures', alertOnDashboard: true, status: 'Active' },
+    { id: 4, title: 'Submit Austin Industries bond conversion', date: '04/22/2024', time: '08:00 AM', account: 'Austin Industries', notes: 'Airport Runway Repair bid won — convert to performance bond', alertOnDashboard: true, status: 'Active' },
     { id: 5, title: 'Quarterly portfolio review prep', date: '04/25/2024', time: '11:00 AM', account: '', notes: 'Prepare portfolio summary deck for regional review meeting', alertOnDashboard: true, status: 'Active' },
-    { id: 6, title: 'R.J. Corman financial statements due', date: '04/10/2024', time: '09:00 AM', account: 'R.J. Corman Railroad Group', notes: 'FY2023 CPA statements expected â€” follow up if not received', alertOnDashboard: false, status: 'Completed' }
+    { id: 6, title: 'R.J. Corman financial statements due', date: '04/10/2024', time: '09:00 AM', account: 'R.J. Corman Railroad Group', notes: 'FY2023 CPA statements expected — follow up if not received', alertOnDashboard: false, status: 'Completed' }
 ];
 let nextReminderId = 7;
 
@@ -264,7 +264,7 @@ const sampleAccountReviews = [
         originatingUW: 'Mike Torres', currentQueue: null, queueEnteredDate: null,
         triggeringStatementId: 'FS-09644', fsDateReceived: '03/20/2022',
         signOffHistory: [
-            { reviewer: 'Mike Torres', title: 'Underwriter', action: 'Created', date: '03/30/2022', state: 'Initial Review', comments: 'Annual review â€” some financial concerns noted' },
+            { reviewer: 'Mike Torres', title: 'Underwriter', action: 'Created', date: '03/30/2022', state: 'Initial Review', comments: 'Annual review — some financial concerns noted' },
             { reviewer: 'Mike Torres', title: 'Underwriter', action: 'Submitted', date: '04/06/2022', state: 'Pending Manager Review', comments: 'Margins declining, recommending closer monitoring' },
             { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Approved', date: '04/12/2022', state: 'Complete', comments: 'Marginal rating agreed. Set review frequency to semi-annual.' }
         ]
@@ -275,7 +275,7 @@ const sampleAccountReviews = [
         originatingUW: 'Jake Miller', currentQueue: 'Max Miller', queueEnteredDate: 'Apr 06, 2024',
         triggeringStatementId: 'FS-09871', fsDateReceived: '03/25/2024',
         signOffHistory: [
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '03/25/2024', state: 'Initial Review', comments: 'Interim review â€" Q3 financials received' },
+            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '03/25/2024', state: 'Initial Review', comments: 'Interim review —" Q3 financials received' },
             { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Submitted', date: '04/06/2024', state: 'Pending Regional Review', comments: 'Cash flow tightening slightly but backlog remains solid' }
         ]
     },
@@ -285,7 +285,7 @@ const sampleAccountReviews = [
         originatingUW: 'Jake Miller', currentQueue: 'John Webster', queueEnteredDate: 'Apr 01, 2024',
         triggeringStatementId: 'FS-10247', fsDateReceived: '03/06/2024',
         signOffHistory: [
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '03/01/2024', state: 'Initial Review', comments: 'CAO-level annual review â€" large account requiring full chain approval' },
+            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '03/01/2024', state: 'Initial Review', comments: 'CAO-level annual review —" large account requiring full chain approval' },
             { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Submitted', date: '03/12/2024', state: 'Pending Regional Review', comments: 'Analysis complete. Aggregate exposure warrants CAO sign-off.' },
             { reviewer: 'Max Miller', title: 'Regional Manager', action: 'Approved & Promoted', date: '03/28/2024', state: 'Pending VP Review', comments: 'Exposure within regional tolerance. Promoting to VP for CAO-level sign-off.' }
         ]
@@ -296,7 +296,7 @@ const sampleAccountReviews = [
         originatingUW: 'Jake Miller', currentQueue: null, queueEnteredDate: null,
         triggeringStatementId: null, fsDateReceived: '09/28/2021',
         signOffHistory: [
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '10/01/2021', state: 'Initial Review', comments: 'Annual review â€" strong year for principal' },
+            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '10/01/2021', state: 'Initial Review', comments: 'Annual review —" strong year for principal' },
             { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Submitted', date: '10/12/2021', state: 'Pending Regional Review', comments: 'Financials healthy, recommend maintaining current limits' },
             { reviewer: 'Max Miller', title: 'Regional Manager', action: 'Approved', date: '10/20/2021', state: 'Complete', comments: 'Agreed. Acceptable rating confirmed.' }
         ]
@@ -331,14 +331,14 @@ const sampleClaims = [
 
 const sampleVisitations = [
     { account: 'R.J. Corman Railroad Group', visitDate: '03/12/2024', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Brown & Brown Insurance', location: 'Nicholasville, KY - Corporate HQ', contactMet: 'Rick Corman (Owner), Bill Hayes (CFO)', purpose: 'Annual Visit', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: true, safetyReviewed: false, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'Strong year operationally. Backlog healthy at $8.7M. New equipment purchases planned for Q3. CFO confident in maintaining margins.', branch: 'Cincinnati' },
-    { account: 'Hensel Phelps Construction Co', visitDate: '02/20/2024', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Marsh McLennan Agency', location: 'Greeley, CO - Main Office', contactMet: 'Mike Choutka (CEO), Janet Lewis (Controller)', purpose: 'ARR Follow-Up', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: true, followUpDate: '05/15/2024', notes: 'Reviewed FY2023 financials in detail. Revenue up 12%. Safety program impressive â€" TRIR well below industry avg. Need updated WIP by May.', branch: 'Cincinnati' },
+    { account: 'Hensel Phelps Construction Co', visitDate: '02/20/2024', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Marsh McLennan Agency', location: 'Greeley, CO - Main Office', contactMet: 'Mike Choutka (CEO), Janet Lewis (Controller)', purpose: 'ARR Follow-Up', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: true, followUpDate: '05/15/2024', notes: 'Reviewed FY2023 financials in detail. Revenue up 12%. Safety program impressive —" TRIR well below industry avg. Need updated WIP by May.', branch: 'Cincinnati' },
     { account: 'Clark Construction Group', visitDate: '01/18/2024', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Aon Surety', location: 'Bethesda, MD - Corporate Office', contactMet: 'Peter Forster (VP Surety), Diana Cho (CFO)', purpose: 'Relationship Mgmt', backlogDiscussed: true, financialsDiscussed: false, equipmentReviewed: false, safetyReviewed: false, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'General relationship meeting. Discussed upcoming federal projects pipeline. They expect $50M+ in new bids Q2. LOA increase discussion tabled for annual review.', branch: 'Cincinnati' },
     { account: 'Turner Construction Company', visitDate: '03/05/2024', visitType: 'Virtual', visitedBy: 'Sarah Mitchell', agency: 'Willis Towers Watson', location: 'Video Conference', contactMet: 'Tom Regan (Surety Liaison), Mark Peters (CFO)', purpose: 'ARR Follow-Up', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: false, overallImpression: 'Neutral', followUpRequired: true, followUpDate: '04/30/2024', notes: 'Interim financials show margin compression on two large NYC projects. CFO attributes to supply chain costs. Need to monitor WIP fade closely.', branch: 'New York' },
-    { account: 'Granite Construction Inc', visitDate: '11/15/2023', visitType: 'In-Person', visitedBy: 'Mike Torres', agency: 'Lockton Companies', location: 'Watsonville, CA - HQ', contactMet: 'Kyle Larkin (President), Susan Park (Treasury)', purpose: 'Annual Visit', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: true, safetyReviewed: true, overallImpression: 'Concerns Noted', followUpRequired: true, followUpDate: '02/15/2024', notes: 'Backlog down 15% YoY. Heavy equipment showing age â€” deferred capex a concern. Safety record has slipped. Recommended closer monitoring of WIP and cashflow.', branch: 'Sacramento' },
+    { account: 'Granite Construction Inc', visitDate: '11/15/2023', visitType: 'In-Person', visitedBy: 'Mike Torres', agency: 'Lockton Companies', location: 'Watsonville, CA - HQ', contactMet: 'Kyle Larkin (President), Susan Park (Treasury)', purpose: 'Annual Visit', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: true, safetyReviewed: true, overallImpression: 'Concerns Noted', followUpRequired: true, followUpDate: '02/15/2024', notes: 'Backlog down 15% YoY. Heavy equipment showing age — deferred capex a concern. Safety record has slipped. Recommended closer monitoring of WIP and cashflow.', branch: 'Sacramento' },
     { account: 'Whiting-Turner Contracting', visitDate: '04/02/2024', visitType: 'In-Person', visitedBy: 'Sarah Mitchell', agency: 'USI Insurance Services', location: 'Baltimore, MD - Corporate Office', contactMet: 'Tim Regan (EVP), Carol Hughes (Controller)', purpose: 'New Account', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: true, followUpDate: '05/01/2024', notes: 'Initial visit for new account setup. Strong balance sheet, diversified project mix. Safety program is top-tier. Requesting $12M single / $35M aggregate LOA.', branch: 'Baltimore' },
-    { account: 'R.J. Corman Railroad Group', visitDate: '09/22/2023', visitType: 'Job Site', visitedBy: 'Jake Miller', agency: 'Brown & Brown Insurance', location: 'Highway 50 Bridge Project Site, KY', contactMet: 'Dave Marshall (Project Manager)', purpose: 'Job Site Inspection', backlogDiscussed: false, financialsDiscussed: false, equipmentReviewed: true, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'Visited Highway 50 bridge project â€” on schedule, within budget. Equipment well-maintained. Crew experienced. No safety concerns observed.', branch: 'Cincinnati' },
+    { account: 'R.J. Corman Railroad Group', visitDate: '09/22/2023', visitType: 'Job Site', visitedBy: 'Jake Miller', agency: 'Brown & Brown Insurance', location: 'Highway 50 Bridge Project Site, KY', contactMet: 'Dave Marshall (Project Manager)', purpose: 'Job Site Inspection', backlogDiscussed: false, financialsDiscussed: false, equipmentReviewed: true, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'Visited Highway 50 bridge project — on schedule, within budget. Equipment well-maintained. Crew experienced. No safety concerns observed.', branch: 'Cincinnati' },
     { account: 'Hensel Phelps Construction Co', visitDate: '08/10/2023', visitType: 'Job Site', visitedBy: 'Jake Miller', agency: 'Marsh McLennan Agency', location: 'DIA Terminal Expansion, Denver, CO', contactMet: 'Brian Foster (Superintendent)', purpose: 'Job Site Inspection', backlogDiscussed: false, financialsDiscussed: false, equipmentReviewed: true, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'DIA terminal project running smoothly. Excellent site organization. Safety protocols exceeded expectations. Project 65% complete.', branch: 'Cincinnati' },
-    { account: 'Clark Construction Group', visitDate: '06/14/2023', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Aon Surety', location: 'Bethesda, MD - Corporate Office', contactMet: 'Peter Forster (VP Surety)', purpose: 'Annual Visit', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: false, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'Annual visit â€” all metrics strong. Backlog at record levels. Discussed succession planning for key personnel.', branch: 'Cincinnati' },
+    { account: 'Clark Construction Group', visitDate: '06/14/2023', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Aon Surety', location: 'Bethesda, MD - Corporate Office', contactMet: 'Peter Forster (VP Surety)', purpose: 'Annual Visit', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: false, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'Annual visit — all metrics strong. Backlog at record levels. Discussed succession planning for key personnel.', branch: 'Cincinnati' },
     { account: 'Granite Construction Inc', visitDate: '05/20/2023', visitType: 'Virtual', visitedBy: 'Mike Torres', agency: 'Lockton Companies', location: 'Video Conference', contactMet: 'Susan Park (Treasury)', purpose: 'ARR Follow-Up', backlogDiscussed: false, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: false, overallImpression: 'Neutral', followUpRequired: true, followUpDate: '08/01/2023', notes: 'Reviewed Q1 financials. Margins tighter than expected on CalTrans projects. Treasury indicated short-term borrowing up. Follow up with updated cashflow projection.', branch: 'Sacramento' }
 ];
 
@@ -352,7 +352,7 @@ const samplePremiumAR = [
     { agency: 'Evergreen Bond & Insurance', type: 'CARRIER_INVITED', current: 2642, d1_30: 5000, d31_60: 975, d61_90: 500, d90plus: 30116, invoices: 26 }
 ];
 
-// Premium AR Detail â€” account-level breakdown per agency (totals must match samplePremiumAR)
+// Premium AR Detail — account-level breakdown per agency (totals must match samplePremiumAR)
 const samplePremiumARDetail = {
     'Great American Surety': [
         // current:5001, d1_30:34736, d31_60:38622, d61_90:32344, d90plus:206350, invoices:86
@@ -399,7 +399,7 @@ const samplePremiumARDetail = {
     ]
 };
 
-// Premium AR Bond-Level Detail â€” bonds per agency|account (totals must match samplePremiumARDetail)
+// Premium AR Bond-Level Detail — bonds per agency|account (totals must match samplePremiumARDetail)
 const samplePremiumARBonds = {
     // === Great American Surety ===
     'Great American Surety|Hensel Phelps Construction Co': [
@@ -762,7 +762,7 @@ const WIDGET_REGISTRY = {
         render: function(container) {
             container.innerHTML = `<div class="kpi-grid kpi-grid-4">
                 <div class="kpi-card clickable" onclick="navigateTo('account-review')"><div class="kpi-header"><span class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="kpi-title">ARRs Due / Overdue</span></div><div class="kpi-value">0</div></div>
-                <div class="kpi-card clickable" onclick="navigateTo('bond-requests'); filterBondRequests('Awaiting Approval', document.querySelector('#bond-requests-tabs .tab[data-filter=&quot;Awaiting Approval&quot;]'));"><div class="kpi-header"><span class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span><span class="kpi-title">Bond Requests Pending</span></div><div class="kpi-value">0</div></div>
+                <div class="kpi-card clickable" onclick="navigateTo('bond-requests'); filterBondRequests('all', document.querySelector('#bond-requests-tabs .tab[data-filter=&quot;all&quot;]'));"><div class="kpi-header"><span class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span><span class="kpi-title">Bond Requests Pending</span></div><div class="kpi-value">0</div></div>
                 <div class="kpi-card clickable" onclick="navigateTo('account-review')"><div class="kpi-header"><span class="kpi-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span class="kpi-title">Watchlist Accounts</span></div><div class="kpi-value">0</div></div>
                 <div class="kpi-card clickable" onclick="navigateTo('loa'); filterLOAView('Expiring', document.querySelector('#loa-tabs .tab:nth-child(3)'));"><div class="kpi-header"><span class="kpi-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><span class="kpi-title">Expiring LOAs (30 Days)</span></div><div class="kpi-value">0</div></div>
                 <div class="kpi-card clickable" onclick="openFSComplianceModal()"><div class="kpi-header"><span class="kpi-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></span><span class="kpi-title">FS Compliance Issues</span></div><div class="kpi-value" id="kpi-fs-compliance">0</div></div>
@@ -847,7 +847,7 @@ function renderDashboardLayout() {
             const widget = WIDGET_REGISTRY[panel.id];
             if (!widget) return;
 
-            // Skip action-items as standalone â€” it's rendered inside week-glance split row
+            // Skip action-items as standalone — it's rendered inside week-glance split row
             if (panel.id === 'action-items' && weekGlanceVisible) return;
 
             const wrapper = document.createElement('div');
@@ -1062,7 +1062,7 @@ const sampleConversations = [
             { from: 'Sarah Mitchell', text: 'Hey Doug, did you get a chance to review the Turner Construction financials?', time: 'Apr 18, 2024 9:15 AM' },
             { from: 'Jake Miller', text: 'Yes, I looked at the 12/31 statements. The debt-to-equity ratio is a bit high but within our tolerance.', time: 'Apr 18, 2024 9:32 AM' },
             { from: 'Sarah Mitchell', text: 'Good. Can you also check the WIP schedule? I noticed some overbilling on the I-75 project.', time: 'Apr 18, 2024 9:45 AM' },
-            { from: 'Sarah Mitchell', text: 'Also, the LOA renewal for Corman is coming up â€” we need to discuss the aggregate limit.', time: 'Apr 18, 2024 10:02 AM' }
+            { from: 'Sarah Mitchell', text: 'Also, the LOA renewal for Corman is coming up — we need to discuss the aggregate limit.', time: 'Apr 18, 2024 10:02 AM' }
         ]
     },
     {
@@ -1071,7 +1071,7 @@ const sampleConversations = [
         messages: [
             { from: 'Jake Miller', text: 'Mike, can you handle the Corman maintenance bond request? I have the Clark P&P to review.', time: 'Apr 17, 2024 2:10 PM' },
             { from: 'Mike Torres', text: 'Sure, I\'ll pick it up. What\'s the bond amount?', time: 'Apr 17, 2024 2:22 PM' },
-            { from: 'Jake Miller', text: '$750K â€” CSX Transportation is the obligee. Draft is in the system already.', time: 'Apr 17, 2024 2:30 PM' },
+            { from: 'Jake Miller', text: '$750K — CSX Transportation is the obligee. Draft is in the system already.', time: 'Apr 17, 2024 2:30 PM' },
             { from: 'Mike Torres', text: 'Got it. I\'ll have it ready for review by EOD.', time: 'Apr 17, 2024 2:35 PM' }
         ]
     },
@@ -1088,7 +1088,7 @@ const sampleConversations = [
         with: 'James Park',
         unread: 0,
         messages: [
-            { from: 'James Park', text: 'FYI â€” the Granite Construction claim (CL-2024-0087) investigation is progressing. SubCo provided additional documentation.', time: 'Apr 15, 2024 11:00 AM' },
+            { from: 'James Park', text: 'FYI — the Granite Construction claim (CL-2024-0087) investigation is progressing. SubCo provided additional documentation.', time: 'Apr 15, 2024 11:00 AM' },
             { from: 'Jake Miller', text: 'What\'s the updated reserve estimate?', time: 'Apr 15, 2024 11:20 AM' },
             { from: 'James Park', text: 'Still at $245K. We may be able to negotiate down once we review the subcontract terms.', time: 'Apr 15, 2024 11:35 AM' }
         ]
@@ -1098,7 +1098,7 @@ const sampleConversations = [
         unread: 0,
         messages: [
             { from: 'Amy Rodriguez', text: 'Doug, the quarterly review meeting is set for next Friday. Please have the ARR summaries ready.', time: 'Apr 12, 2024 3:00 PM' },
-            { from: 'Jake Miller', text: 'Will do. I have Corman and Turner reviews in progress â€” should be done by Wednesday.', time: 'Apr 12, 2024 3:15 PM' }
+            { from: 'Jake Miller', text: 'Will do. I have Corman and Turner reviews in progress — should be done by Wednesday.', time: 'Apr 12, 2024 3:15 PM' }
         ]
     }
 ];
@@ -1107,16 +1107,16 @@ let activeConversationIdx = null;
 
 const sampleAccountNotes = {
     'R.J. Corman Railroad Group': [
-        { author: 'Jake Miller', date: 'Apr 18, 2024 10:30 AM', text: 'LOA renewal discussion needed â€” current aggregate at $15M. Consider increasing to $20M based on backlog growth.', pinned: true },
+        { author: 'Jake Miller', date: 'Apr 18, 2024 10:30 AM', text: 'LOA renewal discussion needed — current aggregate at $15M. Consider increasing to $20M based on backlog growth.', pinned: true },
         { author: 'Sarah Mitchell', date: 'Apr 15, 2024 2:00 PM', text: 'WIP schedule is 30 days overdue. Contacted agent for updated schedule.', pinned: false },
-        { author: 'Mike Torres', date: 'Apr 10, 2024 9:00 AM', text: 'Maintenance bond request submitted for CSX Transportation project â€” $750K.', pinned: false }
+        { author: 'Mike Torres', date: 'Apr 10, 2024 9:00 AM', text: 'Maintenance bond request submitted for CSX Transportation project — $750K.', pinned: false }
     ],
     'Turner Construction Company': [
-        { author: 'Sarah Mitchell', date: 'Apr 17, 2024 3:00 PM', text: 'Interim review flagged high WIP concentration â€” top 3 jobs represent 78% of backlog.', pinned: true },
-        { author: 'Jake Miller', date: 'Apr 14, 2024 11:00 AM', text: 'Bid bond request for NYC DOT project under review. $850K â€” Sarah Mitchell assigned.', pinned: false }
+        { author: 'Sarah Mitchell', date: 'Apr 17, 2024 3:00 PM', text: 'Interim review flagged high WIP concentration — top 3 jobs represent 78% of backlog.', pinned: true },
+        { author: 'Jake Miller', date: 'Apr 14, 2024 11:00 AM', text: 'Bid bond request for NYC DOT project under review. $850K — Sarah Mitchell assigned.', pinned: false }
     ],
     'Hensel Phelps Construction Co': [
-        { author: 'Jake Miller', date: 'Apr 16, 2024 1:00 PM', text: 'New bid bond request â€” $2.4M highway project for CDOT. Financials look strong.', pinned: false },
+        { author: 'Jake Miller', date: 'Apr 16, 2024 1:00 PM', text: 'New bid bond request — $2.4M highway project for CDOT. Financials look strong.', pinned: false },
         { author: 'Lisa Chen', date: 'Apr 10, 2024 4:30 PM', text: 'Exposure analysis complete. Total bonded exposure: $12.8M against $15M aggregate.', pinned: false }
     ],
     'Clark Construction Group': [
@@ -1124,7 +1124,7 @@ const sampleAccountNotes = {
         { author: 'James Park', date: 'Apr 5, 2024 2:00 PM', text: 'Metro Plumbing claim (CL-2023-0092) closed. No loss to surety.', pinned: false }
     ],
     'Granite Construction Inc': [
-        { author: 'James Park', date: 'Apr 15, 2024 11:45 AM', text: 'Active claim CL-2024-0087 â€” SubCo Materials LLC. Reserve: $245K. Investigation ongoing.', pinned: true },
+        { author: 'James Park', date: 'Apr 15, 2024 11:45 AM', text: 'Active claim CL-2024-0087 — SubCo Materials LLC. Reserve: $245K. Investigation ongoing.', pinned: true },
         { author: 'Jake Miller', date: 'Apr 8, 2024 10:00 AM', text: 'Financial statement still pending CPA review since Feb 2024. Following up with agent.', pinned: false }
     ]
 };
@@ -1144,7 +1144,7 @@ function statusClass(s) {
 
 function daysInQueue(dateStr) {
     if (!dateStr) return null;
-    const ref = new Date(2024, 3, 15); // April 15, 2024 â€” reference "today"
+    const ref = new Date(2024, 3, 15); // April 15, 2024 — reference "today"
     const entered = new Date(dateStr);
     const diff = Math.floor((ref - entered) / (1000 * 60 * 60 * 24));
     return diff >= 0 ? diff : 0;
@@ -1172,7 +1172,7 @@ function computeARRDueDate(fsDateReceived) {
 }
 
 function formatDueDate(dateObj) {
-    if (!dateObj) return 'â€”';
+    if (!dateObj) return '—';
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return months[dateObj.getMonth()] + ' ' + dateObj.getDate().toString().padStart(2, '0') + ', ' + dateObj.getFullYear();
 }
@@ -1229,11 +1229,11 @@ function checkFSCompliance(accountName) {
     const issues = [];
 
     if (!profile) {
-        issues.push({ type: 'warning', message: 'No account profile found â€” cannot verify FS compliance' });
+        issues.push({ type: 'warning', message: 'No account profile found — cannot verify FS compliance' });
         return { compliant: false, issues: issues };
     }
 
-    // Check annual CPA â€” should have one within last 18 months
+    // Check annual CPA — should have one within last 18 months
     if (profile.lastAnnualCPADate) {
         const lastCPA = new Date(profile.lastAnnualCPADate);
         const monthsSince = (ref.getFullYear() - lastCPA.getFullYear()) * 12 + (ref.getMonth() - lastCPA.getMonth());
@@ -1246,7 +1246,7 @@ function checkFSCompliance(accountName) {
         issues.push({ type: 'urgent', message: 'No annual CPA statement on file' });
     }
 
-    // Check interim FS â€” at least one per year for active accounts
+    // Check interim FS — at least one per year for active accounts
     const freq = getRequiredFrequency(accountName);
     if (freq.frequency === 'Semi-Annual' || freq.frequency === 'Quarterly') {
         if (!profile.lastInterimDate) {
@@ -1320,7 +1320,7 @@ function updateBondRequestBadge() {
 // ==================== WEEK AT A GLANCE (HOME) ====================
 
 function renderWeekAtGlance() {
-    // Determine current week boundaries (Sunâ€“Sat containing "today")
+    // Determine current week boundaries (Sun—Sat containing "today")
     // Using April 15, 2024 as reference date to match sample data
     const today = new Date(2024, 3, 15); // April 15, 2024
     const dayOfWeek = today.getDay();
@@ -1537,7 +1537,7 @@ function renderActionItems() {
         }
     });
 
-    // BR-5: Frequency override active â€” informational
+    // BR-5: Frequency override active — informational
     Object.entries(accountProfiles).forEach(([acctName, profile]) => {
         if (!profile.frequencyOverride) return;
         const isMyAccount = sampleARRs.some(a => a.account === acctName && a.assignee === currentUser.name);
@@ -1574,7 +1574,7 @@ function renderActionItems() {
         items.push({
             priority, level, category: 'Reminder',
             account: r.account || 'General',
-            text: `${r.title}${isPast ? ' (overdue â€” ' + r.date + ')' : isToday ? ' (today at ' + r.time + ')' : ' (' + r.date + ' at ' + r.time + ')'}${r.notes ? ' â€” ' + r.notes : ''}`,
+            text: `${r.title}${isPast ? ' (overdue — ' + r.date + ')' : isToday ? ' (today at ' + r.time + ')' : ' (' + r.date + ' at ' + r.time + ')'}${r.notes ? ' — ' + r.notes : ''}`,
             view: 'bid-calendar'
         });
     });
@@ -1673,7 +1673,7 @@ function parseCurrency(s) {
 }
 
 function parseDate(s) {
-    if (!s || s === 'â€”') return new Date(0);
+    if (!s || s === '—') return new Date(0);
     return new Date(s);
 }
 
@@ -1856,10 +1856,10 @@ function renderFinancials() {
     tbody.innerHTML = sorted.map(fs => `
         <tr>
             <td><span class="clickable-cell" onclick="openFSDetail('${fs.id}')">${fs.id}</span></td>
-            <td><span class="fs-type-badge fs-type-${fs.statementType === 'Annual CPA' ? 'annual' : 'interim'}">${fs.statementType || 'â€”'}</span></td>
+            <td><span class="fs-type-badge fs-type-${fs.statementType === 'Annual CPA' ? 'annual' : 'interim'}">${fs.statementType || '—'}</span></td>
             <td>${fs.date}</td>
-            <td>${fs.dateReceived || 'â€”'}</td>
-            <td>${fs.source || 'â€”'}</td>
+            <td>${fs.dateReceived || '—'}</td>
+            <td>${fs.source || '—'}</td>
             <td>${fs.term} Mo.</td>
             <td>${fs.fye}</td>
             <td class="wrap-cell">${fs.preparer}</td>
@@ -1901,7 +1901,7 @@ function renderWIPSummary() {
 
 function renderWIPDetail(idx) {
     const schedule = sampleWIPSchedules[idx];
-    document.getElementById('wip-detail-title').textContent = 'WIP Schedule â€” ' + schedule.date;
+    document.getElementById('wip-detail-title').textContent = 'WIP Schedule — ' + schedule.date;
     document.getElementById('wip-detail-date').textContent = 'Schedule Date: ' + schedule.date;
 
     const tbody = document.getElementById('wip-detail-body');
@@ -2036,7 +2036,7 @@ function renderBidLog(data) {
             <td><span class="branch-tag-sm">${b.doa}</span></td>
             <td><button class="action-btn" onclick="openBidNotes(${idx})">Notes</button></td>
             <td><button class="action-btn delete-btn" onclick="openDeleteConfirm('bid row', '${b.projectName || 'Row ' + (idx+1)}', 'deleteBidRow(${idx})')">Del</button></td>
-            <td><button class="action-btn" onclick="showToast('DocEx: ${b.projectName || 'No project'} â€” Document exchange opened')">DocEx</button></td>
+            <td><button class="action-btn" onclick="showToast('DocEx: ${b.projectName || 'No project'} — Document exchange opened')">DocEx</button></td>
         </tr>`;
     }).join('');
 }
@@ -2142,7 +2142,7 @@ function renderBidCalMonth(titleEl, grid, bidsByDate, remindersByDate) {
             bidsHtml += `<div class="bid-cal-entry bid-cal-entry-${sc}" title="${b.projectName} - ${b.status} - ${fmt(b.contractValue)}">${b.projectName.length > 22 ? b.projectName.substring(0,20) + '...' : b.projectName}</div>`;
         });
         reminders.forEach(r => {
-            bidsHtml += `<div class="bid-cal-entry bid-cal-entry-reminder" title="${r.title} â€” ${r.time}${r.account ? ' â€” ' + r.account : ''}" onclick="openAddReminderModal(${r.id})" style="cursor:pointer;">&#128276; ${r.title.length > 18 ? r.title.substring(0,16) + '...' : r.title}</div>`;
+            bidsHtml += `<div class="bid-cal-entry bid-cal-entry-reminder" title="${r.title} — ${r.time}${r.account ? ' — ' + r.account : ''}" onclick="openAddReminderModal(${r.id})" style="cursor:pointer;">&#128276; ${r.title.length > 18 ? r.title.substring(0,16) + '...' : r.title}</div>`;
         });
 
         cells += `<div class="${cls}"><span class="bid-cal-day-num">${d}</span>${bidsHtml}</div>`;
@@ -2345,7 +2345,7 @@ function openAddReminderModal(editId) {
         <div style="grid-column:1/-1;">
             <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Related Account</label>
             <select id="rem-account" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
-                <option value="">â€” None (General) â€”</option>
+                <option value="">— None (General) —</option>
                 ${accountOptions}
             </select>
         </div>
@@ -2513,7 +2513,7 @@ function renderAccountReviewSummary() {
             <td>${r.reviewRating}</td>
             <td><button class="action-btn" onclick="openARDetail(${i})">View</button></td>
             <td><button class="action-btn" onclick="openARNotes(${i})">Notes</button></td>
-            <td><button class="action-btn" onclick="simulateReportGenerate('Account Review â€” ${r.reviewDate}')">Report</button></td>
+            <td><button class="action-btn" onclick="simulateReportGenerate('Account Review — ${r.reviewDate}')">Report</button></td>
             <td><button class="action-btn delete-btn" onclick="openDeleteConfirm('account review', '${r.reviewDate}', 'deleteAccountReview(${i})')">Del</button></td>
         </tr>`;
     }).join('');
@@ -2559,7 +2559,7 @@ function getARSectionHTML(sectionId) {
                     ? '<span class="queue-badge queue-you">In Your Queue</span>'
                     : '<span class="queue-badge queue-other">' + infoReview.currentQueue + ' (' + (chainTitles[infoReview.currentQueue] || '') + ')</span>') + queueAgeHTML(infoReview.queueEnteredDate)
                 : '<span class="queue-badge" style="opacity:.5">Completed</span>';
-            const triggeringFS = infoReview.triggeringStatementId || 'â€”';
+            const triggeringFS = infoReview.triggeringStatementId || '—';
             const deadlineHTML = arrDeadlineHTML(infoReview.fsDateReceived);
             const acctName = 'R.J. Corman Railroad Group';
             const freqHTML = frequencyBadgeHTML(acctName);
@@ -2573,7 +2573,7 @@ function getARSectionHTML(sectionId) {
                 <div class="detail-item"><div class="detail-label">Financial Statement Date</div><div class="detail-value">${infoReview.fsDate}</div></div>
                 <div class="detail-item"><div class="detail-label">Current Queue</div><div class="detail-value">${queueDisplay}</div></div>
                 <div class="detail-item"><div class="detail-label">Triggering FS (BR-1)</div><div class="detail-value">${triggeringFS}</div></div>
-                <div class="detail-item"><div class="detail-label">FS Date Received</div><div class="detail-value">${infoReview.fsDateReceived || 'â€”'}</div></div>
+                <div class="detail-item"><div class="detail-label">FS Date Received</div><div class="detail-value">${infoReview.fsDateReceived || '—'}</div></div>
                 <div class="detail-item"><div class="detail-label">14-Day Deadline (FR-3)</div><div class="detail-value">${deadlineHTML}</div></div>
                 <div class="detail-item"><div class="detail-label">Review Frequency (BR-4)</div><div class="detail-value">${freqHTML}</div></div>
             </div>
@@ -2634,7 +2634,7 @@ function getARSectionHTML(sectionId) {
             </div>
             <div class="form-group" style="margin-bottom:16px;">
                 <label class="form-label">Work on Hand Notes</label>
-                <textarea class="form-textarea" rows="3">Backlog remains healthy. Aggregate utilization within acceptable limits. LOA renewal due 12/31/2024 â€” discuss potential increase based on new project pipeline.</textarea>
+                <textarea class="form-textarea" rows="3">Backlog remains healthy. Aggregate utilization within acceptable limits. LOA renewal due 12/31/2024 — discuss potential increase based on new project pipeline.</textarea>
             </div>
             <div class="mark-complete"><label class="form-check"><input type="checkbox"> Mark Work on Hand as Complete</label></div>`;
 
@@ -2740,7 +2740,7 @@ function getARSectionHTML(sectionId) {
             <h3 style="font-size:14px; margin-bottom:12px;">Identified Risks</h3>
             <div class="form-group" style="margin-bottom:16px;">
                 <textarea class="form-textarea" rows="3">1. Key-man dependency on Rick Corman (CEO/100% owner)
-2. Equipment fleet aging â€” capex requirements increasing
+2. Equipment fleet aging — capex requirements increasing
 3. Railroad industry cyclicality tied to Class I capital spending</textarea>
             </div>
             <h3 style="font-size:14px; margin-bottom:12px;">Requirements</h3>
@@ -2794,7 +2794,7 @@ function getARSectionHTML(sectionId) {
                 `<option${f === soFreq.frequency ? ' selected' : ''}>${f}</option>`
             ).join('');
             const overrideIndicator = soFreq.source === 'Override'
-                ? `<div style="margin-top:6px; font-size:11px; color:#e65100;">âš  Override by ${soFreq.override.approver} (${soFreq.override.approvalDate}): ${soFreq.override.rationale}</div>`
+                ? `<div style="margin-top:6px; font-size:11px; color:#e65100;">⚠ Override by ${soFreq.override.approver} (${soFreq.override.approvalDate}): ${soFreq.override.rationale}</div>`
                 : '';
             return `
             <div class="section-title">Sign-Off and Promote Review</div>
@@ -2919,7 +2919,7 @@ function openBondDetail(idx) {
             </tbody></table>
         </div>`;
     const footer = `<button class="btn btn-outline" onclick="closeAllModals()">Close</button>`;
-    openModal('Bond Detail â€” ' + b.bondNumber, body, footer);
+    openModal('Bond Detail — ' + b.bondNumber, body, footer);
     document.getElementById('modal-container').style.maxWidth = '740px';
 }
 
@@ -3029,7 +3029,7 @@ function openClaimDetail(idx) {
             </tbody></table>
         </div>`;
     const footer = `<button class="btn btn-outline" onclick="closeAllModals()">Close</button>`;
-    openModal('Claim Detail â€” ' + c.claimNumber, body, footer);
+    openModal('Claim Detail — ' + c.claimNumber, body, footer);
     document.getElementById('modal-container').style.maxWidth = '740px';
 }
 
@@ -3269,7 +3269,7 @@ function openPortfolioKPIDrillDown(grade) {
         </table>
     </div>`;
     const footer = '<button class="btn btn-outline" onclick="closeAllModals()">Close</button>';
-    openModal(title + ' â€” Portfolio Breakdown', body, footer);
+    openModal(title + ' — Portfolio Breakdown', body, footer);
     document.getElementById('modal-container').style.maxWidth = '880px';
 }
 
@@ -3506,7 +3506,7 @@ function openVisitDetailModal(idx) {
             <div class="form-group"><label class="form-label">Account</label><div class="form-static">${v.account}</div></div>
             <div class="form-group"><label class="form-label">Visit Date</label><div class="form-static">${v.visitDate}</div></div>
             <div class="form-group"><label class="form-label">Visited By</label><div class="form-static">${v.visitedBy}</div></div>
-            <div class="form-group"><label class="form-label">Agency</label><div class="form-static">${v.agency || 'â€”'}</div></div>
+            <div class="form-group"><label class="form-label">Agency</label><div class="form-static">${v.agency || '—'}</div></div>
             <div class="form-group"><label class="form-label">Visit Type</label><div class="form-static">${v.visitType}</div></div>
             <div class="form-group"><label class="form-label">Location</label><div class="form-static">${v.location}</div></div>
             <div class="form-group"><label class="form-label">Contact(s) Met</label><div class="form-static">${v.contactMet}</div></div>
@@ -3528,7 +3528,7 @@ function openVisitDetailModal(idx) {
             <div style="padding:10px 12px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:var(--radius);font-size:13px;line-height:1.5;">${v.notes}</div>
         </div>
     `;
-    openModal('Visit Detail â€” ' + v.account, body, '<button class="btn btn-outline" onclick="closeAllModals()">Close</button>');
+    openModal('Visit Detail — ' + v.account, body, '<button class="btn btn-outline" onclick="closeAllModals()">Close</button>');
 }
 
 function openLogVisitModal() {
@@ -3781,7 +3781,7 @@ function openRedFlagDetail(accountName) {
         </div>
     `;
 
-    openModal(accountName + ' â€” Red Flag Ratios', body, '<button class="btn btn-outline" onclick="closeModal()">Close</button>');
+    openModal(accountName + ' — Red Flag Ratios', body, '<button class="btn btn-outline" onclick="closeModal()">Close</button>');
 }
 
 // ==================== RED FLAGS KPI DRILL-DOWN ====================
@@ -3802,7 +3802,7 @@ function openRedFlagKPIDrillDown(type) {
         title = 'All Flagged Accounts';
         filtered = allRows;
     } else if (type === 'allflags') {
-        title = 'Total Active Flags â€” By Account';
+        title = 'Total Active Flags — By Account';
         filtered = allRows;
     } else if (type === 'high') {
         title = 'High Risk Accounts (4+ Flags)';
@@ -3855,7 +3855,7 @@ function openRedFlagKPIDrillDown(type) {
         </table>
     </div>`;
     const footer = '<button class="btn btn-outline" onclick="closeAllModals()">Close</button>';
-    openModal(title + ' â€” Red Flag Breakdown', body, footer);
+    openModal(title + ' — Red Flag Breakdown', body, footer);
     document.getElementById('modal-container').style.maxWidth = '900px';
 }
 
@@ -3959,7 +3959,7 @@ function openLOADetail(idx) {
             <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Assigned To User: ${l.toUser}</div>
         </div>`;
     const footer = `<button class="btn btn-outline" onclick="closeAllModals()">Close</button>`;
-    openModal('LOA Detail â€” ' + l.account, body, footer);
+    openModal('LOA Detail — ' + l.account, body, footer);
     document.getElementById('modal-container').style.maxWidth = '700px';
 }
 
@@ -3973,10 +3973,10 @@ function openLOAKPIDrillDown(type) {
         title = 'Active Letters of Authority';
         filtered = activeLOAs;
     } else if (type === 'aggregate') {
-        title = 'Aggregate Capacity â€” By Account';
+        title = 'Aggregate Capacity — By Account';
         filtered = activeLOAs.sort((a, b) => b.aggregate - a.aggregate);
     } else if (type === 'utilization') {
-        title = 'Aggregate Utilization â€” By Account';
+        title = 'Aggregate Utilization — By Account';
         filtered = activeLOAs.sort((a, b) => (b.used / b.aggregate) - (a.used / a.aggregate));
     } else if (type === 'expiring') {
         title = 'LOAs Expiring Within 30 Days';
@@ -4035,7 +4035,7 @@ function openLOAKPIDrillDown(type) {
         </table>
     </div>`;
     const footer = '<button class="btn btn-outline" onclick="closeAllModals()">Close</button>';
-    openModal(title + ' â€” LOA Breakdown', body, footer);
+    openModal(title + ' — LOA Breakdown', body, footer);
     document.getElementById('modal-container').style.maxWidth = '920px';
 }
 
@@ -4121,7 +4121,7 @@ function renderExposureMap() {
         { id:'ME', region:'Northeast', d:'M922.83976,78.830719L924.77969,80.932305L927.04294,84.650496L927.04294,86.590422L924.94135,91.278575L923.00142,91.925217L919.60655,94.996766L914.75674,100.49322C914.75674,100.49322,914.1101,100.49322,913.46346,100.49322C912.81682,100.49322,912.49349,98.391636,912.49349,98.391636L910.71523,98.553296L909.74527,100.00824L907.32036,101.46319L906.3504,102.91813L907.967,104.37307L907.48202,105.01972L906.99704,107.76794L905.05711,107.60628L905.05711,105.98968L904.73379,104.69639L903.27885,105.01972L901.50058,101.78651L899.399,103.07979L900.69228,104.53473L901.0156,105.66636L900.2073,106.95964L900.53062,110.03119L900.69228,111.64779L899.07568,114.23436L896.16579,114.71934L895.84247,117.62923L890.50767,120.70078L889.21439,121.18576L887.59778,119.73082L884.52623,123.28735L885.4962,126.52056L884.04125,127.81384L883.87959,132.17867L882.75631,138.43803L880.29406,137.28208L879.80907,134.21052L875.92922,133.07889L875.6059,130.33065L868.33115,106.88983L863.63257,92.250088L865.05311,92.131923L866.5669,92.541822L866.5669,89.955254L867.8752,85.458798L870.46177,80.770645L871.91672,76.729133L869.97679,74.304226L869.97679,68.322789L870.78509,67.352826L871.5934,64.604598L871.43174,63.149654L871.27007,58.29984L873.04834,53.450026L875.95823,44.5587L878.05981,40.355528L879.3531,40.355528L880.64638,40.517188L880.64638,41.648811L881.93967,43.912058L884.68789,44.5587L885.4962,43.750397L885.4962,42.780435L889.53771,39.870546L891.31597,38.092281L892.77092,38.253942L898.75235,40.678849L900.69228,41.648811L909.74527,71.555998L915.7267,71.555998L916.53501,73.495924L916.69667,78.345738L919.60655,80.608984L920.41486,80.608984L920.57652,80.124003L920.09154,78.99238L922.83976,78.830719ZM901.90801,108.97825L903.44379,107.44247L904.81791,108.49327L905.38372,110.91819L903.68628,111.80732L901.90801,108.97825ZM908.61694,103.07763L910.39521,104.93673C910.39521,104.93673,911.6885,105.01755,911.6885,104.69423C911.6885,104.37091,911.93099,102.67347,911.93099,102.67347L912.82013,101.86517L912.01182,100.08689L909.99106,100.81437L908.61694,103.07763Z' },
     ];
 
-    // Map state ID â†’ region name for lookups
+    // Map state ID ’ region name for lookups
     const stateToRegion = {};
     usStates.forEach(s => { stateToRegion[s.id] = s.region; });
 
@@ -4375,7 +4375,7 @@ function renderExposureMap() {
             }).join('')}
         `;
 
-        // Tooltips â€” hover on individual states shows region data
+        // Tooltips — hover on individual states shows region data
         const tooltip = document.getElementById('map-tooltip');
         const mapContainer = document.getElementById('exposure-map');
         svg.querySelectorAll('.map-state').forEach(stateEl => {
@@ -4518,7 +4518,7 @@ function initMapTooltips() {
 
 // ==================== EXPOSURE KPI DRILL-DOWN ====================
 function openExposureKPIDrillDown(type) {
-    // Re-derive exposureRegions from renderExposureMap scope â€” they are local to that function
+    // Re-derive exposureRegions from renderExposureMap scope — they are local to that function
     // We need to access the data; since exposureRegions is defined inside renderExposureMap, we re-read it here
     const exposureRegions = [
         { name: 'Pacific', abbr: 'PAC', value: 24.8, bonds: 347, lossRatio: 2.1, largestBond: 4200000, trend: 'up', trendPct: 8.3, type: { contract: 18.6, commercial: 6.2 } },
@@ -4541,23 +4541,23 @@ function openExposureKPIDrillDown(type) {
     let sortCol = '';
 
     if (type === 'total') {
-        title = 'Total Exposure â€” By Region';
+        title = 'Total Exposure — By Region';
         sorted = [...exposureRegions].sort((a, b) => b.value - a.value);
         sortCol = 'exposure';
     } else if (type === 'bonds') {
-        title = 'Active Bonds â€” By Region';
+        title = 'Active Bonds — By Region';
         sorted = [...exposureRegions].sort((a, b) => b.bonds - a.bonds);
         sortCol = 'bonds';
     } else if (type === 'avgsize') {
-        title = 'Average Bond Size â€” By Region';
+        title = 'Average Bond Size — By Region';
         sorted = [...exposureRegions].sort((a, b) => (b.value * 1000000 / b.bonds) - (a.value * 1000000 / a.bonds));
         sortCol = 'avgsize';
     } else if (type === 'lossratio') {
-        title = 'Loss Ratio â€” By Region';
+        title = 'Loss Ratio — By Region';
         sorted = [...exposureRegions].sort((a, b) => b.lossRatio - a.lossRatio);
         sortCol = 'lossratio';
     } else if (type === 'highest') {
-        title = 'Highest Exposure Region â€” Detail';
+        title = 'Highest Exposure Region — Detail';
         const highest = exposureRegions.reduce((a, b) => a.value > b.value ? a : b);
         sorted = [highest];
         sortCol = 'exposure';
@@ -4614,7 +4614,7 @@ function openExposureKPIDrillDown(type) {
         </table>
     </div>`;
     const footer = '<button class="btn btn-outline" onclick="closeAllModals()">Close</button>';
-    openModal(title + ' â€” Exposure Breakdown', body, footer);
+    openModal(title + ' — Exposure Breakdown', body, footer);
     document.getElementById('modal-container').style.maxWidth = '960px';
 }
 
@@ -4668,7 +4668,7 @@ function openFSComplianceModal() {
 
     let body;
     if (rows.length === 0) {
-        body = '<p style="text-align:center; color:var(--text-muted); padding:24px 0;">All accounts are compliant â€” no FS issues found.</p>';
+        body = '<p style="text-align:center; color:var(--text-muted); padding:24px 0;">All accounts are compliant — no FS issues found.</p>';
     } else {
         const tableRows = rows.map(r => {
             const sevClass = r.type === 'urgent' ? 'sev-urgent' : 'sev-warning';
@@ -4722,7 +4722,7 @@ function openFSDetail(fsId) {
             </table>
         </div>`;
     const footer = `<button class="btn btn-outline" onclick="closeAllModals()">Close</button>`;
-    openModal('Financial Statement Detail â€” ' + fsId, body, footer);
+    openModal('Financial Statement Detail — ' + fsId, body, footer);
     // Widen modal for FS detail
     document.getElementById('modal-container').style.maxWidth = '840px';
 }
@@ -4760,7 +4760,7 @@ function openReassignModal() {
         </div>
         <div class="form-group" style="margin-top:14px;">
             <label class="form-label">Email Subject</label>
-            <input type="text" class="form-input" value="Account Review Reassignment â€” R.J. Corman Railroad Group">
+            <input type="text" class="form-input" value="Account Review Reassignment — R.J. Corman Railroad Group">
         </div>
         <div class="form-group" style="margin-top:14px;">
             <label class="form-label">Email Body Message</label>
@@ -4837,7 +4837,7 @@ let currentARIndex = 0;
 function openARDetail(idx) {
     currentARIndex = idx;
     const review = sampleAccountReviews[idx];
-    document.getElementById('ar-detail-title').textContent = 'Account Review â€” ' + review.reviewDate;
+    document.getElementById('ar-detail-title').textContent = 'Account Review — ' + review.reviewDate;
     document.getElementById('ar-detail-status').textContent = 'Status: ' + review.reviewState;
     document.getElementById('ar-detail-meta').textContent = 'Review Type: ' + review.reviewType + ' | Review Level: ' + review.reviewLevel;
 
@@ -5129,15 +5129,15 @@ function exportExposureData() {
 // ==================== NOTIFICATION BELL ====================
 
 const notifications = [
-    { icon: 'âš ï¸', text: 'ARR for Granite Construction is overdue by 15 days', time: '2h ago', type: 'warning' },
-    { icon: 'ðŸ“‹', text: 'New bond request BR-2024-010 awaiting approval', time: '3h ago', type: 'info' },
-    { icon: 'ðŸ””', text: 'LOA for R.J. Corman expires in 12 days', time: '5h ago', type: 'alert' },
-    { icon: 'âœ…', text: 'Financial statement FS-2024-001 approved', time: '1d ago', type: 'success' },
-    { icon: 'âš ï¸', text: 'Claim CLM-2024-003 investigation deadline approaching', time: '1d ago', type: 'warning' },
-    { icon: 'ðŸ“‹', text: 'WIP Schedule updated for Turner Construction', time: '2d ago', type: 'info' },
-    { icon: 'ðŸ•', text: 'FR-3: 14-day ARR deadline approaching for Clark Construction (FS received 04/17)', time: '1h ago', type: 'warning' },
-    { icon: 'ðŸ“Š', text: 'BR-2: Granite Construction â€” Annual CPA is 40 months old, requires updated statement', time: '4h ago', type: 'warning' },
-    { icon: 'ðŸ”„', text: 'BR-5: Frequency override active for Clark Construction â€” Semi-Annual (approved by John Webster)', time: '1d ago', type: 'info' }
+    { icon: '⚠️', text: 'ARR for Granite Construction is overdue by 15 days', time: '2h ago', type: 'warning' },
+    { icon: '📋', text: 'New bond request BR-2024-010 awaiting approval', time: '3h ago', type: 'info' },
+    { icon: '📝', text: 'LOA for R.J. Corman expires in 12 days', time: '5h ago', type: 'alert' },
+    { icon: '💰', text: 'Financial statement FS-2024-001 approved', time: '1d ago', type: 'success' },
+    { icon: '⚠️', text: 'Claim CLM-2024-003 investigation deadline approaching', time: '1d ago', type: 'warning' },
+    { icon: '📋', text: 'WIP Schedule updated for Turner Construction', time: '2d ago', type: 'info' },
+    { icon: '🔔', text: 'FR-3: 14-day ARR deadline approaching for Clark Construction (FS received 04/17)', time: '1h ago', type: 'warning' },
+    { icon: '📊', text: 'BR-2: Granite Construction — Annual CPA is 40 months old, requires updated statement', time: '4h ago', type: 'warning' },
+    { icon: '📎', text: 'BR-5: Frequency override active for Clark Construction — Semi-Annual (approved by John Webster)', time: '1d ago', type: 'info' }
 ];
 
 function toggleNotifications() {
@@ -5185,19 +5185,19 @@ function handleGlobalSearch(query) {
 
     sampleBonds.forEach((b, i) => {
         if (b.bondNumber.toLowerCase().includes(q) || b.principal.toLowerCase().includes(q))
-            results.push({ label: b.bondNumber + ' â€” ' + b.principal, action: `navigateTo('bonds'); setTimeout(()=>openBondDetail(${i}),100);` });
+            results.push({ label: b.bondNumber + ' — ' + b.principal, action: `navigateTo('bonds'); setTimeout(()=>openBondDetail(${i}),100);` });
     });
     sampleClaims.forEach((c, i) => {
         if (c.claimNumber.toLowerCase().includes(q) || c.principal.toLowerCase().includes(q) || c.claimant.toLowerCase().includes(q))
-            results.push({ label: c.claimNumber + ' â€” ' + c.claimant, action: `navigateTo('claims'); setTimeout(()=>openClaimDetail(${i}),100);` });
+            results.push({ label: c.claimNumber + ' — ' + c.claimant, action: `navigateTo('claims'); setTimeout(()=>openClaimDetail(${i}),100);` });
     });
     sampleBondRequests.forEach(r => {
         if (r.id.toLowerCase().includes(q) || r.account.toLowerCase().includes(q))
-            results.push({ label: r.id + ' â€” ' + r.account, action: `navigateTo('bond-requests')` });
+            results.push({ label: r.id + ' — ' + r.account, action: `navigateTo('bond-requests')` });
     });
     sampleAccountReviews.forEach(a => {
         if (a.reviewDate.toLowerCase().includes(q) || a.reviewedBy.toLowerCase().includes(q))
-            results.push({ label: 'Review ' + a.reviewDate + ' â€” ' + a.reviewedBy, action: `navigateTo('account-review')` });
+            results.push({ label: 'Review ' + a.reviewDate + ' — ' + a.reviewedBy, action: `navigateTo('account-review')` });
     });
 
     const viewMap = [
@@ -5217,7 +5217,7 @@ function handleGlobalSearch(query) {
     ];
     viewMap.forEach(v => {
         if (v.keywords.some(k => k.includes(q)))
-            results.push({ label: 'ðŸ“„ ' + v.label, action: `navigateTo('${v.view}')` });
+            results.push({ label: '🔍 ' + v.label, action: `navigateTo('${v.view}')` });
     });
 
     if (results.length === 0) {
@@ -5242,7 +5242,7 @@ function openARNotes(idx) {
             <textarea class="modal-input" rows="5" placeholder="Enter review notes...">${r.notes || 'Annual review completed. All financials reviewed and approved. No concerns noted.'}</textarea>
         </div>`;
     const footer = `<button class="btn btn-primary" onclick="showToast('Notes saved'); closeAllModals();">Save</button><button class="btn btn-outline" onclick="closeAllModals()">Cancel</button>`;
-    openModal('Review Notes â€” ' + r.reviewDate, body, footer);
+    openModal('Review Notes — ' + r.reviewDate, body, footer);
 }
 
 function openFSNotes(fsId) {
@@ -5257,7 +5257,7 @@ function openFSNotes(fsId) {
             <textarea class="modal-input" rows="5" placeholder="Enter statement notes...">Financial statement reviewed. ${fs.auditStatus}. Prepared by ${fs.preparer}.</textarea>
         </div>`;
     const footer = `<button class="btn btn-primary" onclick="showToast('Notes saved'); closeAllModals();">Save</button><button class="btn btn-outline" onclick="closeAllModals()">Cancel</button>`;
-    openModal('Statement Notes â€” ' + fs.id, body, footer);
+    openModal('Statement Notes — ' + fs.id, body, footer);
 }
 
 function openWIPNotes(idx) {
@@ -5272,7 +5272,7 @@ function openWIPNotes(idx) {
             <textarea class="modal-input" rows="5" placeholder="Enter WIP schedule notes...">WIP schedule reviewed. Contract price: ${fmt(w.contractPrice)}. Last updated: ${w.lastUpdated}.</textarea>
         </div>`;
     const footer = `<button class="btn btn-primary" onclick="showToast('Notes saved'); closeAllModals();">Save</button><button class="btn btn-outline" onclick="closeAllModals()">Cancel</button>`;
-    openModal('WIP Notes â€” ' + w.date, body, footer);
+    openModal('WIP Notes — ' + w.date, body, footer);
 }
 
 // ==================== ADDITIONAL DELETE HELPERS ====================
@@ -5588,7 +5588,7 @@ function renderPremiumARRows() {
         });
     }
 
-    // Header â€” light/white style with uppercase gray labels (not blue branded)
+    // Header — light/white style with uppercase gray labels (not blue branded)
     const headerRow = document.getElementById('premium-ar-agency-header');
     const thBase = 'background:#f8f9fa;color:#6b7280;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;padding:10px 12px;border-bottom:1px solid #e5e7eb;';
     headerRow.innerHTML = cols.map((c, i) => {
@@ -5600,7 +5600,7 @@ function renderPremiumARRows() {
         return `<th class="sortable" style="${thBase}${align}" onclick="toggleTableSort('premium-ar-agency-table',${i},renderPremiumARRows)">${labelHtml}${arrow}</th>`;
     }).join('');
 
-    // Rows â€” inline expandable with account/bond sub-rows
+    // Rows — inline expandable with account/bond sub-rows
     const fmtCell = v => v === 0 ? '<span style="color:var(--text-muted);">\u2014</span>' : '$' + v.toLocaleString();
     const tdRight = 'text-align:right;padding:10px 12px;';
     const tdLeft = 'padding:10px 12px;';
@@ -5995,9 +5995,9 @@ function matchAIResponse(text) {
                 <li>Navigate to <strong>My Account Review Reports</strong> from the sidebar</li>
                 <li>Click <strong>"New ARR"</strong> in the top-right corner</li>
                 <li>Fill in the required fields: Account, Risk Assessment, Financial Analysis, and Recommendation</li>
-                <li>Click <strong>"Submit for Review"</strong> â€” it will enter the review queue and route to your Branch Manager</li>
+                <li>Click <strong>"Submit for Review"</strong> — it will enter the review queue and route to your Branch Manager</li>
             </ul>
-            <p>ARRs follow the chain of command: <strong>Underwriter â†’ Branch Manager â†’ Regional UW Manager â†’ Home Office</strong>.</p>`,
+            <p>ARRs follow the chain of command: <strong>Underwriter ’ Branch Manager ’ Regional UW Manager ’ Home Office</strong>.</p>`,
             suggestions: ['What are the review queue statuses?', 'How long do reviews take?']
         };
     }
@@ -6007,14 +6007,14 @@ function matchAIResponse(text) {
         return {
             html: `<p>ARRs move through these <strong>review queue statuses</strong>:</p>
             <ul>
-                <li><strong>Draft</strong> â€” Saved but not yet submitted</li>
-                <li><strong>Submitted</strong> â€” In the review queue, awaiting first reviewer</li>
-                <li><strong>UW Review</strong> â€” Being reviewed by Underwriting</li>
-                <li><strong>Branch Review</strong> â€” Branch Manager is reviewing</li>
-                <li><strong>Regional Review</strong> â€” Regional UW Manager is reviewing</li>
-                <li><strong>Home Office Review</strong> â€” Final review at Home Office level</li>
-                <li><strong>Approved</strong> â€” Fully approved through the chain</li>
-                <li><strong>Returned</strong> â€” Sent back for revisions with comments</li>
+                <li><strong>Draft</strong> — Saved but not yet submitted</li>
+                <li><strong>Submitted</strong> — In the review queue, awaiting first reviewer</li>
+                <li><strong>UW Review</strong> — Being reviewed by Underwriting</li>
+                <li><strong>Branch Review</strong> — Branch Manager is reviewing</li>
+                <li><strong>Regional Review</strong> — Regional UW Manager is reviewing</li>
+                <li><strong>Home Office Review</strong> — Final review at Home Office level</li>
+                <li><strong>Approved</strong> — Fully approved through the chain</li>
+                <li><strong>Returned</strong> — Sent back for revisions with comments</li>
             </ul>`,
             suggestions: ['How do I submit an ARR?', 'What accounts need attention?']
         };
@@ -6044,7 +6044,7 @@ function matchAIResponse(text) {
         const suspended = sampleMyAccounts.filter(a => a.status === 'Suspended');
         let html = `<p>You have <strong>${suspended.length} suspended account${suspended.length !== 1 ? 's' : ''}</strong>:</p><ul>`;
         suspended.forEach(a => {
-            html += `<li><strong>${a.name}</strong> (Grade ${a.accountGrade}) â€” ${a.suspendedReason || 'No reason specified'}</li>`;
+            html += `<li><strong>${a.name}</strong> (Grade ${a.accountGrade}) — ${a.suspendedReason || 'No reason specified'}</li>`;
         });
         html += `</ul><p>Suspended accounts cannot have new bonds issued until the suspension is resolved.</p>`;
         return { html, suggestions: ['What accounts need attention?', 'How do I reactivate an account?'] };
@@ -6055,10 +6055,10 @@ function matchAIResponse(text) {
         return {
             html: `<p>The <strong>bond request workflow</strong> follows these steps:</p>
             <ul>
-                <li><strong>1. Request Submitted</strong> â€” Agent or contractor submits a bond need</li>
-                <li><strong>2. Underwriter Review</strong> â€” You review the request, financials, and project details</li>
-                <li><strong>3. Approval / Decline / Refer</strong> â€” Approve within authority, decline with reason, or refer to higher authority</li>
-                <li><strong>4. Bond Issuance</strong> â€” Approved bonds are issued and tracked in the system</li>
+                <li><strong>1. Request Submitted</strong> — Agent or contractor submits a bond need</li>
+                <li><strong>2. Underwriter Review</strong> — You review the request, financials, and project details</li>
+                <li><strong>3. Approval / Decline / Refer</strong> — Approve within authority, decline with reason, or refer to higher authority</li>
+                <li><strong>4. Bond Issuance</strong> — Approved bonds are issued and tracked in the system</li>
             </ul>
             <p>Open bond requests appear on your <strong>My Dashboard</strong> dashboard and in the <strong>Bonds</strong> view.</p>`,
             suggestions: ['What is my approval authority?', 'What accounts need attention?']
@@ -6070,9 +6070,9 @@ function matchAIResponse(text) {
         return {
             html: `<p>A <strong>Letter of Authority (LOA)</strong> defines the bonding limits for an account:</p>
             <ul>
-                <li><strong>Single Bond Limit</strong> â€” Maximum size of any individual bond</li>
-                <li><strong>Aggregate Limit</strong> â€” Maximum total bonded exposure</li>
-                <li><strong>Expiration Date</strong> â€” LOAs are typically annual and must be renewed</li>
+                <li><strong>Single Bond Limit</strong> — Maximum size of any individual bond</li>
+                <li><strong>Aggregate Limit</strong> — Maximum total bonded exposure</li>
+                <li><strong>Expiration Date</strong> — LOAs are typically annual and must be renewed</li>
             </ul>
             <p>You can view and manage LOAs in the <strong>LOA Management</strong> section. Expiring LOAs will appear in your action items.</p>`,
             suggestions: ['What accounts need attention?', 'How do I submit an ARR?']
@@ -6084,9 +6084,9 @@ function matchAIResponse(text) {
         return {
             html: `<p>Claims are tracked in the <strong>Claims</strong> view and affect account health:</p>
             <ul>
-                <li><strong>Open Claims</strong> â€” Active claims being investigated or litigated</li>
-                <li><strong>Reserved</strong> â€” Claims with loss reserves established</li>
-                <li><strong>Closed</strong> â€” Resolved claims (paid or denied)</li>
+                <li><strong>Open Claims</strong> — Active claims being investigated or litigated</li>
+                <li><strong>Reserved</strong> — Claims with loss reserves established</li>
+                <li><strong>Closed</strong> — Resolved claims (paid or denied)</li>
             </ul>
             <p>Accounts with large open claims may trigger a <strong>claims review hold</strong>, which suspends new bond issuance until the claim is resolved or within acceptable parameters.</p>`,
             suggestions: ['What accounts need attention?', 'Explain bond request workflow']
@@ -6118,7 +6118,7 @@ function matchAIResponse(text) {
             <ul>
                 <li>Total AR Outstanding: <strong>$${totalAR.toLocaleString()}</strong> across <strong>${totalInvoices} invoices</strong></li>
                 <li>90+ Days past due: <strong>$${tot90plus.toLocaleString()}</strong></li>
-                <li>AR is broken down by aging bucket: <strong>Current, 1â€“30, 31â€“60, 61â€“90, and 90+ Days</strong></li>
+                <li>AR is broken down by aging bucket: <strong>Current, 1—30, 31—60, 61—90, and 90+ Days</strong></li>
                 <li>${samplePremiumAR.length} appointed agencies shown with full aging breakdown</li>
             </ul>
             <p>Agencies with high 90+ day balances should be prioritized for collection follow-up.</p>`,
@@ -6131,11 +6131,11 @@ function matchAIResponse(text) {
         return {
             html: `<p>Review turnaround times vary by level:</p>
             <ul>
-                <li><strong>Branch Review</strong> â€” Typically 1-3 business days</li>
-                <li><strong>Regional Review</strong> â€” Typically 2-5 business days</li>
-                <li><strong>Home Office Review</strong> â€” Typically 3-7 business days</li>
+                <li><strong>Branch Review</strong> — Typically 1-3 business days</li>
+                <li><strong>Regional Review</strong> — Typically 2-5 business days</li>
+                <li><strong>Home Office Review</strong> — Typically 3-7 business days</li>
             </ul>
-            <p>You can track how long each ARR has been in queue from the <strong>My Account Review Reports</strong> section â€” the "Days in Queue" column shows current wait time.</p>`,
+            <p>You can track how long each ARR has been in queue from the <strong>My Account Review Reports</strong> section — the "Days in Queue" column shows current wait time.</p>`,
             suggestions: ['What are the review queue statuses?', 'How do I submit an ARR?']
         };
     }
@@ -6150,7 +6150,7 @@ function matchAIResponse(text) {
                 <li>Submit the ARR through the review chain with a recommendation to reinstate</li>
                 <li>Once approved, the account status will be changed from Suspended to Active</li>
             </ul>
-            <p>The specific requirements depend on the suspension reason â€” check the account's <strong>Red Flags</strong> for details.</p>`,
+            <p>The specific requirements depend on the suspension reason — check the account's <strong>Red Flags</strong> for details.</p>`,
             suggestions: ['Show me suspended accounts', 'How do I submit an ARR?']
         };
     }
@@ -6160,12 +6160,12 @@ function matchAIResponse(text) {
         return {
             html: `<p>Here's how to navigate the key sections:</p>
             <ul>
-                <li><strong>Sidebar</strong> â€” Use the left navigation to switch between views</li>
-                <li><strong>My Dashboard</strong> â€” Your dashboard with action items, KPIs, and week-at-a-glance</li>
-                <li><strong>My Accounts</strong> â€” All your assigned accounts (Active and Suspended)</li>
-                <li><strong>Bonds</strong> â€” Bond requests and approvals</li>
-                <li><strong>Claims</strong> â€” Claims tracking and management</li>
-                <li><strong>Red Flags</strong> â€” Risk alerts and compliance issues</li>
+                <li><strong>Sidebar</strong> — Use the left navigation to switch between views</li>
+                <li><strong>My Dashboard</strong> — Your dashboard with action items, KPIs, and week-at-a-glance</li>
+                <li><strong>My Accounts</strong> — All your assigned accounts (Active and Suspended)</li>
+                <li><strong>Bonds</strong> — Bond requests and approvals</li>
+                <li><strong>Claims</strong> — Claims tracking and management</li>
+                <li><strong>Red Flags</strong> — Risk alerts and compliance issues</li>
             </ul>`,
             suggestions: ['What accounts need attention?', 'How do I submit an ARR?']
         };
