@@ -1270,6 +1270,30 @@ function accountLink(name) {
     return `<span class="account-link" onclick="openAccountNotesDetail('${name.replace(/'/g, "\\'")}'); navigateTo('account-notes');">${name}</span>`;
 }
 
+function myAccountLink(name) {
+    return `<span class="account-link" onclick="navigateToMyAccount('${name.replace(/'/g, "\\'")}')">${name}</span>`;
+}
+
+function navigateToMyAccount(acctName) {
+    closeAllModals();
+    navigateTo('my-accounts');
+    renderMyAccounts();
+    // Brief delay to ensure DOM is rendered, then find and highlight the row
+    setTimeout(() => {
+        const rows = document.querySelectorAll('#my-accounts-table-body tr');
+        for (const row of rows) {
+            const firstCell = row.querySelector('td');
+            if (firstCell && firstCell.textContent.trim().startsWith(acctName)) {
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                row.style.transition = 'background 0.3s';
+                row.style.background = 'var(--accent-blue-bg)';
+                setTimeout(() => { row.style.background = ''; }, 2000);
+                break;
+            }
+        }
+    }, 100);
+}
+
 // ==================== KPI VALUES ====================
 
 function updateKPIValues() {
@@ -3219,7 +3243,7 @@ function renderPortfolioAnalysis(branchFilter) {
                 const rColor = riskColors[a.risk] || 'var(--text-muted)';
                 html += `<tr data-parent="${grpId}" style="display:none;background:#f9fafb;">
                     <td></td>
-                    <td style="padding-left:24px;">${accountLink(a.account)}</td>
+                    <td style="padding-left:24px;">${myAccountLink(a.account)}</td>
                     <td style="text-align:center;"><span style="display:inline-block;background:${gColor};color:#fff;font-weight:700;font-size:11px;min-width:24px;height:24px;line-height:24px;text-align:center;border-radius:12px;padding:0 5px;">${a.grade}</span></td>
                     <td><span style="color:${rColor};font-weight:600;font-size:12px;">${a.risk.charAt(0).toUpperCase() + a.risk.slice(1)} Risk</span></td>
                     <td style="font-size:12px;color:var(--text-secondary);">${a.type}</td>
@@ -3257,7 +3281,7 @@ function openPortfolioKPIDrillDown(grade) {
         const gColor = getGradeColor(a.grade);
         const sColor = statusColors[a.status] || 'var(--text-muted)';
         return `<tr>
-            <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;">${accountLink(a.account)}</td>
+            <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;">${myAccountLink(a.account)}</td>
             <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;">${a.branch}</td>
             <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:center;"><span style="display:inline-block;background:${gColor};color:#fff;font-weight:700;font-size:11px;min-width:24px;height:24px;line-height:24px;text-align:center;border-radius:12px;padding:0 5px;">${a.grade}</span></td>
             <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;"><span style="color:${sColor};font-weight:600;">${a.status}</span></td>
