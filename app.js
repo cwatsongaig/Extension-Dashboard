@@ -275,7 +275,7 @@ const sampleAccountReviews = [
         originatingUW: 'Jake Miller', currentQueue: 'Max Miller', queueEnteredDate: 'Apr 06, 2024',
         triggeringStatementId: 'FS-09871', fsDateReceived: '03/25/2024',
         signOffHistory: [
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '03/25/2024', state: 'Initial Review', comments: 'Interim review —" Q3 financials received' },
+            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '03/25/2024', state: 'Initial Review', comments: 'Interim review — Q3 financials received' },
             { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Submitted', date: '04/06/2024', state: 'Pending Regional Review', comments: 'Cash flow tightening slightly but backlog remains solid' }
         ]
     },
@@ -285,7 +285,7 @@ const sampleAccountReviews = [
         originatingUW: 'Jake Miller', currentQueue: 'John Webster', queueEnteredDate: 'Apr 01, 2024',
         triggeringStatementId: 'FS-10247', fsDateReceived: '03/06/2024',
         signOffHistory: [
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '03/01/2024', state: 'Initial Review', comments: 'CAO-level annual review —" large account requiring full chain approval' },
+            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '03/01/2024', state: 'Initial Review', comments: 'CAO-level annual review — large account requiring full chain approval' },
             { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Submitted', date: '03/12/2024', state: 'Pending Regional Review', comments: 'Analysis complete. Aggregate exposure warrants CAO sign-off.' },
             { reviewer: 'Max Miller', title: 'Regional Manager', action: 'Approved & Promoted', date: '03/28/2024', state: 'Pending VP Review', comments: 'Exposure within regional tolerance. Promoting to VP for CAO-level sign-off.' }
         ]
@@ -296,7 +296,7 @@ const sampleAccountReviews = [
         originatingUW: 'Jake Miller', currentQueue: null, queueEnteredDate: null,
         triggeringStatementId: null, fsDateReceived: '09/28/2021',
         signOffHistory: [
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '10/01/2021', state: 'Initial Review', comments: 'Annual review —" strong year for principal' },
+            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '10/01/2021', state: 'Initial Review', comments: 'Annual review — strong year for principal' },
             { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Submitted', date: '10/12/2021', state: 'Pending Regional Review', comments: 'Financials healthy, recommend maintaining current limits' },
             { reviewer: 'Max Miller', title: 'Regional Manager', action: 'Approved', date: '10/20/2021', state: 'Complete', comments: 'Agreed. Acceptable rating confirmed.' }
         ]
@@ -331,7 +331,7 @@ const sampleClaims = [
 
 const sampleVisitations = [
     { account: 'R.J. Corman Railroad Group', visitDate: '03/12/2024', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Brown & Brown Insurance', location: 'Nicholasville, KY - Corporate HQ', contactMet: 'Rick Corman (Owner), Bill Hayes (CFO)', purpose: 'Annual Visit', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: true, safetyReviewed: false, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'Strong year operationally. Backlog healthy at $8.7M. New equipment purchases planned for Q3. CFO confident in maintaining margins.', branch: 'Cincinnati' },
-    { account: 'Hensel Phelps Construction Co', visitDate: '02/20/2024', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Marsh McLennan Agency', location: 'Greeley, CO - Main Office', contactMet: 'Mike Choutka (CEO), Janet Lewis (Controller)', purpose: 'ARR Follow-Up', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: true, followUpDate: '05/15/2024', notes: 'Reviewed FY2023 financials in detail. Revenue up 12%. Safety program impressive —" TRIR well below industry avg. Need updated WIP by May.', branch: 'Cincinnati' },
+    { account: 'Hensel Phelps Construction Co', visitDate: '02/20/2024', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Marsh McLennan Agency', location: 'Greeley, CO - Main Office', contactMet: 'Mike Choutka (CEO), Janet Lewis (Controller)', purpose: 'ARR Follow-Up', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: true, followUpDate: '05/15/2024', notes: 'Reviewed FY2023 financials in detail. Revenue up 12%. Safety program impressive — TRIR well below industry avg. Need updated WIP by May.', branch: 'Cincinnati' },
     { account: 'Clark Construction Group', visitDate: '01/18/2024', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Aon Surety', location: 'Bethesda, MD - Corporate Office', contactMet: 'Peter Forster (VP Surety), Diana Cho (CFO)', purpose: 'Relationship Mgmt', backlogDiscussed: true, financialsDiscussed: false, equipmentReviewed: false, safetyReviewed: false, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'General relationship meeting. Discussed upcoming federal projects pipeline. They expect $50M+ in new bids Q2. LOA increase discussion tabled for annual review.', branch: 'Cincinnati' },
     { account: 'Turner Construction Company', visitDate: '03/05/2024', visitType: 'Virtual', visitedBy: 'Sarah Mitchell', agency: 'Willis Towers Watson', location: 'Video Conference', contactMet: 'Tom Regan (Surety Liaison), Mark Peters (CFO)', purpose: 'ARR Follow-Up', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: false, overallImpression: 'Neutral', followUpRequired: true, followUpDate: '04/30/2024', notes: 'Interim financials show margin compression on two large NYC projects. CFO attributes to supply chain costs. Need to monitor WIP fade closely.', branch: 'New York' },
     { account: 'Granite Construction Inc', visitDate: '11/15/2023', visitType: 'In-Person', visitedBy: 'Mike Torres', agency: 'Lockton Companies', location: 'Watsonville, CA - HQ', contactMet: 'Kyle Larkin (President), Susan Park (Treasury)', purpose: 'Annual Visit', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: true, safetyReviewed: true, overallImpression: 'Concerns Noted', followUpRequired: true, followUpDate: '02/15/2024', notes: 'Backlog down 15% YoY. Heavy equipment showing age — deferred capex a concern. Safety record has slipped. Recommended closer monitoring of WIP and cashflow.', branch: 'Sacramento' },
@@ -4121,7 +4121,7 @@ function renderExposureMap() {
         { id:'ME', region:'Northeast', d:'M922.83976,78.830719L924.77969,80.932305L927.04294,84.650496L927.04294,86.590422L924.94135,91.278575L923.00142,91.925217L919.60655,94.996766L914.75674,100.49322C914.75674,100.49322,914.1101,100.49322,913.46346,100.49322C912.81682,100.49322,912.49349,98.391636,912.49349,98.391636L910.71523,98.553296L909.74527,100.00824L907.32036,101.46319L906.3504,102.91813L907.967,104.37307L907.48202,105.01972L906.99704,107.76794L905.05711,107.60628L905.05711,105.98968L904.73379,104.69639L903.27885,105.01972L901.50058,101.78651L899.399,103.07979L900.69228,104.53473L901.0156,105.66636L900.2073,106.95964L900.53062,110.03119L900.69228,111.64779L899.07568,114.23436L896.16579,114.71934L895.84247,117.62923L890.50767,120.70078L889.21439,121.18576L887.59778,119.73082L884.52623,123.28735L885.4962,126.52056L884.04125,127.81384L883.87959,132.17867L882.75631,138.43803L880.29406,137.28208L879.80907,134.21052L875.92922,133.07889L875.6059,130.33065L868.33115,106.88983L863.63257,92.250088L865.05311,92.131923L866.5669,92.541822L866.5669,89.955254L867.8752,85.458798L870.46177,80.770645L871.91672,76.729133L869.97679,74.304226L869.97679,68.322789L870.78509,67.352826L871.5934,64.604598L871.43174,63.149654L871.27007,58.29984L873.04834,53.450026L875.95823,44.5587L878.05981,40.355528L879.3531,40.355528L880.64638,40.517188L880.64638,41.648811L881.93967,43.912058L884.68789,44.5587L885.4962,43.750397L885.4962,42.780435L889.53771,39.870546L891.31597,38.092281L892.77092,38.253942L898.75235,40.678849L900.69228,41.648811L909.74527,71.555998L915.7267,71.555998L916.53501,73.495924L916.69667,78.345738L919.60655,80.608984L920.41486,80.608984L920.57652,80.124003L920.09154,78.99238L922.83976,78.830719ZM901.90801,108.97825L903.44379,107.44247L904.81791,108.49327L905.38372,110.91819L903.68628,111.80732L901.90801,108.97825ZM908.61694,103.07763L910.39521,104.93673C910.39521,104.93673,911.6885,105.01755,911.6885,104.69423C911.6885,104.37091,911.93099,102.67347,911.93099,102.67347L912.82013,101.86517L912.01182,100.08689L909.99106,100.81437L908.61694,103.07763Z' },
     ];
 
-    // Map state ID ’ region name for lookups
+    // Map state ID -> region name for lookups
     const stateToRegion = {};
     usStates.forEach(s => { stateToRegion[s.id] = s.region; });
 
@@ -5997,7 +5997,7 @@ function matchAIResponse(text) {
                 <li>Fill in the required fields: Account, Risk Assessment, Financial Analysis, and Recommendation</li>
                 <li>Click <strong>"Submit for Review"</strong> — it will enter the review queue and route to your Branch Manager</li>
             </ul>
-            <p>ARRs follow the chain of command: <strong>Underwriter ’ Branch Manager ’ Regional UW Manager ’ Home Office</strong>.</p>`,
+            <p>ARRs follow the chain of command: <strong>Underwriter → Branch Manager → Regional UW Manager → Home Office</strong>.</p>`,
             suggestions: ['What are the review queue statuses?', 'How long do reviews take?']
         };
     }
