@@ -1,0 +1,141 @@
+
+Purpose
+Translate underwriting policy for financial statement requirements and Account Review Report (ARR) frequency into clear, testable application requirements.
+
+
+In-Scope Definitions
+
+ARR (Account Review Report): A review event triggered by receipt of financial statements.
+ARR Frequency: Required cadence for completing ARRs (Annual, Semi-Annual, Quarterly).
+Financial Statement Event: Receipt of annual CPA statements or interim statements.
+Authority Level: Branch, Director-level, or beyond Director-level.
+
+
+Business Rules (Authoritative)
+BR-1: ARR Trigger
+
+An ARR shall be required upon receipt of a financial statement (annual CPA or interim).
+BR-2: Minimum Financial Statement Expectations (Active Accounts)
+
+Active accounts shall require: One annual CPA financial statement, and
+At least one interim financial statement per year (preferred mid-year).
+BR-3: ARR Completion Timeline
+
+Once a financial statement is received, the ARR shall be completed within 14 calendar days.
+BR-4: ARR Frequency by Authority Level
+
+Branch-level accounts: Minimum: Annual ARR.
+Exception: Annual-only ARR requires Director approval and is intended for low-risk accounts.
+Director-level accounts: At least two ARRs per year (Annual + one additional interim-driven ARR).
+Beyond Director-level accounts: Quarterly ARRs (four per year) unless explicitly reduced by the highest supervisor.
+BR-5: Supervisor Overrides
+
+The highest supervisor may reduce ARR frequency below quarterly for beyond Director-level accounts.
+All overrides must be recorded with approver identity, date, and rationale.
+BR-6: No-Delay Principle
+
+ARR completion must not be blocked by missing supplemental documents once a financial statement is received.
+
+
+Functional Requirements
+FR-1: Financial Statement Intake
+
+The system shall capture financial statement events with: Statement type (Annual CPA / Interim)
+Statement period end date
+Date received
+Source (Agent, Principal, System Upload)
+FR-2: ARR Requirement Evaluation
+
+Upon each Financial Statement Event, the system shall evaluate whether an ARR is required based on ARR Frequency rules.
+FR-3: ARR Due Date Calculation
+
+The system shall automatically set ARR Due Date = Financial Statement Date Received + 14 days.
+FR-4: ARR Frequency Enforcement
+
+The system shall enforce the minimum ARR frequency based on Authority Level unless an approved override exists.
+FR-5: Override Management
+
+The system shall allow supervisors to: Approve reduced ARR frequency
+Record justification notes
+Define override effective period
+FR-6: Notifications & Alerts
+
+The system shall generate alerts: When an ARR is required
+When an ARR is 7 days from due
+When an ARR is overdue
+FR-7: Completion Recording
+
+The system shall record ARR completion with: Completion date
+Responsible underwriter
+Review level achieved
+FR-8: Audit Trail
+
+The system shall maintain a complete audit history for: Financial statement receipt
+ARR creation, updates, completion
+Frequency overrides
+
+
+Data Model Requirements
+Entities
+
+AccountAccount ID
+Status (Active, Inactive, etc.)
+Authority Level
+Current ARR Frequency
+FinancialStatementStatement ID
+Account ID
+Type (Annual CPA / Interim)
+Period End Date
+Date Received
+AccountReview (ARR)ARR ID
+Account ID
+Triggering Statement ID
+Frequency Type
+Due Date
+Completion Date
+Status
+FrequencyOverrideOverride ID
+Account ID
+Approved Frequency
+Approved By
+Approval Date
+Rationale
+Effective Start / End Dates
+
+
+Decision Logic (Rules Engine Friendly)
+ON FinancialStatementReceived:
+  IF Account.status != Active:
+    EXIT
+
+  requiredFrequency = determineFrequency(Account.authorityLevel, Override)
+
+  IF ARRNeededBasedOnFrequency(requiredFrequency):
+    CREATE ARR
+    SET ARR.dueDate = statement.receivedDate + 14 days
+
+
+
+
+Validation Rules
+
+ARR cannot be marked complete without a triggering Financial Statement.
+ARR Frequency cannot be reduced without supervisor override.
+Override must expire or be actively renewed.
+
+
+Non-Functional Requirements
+
+Auditability: All decisions must be explainable for audit review.
+Configurability: Authority thresholds and frequencies must be configurable without code deployment.
+Performance: ARR evaluation must occur in near-real-time upon statement receipt.
+Security: Override permissions restricted to supervisory roles.
+
+
+Reporting Requirements
+
+Accounts missing required financial statements
+Upcoming and overdue ARRs
+Accounts operating under overridden frequencies
+Trend of ARR completion timeliness
+	
