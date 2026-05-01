@@ -3128,7 +3128,7 @@ function renderPortfolioAnalysis(branchFilter) {
         const legendHTML = gradeGroups.map(g => {
             const count = groupCounts[g];
             const pct = total ? Math.round(count / total * 100) : 0;
-            return `<div class="portfolio-pie-legend-item">
+            return `<div class="portfolio-pie-legend-item" style="cursor:pointer;" onclick="openPortfolioKPIDrillDown('${g}')">
                 <span class="portfolio-pie-legend-dot" style="background:${gradeGroupColors[g]}"></span>
                 <div class="portfolio-pie-legend-info">
                     <div class="portfolio-pie-legend-name">${gradeGroupLabels[g]}</div>
@@ -3181,27 +3181,53 @@ function renderPortfolioAnalysis(branchFilter) {
                 seg.addEventListener('mouseleave', function () {
                     pieTooltip.classList.remove('visible');
                 });
+                seg.addEventListener('click', function () {
+                    const grade = this.getAttribute('data-grade');
+                    openPortfolioKPIDrillDown(grade);
+                });
             });
         }
     }
 
-    // Detail table
+    // Detail table with expandable account rows
     const branchList = branchFilter === 'all' ? branches : [branchFilter];
     const tbody = document.getElementById('portfolio-table-body');
     if (tbody) {
-        tbody.innerHTML = branchList.map(branch => {
+        tbody.innerHTML = branchList.map((branch, bIdx) => {
             const branchAccounts = accessibleARRs.filter(a => a.branch === branch);
             const bTotal = branchAccounts.length;
             const bGroupCounts = { A: 0, B: 0, C: 0 };
             branchAccounts.forEach(a => { const g = getGradeGroup(a.grade); if (bGroupCounts[g] !== undefined) bGroupCounts[g]++; });
-            return `<tr>
+            const grpId = 'pf-branch-' + bIdx;
+
+            // Branch summary row (clickable to expand)
+            let html = `<tr style="cursor:pointer;" onclick="togglePortfolioBranch('${grpId}','${grpId}-arrow')">
+                <td style="text-align:center;"><span id="${grpId}-arrow" style="font-size:9px;color:var(--text-muted);">\u25B6</span></td>
                 <td><strong>${branch}</strong></td>
                 <td>${bTotal}</td>
                 ${gradeGroups.map(g => {
                     const pct = bTotal ? Math.round(bGroupCounts[g] / bTotal * 100) : 0;
-                    return `<td><span class="status-badge" style="background:var(--accent-${gradeGroupColorNames[g]}-bg);color:var(--accent-${gradeGroupColorNames[g]})">${bGroupCounts[g]} (${pct}%)</span></td>`;
+                    return `<td><span class="status-badge" style="cursor:pointer;background:var(--accent-${gradeGroupColorNames[g]}-bg);color:var(--accent-${gradeGroupColorNames[g]})" onclick="event.stopPropagation();openPortfolioKPIDrillDown('${g}')">${bGroupCounts[g]} (${pct}%)</span></td>`;
                 }).join('')}
             </tr>`;
+
+            // Child rows: one per account in this branch (hidden by default)
+            const sorted = [...branchAccounts].sort((a, b) => a.grade.localeCompare(b.grade));
+            sorted.forEach(a => {
+                const gColor = getGradeColor(a.grade);
+                const riskColors = { high: 'var(--accent-red)', medium: 'var(--accent-orange)', low: 'var(--accent-green)' };
+                const rColor = riskColors[a.risk] || 'var(--text-muted)';
+                html += `<tr data-parent="${grpId}" style="display:none;background:#f9fafb;">
+                    <td></td>
+                    <td style="padding-left:24px;">${accountLink(a.account)}</td>
+                    <td style="text-align:center;"><span style="display:inline-block;background:${gColor};color:#fff;font-weight:700;font-size:11px;min-width:24px;height:24px;line-height:24px;text-align:center;border-radius:12px;padding:0 5px;">${a.grade}</span></td>
+                    <td><span style="color:${rColor};font-weight:600;font-size:12px;">${a.risk.charAt(0).toUpperCase() + a.risk.slice(1)} Risk</span></td>
+                    <td style="font-size:12px;color:var(--text-secondary);">${a.type}</td>
+                    <td style="font-size:12px;color:var(--text-secondary);">${a.assignee}</td>
+                </tr>`;
+            });
+
+            return html;
         }).join('');
     }
 }
@@ -3271,6 +3297,15 @@ function openPortfolioKPIDrillDown(grade) {
     const footer = '<button class="btn btn-outline" onclick="closeAllModals()">Close</button>';
     openModal(title + ' — Portfolio Breakdown', body, footer);
     document.getElementById('modal-container').style.maxWidth = '880px';
+}
+
+// ==================== PORTFOLIO BRANCH EXPAND/COLLAPSE ====================
+function togglePortfolioBranch(groupId, arrowId) {
+    const rows = document.querySelectorAll(`tr[data-parent="${groupId}"]`);
+    const arrow = document.getElementById(arrowId);
+    const isOpen = rows.length > 0 && rows[0].style.display !== 'none';
+    rows.forEach(r => r.style.display = isOpen ? 'none' : 'table-row');
+    if (arrow) arrow.textContent = isOpen ? '\u25B6' : '\u25BC';
 }
 
 // ==================== RENDER: MY ACCOUNTS ====================

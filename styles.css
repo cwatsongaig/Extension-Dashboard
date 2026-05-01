@@ -525,7 +525,8 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
 .portfolio-pie-center-label .pie-total-num { font-size: 28px; font-weight: 700; color: var(--text-primary); display: block; }
 .portfolio-pie-center-label .pie-total-text { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .portfolio-pie-legend { flex: 1; }
-.portfolio-pie-legend-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+.portfolio-pie-legend-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-color); transition: background 0.15s; border-radius: 6px; padding: 10px 8px; }
+.portfolio-pie-legend-item:hover { background: var(--bg-primary); }
 .portfolio-pie-legend-item:last-child { border-bottom: none; }
 .portfolio-pie-legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
 .portfolio-pie-legend-info { flex: 1; }
