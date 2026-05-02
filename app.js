@@ -705,8 +705,7 @@ const DASHBOARD_DEFAULTS = {
         { id: 'week-glance', label: 'This Week\'s Bids & Reminders', visible: true, order: 4 },
         { id: 'action-items', label: 'Action Items', visible: true, order: 5 },
         { id: 'arr-list', label: 'My Account Review Reports', visible: true, order: 6 },
-        { id: 'bond-requests', label: 'My Bond Requests', visible: true, order: 7 },
-        { id: 'workload-heatmap', label: 'Workload Heatmap', visible: false, order: 8 }
+        { id: 'bond-requests', label: 'My Bond Requests', visible: true, order: 7 }
     ],
     config: {
         actionItemsMaxCount: 10,
@@ -945,78 +944,6 @@ const WIDGET_REGISTRY = {
                             <span class="gauge-acct-pct" style="color:${c}">${a.pct}%</span>
                         </div>`;
                     }).join('')}
-                </div>
-            `;
-        }
-    },
-    'workload-heatmap': {
-        label: 'Workload Heatmap',
-        render: function(container) {
-            container.innerHTML = '<div class="uw-panel uw-panel-full"><h2 class="uw-panel-title">Workload Heatmap</h2><div id="workload-heatmap-content"></div></div>';
-        },
-        postRender: function() {
-            const el = document.getElementById('workload-heatmap-content');
-            if (!el) return;
-            const today = new Date(2024, 3, 15);
-            const myARRs = sampleARRs.filter(a => a.assignee === currentUser.name);
-
-            // Collect all due dates into a map: dateStr -> [{type, label}]
-            const dateItems = {};
-            function addItem(dateStr, type, label) {
-                if (!dateStr) return;
-                const d = new Date(dateStr);
-                if (isNaN(d.getTime())) return;
-                const key = d.toISOString().slice(0, 10);
-                if (!dateItems[key]) dateItems[key] = [];
-                dateItems[key].push({ type, label });
-            }
-
-            myARRs.forEach(a => addItem(a.dueDate, 'arr', a.account + ' (' + a.type + ')'));
-            sampleLOAData.filter(l => l.assignee === currentUser.name && getLOAStatus(l) === 'Active')
-                .forEach(l => addItem(l.expDate, 'loa', l.account + ' LOA expires'));
-            sampleBondRequests.filter(b => b.assignee === currentUser.name)
-                .forEach(b => addItem(b.date, 'bond', b.account + ' — ' + b.type));
-            sampleBidLog.filter(b => b.status === 'Pending Bid')
-                .forEach(b => addItem(b.bidDate, 'bid', b.projectName));
-
-            // Build 6-week grid starting from Monday of current week
-            const startOfWeek = new Date(today);
-            startOfWeek.setDate(today.getDate() - ((today.getDay() + 6) % 7)); // Monday
-            const totalDays = 42; // 6 weeks
-            const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-            let headerHTML = dayNames.map(d => `<div class="heatmap-day-header">${d}</div>`).join('');
-            let cellsHTML = '';
-            for (let i = 0; i < totalDays; i++) {
-                const d = new Date(startOfWeek);
-                d.setDate(startOfWeek.getDate() + i);
-                const key = d.toISOString().slice(0, 10);
-                const items = dateItems[key] || [];
-                const count = items.length;
-                const isToday = d.toDateString() === today.toDateString();
-                const isPast = d < today && !isToday;
-                const monthStr = d.toLocaleDateString('en-US', { month: 'short' });
-                const showMonth = d.getDate() === 1 || i === 0;
-                const colorClass = count === 0 ? '' : count === 1 ? 'hm-low' : count === 2 ? 'hm-med' : 'hm-high';
-                const tooltip = items.length > 0 ? items.map(it => it.label).join('\\n') : 'No items';
-
-                cellsHTML += `<div class="heatmap-cell ${colorClass}${isToday ? ' hm-today' : ''}${isPast ? ' hm-past' : ''}" title="${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}:\n${tooltip}">
-                    ${showMonth ? '<span class="hm-month">' + monthStr + '</span>' : ''}
-                    <span class="hm-day">${d.getDate()}</span>
-                    ${count > 0 ? '<span class="hm-count">' + count + '</span>' : ''}
-                </div>`;
-            }
-
-            el.innerHTML = `
-                <div class="heatmap-legend">
-                    <span class="heatmap-legend-item"><span class="hm-swatch"></span> None</span>
-                    <span class="heatmap-legend-item"><span class="hm-swatch hm-low"></span> 1 item</span>
-                    <span class="heatmap-legend-item"><span class="hm-swatch hm-med"></span> 2 items</span>
-                    <span class="heatmap-legend-item"><span class="hm-swatch hm-high"></span> 3+ items</span>
-                </div>
-                <div class="heatmap-grid">
-                    ${headerHTML}
-                    ${cellsHTML}
                 </div>
             `;
         }

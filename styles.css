@@ -679,28 +679,6 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
 .gauge-mini-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
 .gauge-acct-pct { font-weight: 700; font-size: 12px; min-width: 36px; text-align: right; }
 
-/* ======== WORKLOAD HEATMAP ======== */
-.heatmap-legend { display: flex; gap: 14px; margin-bottom: 12px; font-size: 11px; color: var(--text-muted); flex-wrap: wrap; }
-.heatmap-legend-item { display: flex; align-items: center; gap: 4px; }
-.hm-swatch { width: 14px; height: 14px; border-radius: 3px; background: var(--bg-primary); border: 1px solid var(--border-color); }
-.hm-swatch.hm-low { background: #dbeafe; border-color: #93c5fd; }
-.hm-swatch.hm-med { background: #93c5fd; border-color: #60a5fa; }
-.hm-swatch.hm-high { background: #ef4444; border-color: #dc2626; }
-.heatmap-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.heatmap-day-header { text-align: center; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; padding: 4px 0; }
-.heatmap-cell { position: relative; aspect-ratio: 1; min-height: 36px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: default; transition: all 0.15s; }
-.heatmap-cell:hover { border-color: var(--accent-blue); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-.heatmap-cell.hm-low { background: #dbeafe; border-color: #93c5fd; }
-.heatmap-cell.hm-med { background: #93c5fd; border-color: #60a5fa; }
-.heatmap-cell.hm-high { background: #ef4444; border-color: #dc2626; color: #fff; }
-.heatmap-cell.hm-today { box-shadow: inset 0 0 0 2px var(--accent-brand); }
-.heatmap-cell.hm-past { opacity: 0.5; }
-.hm-month { font-size: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; line-height: 1; }
-.heatmap-cell.hm-high .hm-month { color: rgba(255,255,255,0.8); }
-.hm-day { font-size: 13px; font-weight: 600; line-height: 1; }
-.hm-count { font-size: 9px; font-weight: 700; line-height: 1; margin-top: 1px; }
-.heatmap-cell.hm-high .hm-count { color: rgba(255,255,255,0.9); }
-
 /* ======== DRAG-AND-DROP WIDGETS ======== */
 .dashboard-widget { transition: opacity 0.2s, transform 0.2s; }
 .dashboard-widget[draggable="true"] { cursor: grab; }
@@ -829,10 +807,6 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
     .gauge-metric-value { font-size: 16px; }
     .gauge-mini-bar { flex: 0 0 60px; }
     .gauge-acct-type { display: none; }
-    .heatmap-cell { min-height: 28px; }
-    .hm-day { font-size: 11px; }
-    .hm-month { font-size: 7px; }
-    .hm-count { font-size: 8px; }
     .dashboard-widget[draggable="true"] { cursor: default; }
     .modal-overlay { align-items: flex-end; }
     .modal { width: 100%; max-width: 100%; max-height: 90vh; border-radius: 12px 12px 0 0; }
@@ -891,9 +865,6 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
     .quick-action-btn { min-width: 0; padding: 10px 6px; }
     .gauge-metric-value { font-size: 14px; }
     .gauge-metric-label { font-size: 10px; }
-    .heatmap-cell { min-height: 24px; }
-    .hm-day { font-size: 10px; }
-    .heatmap-grid { gap: 2px; }
 
     /* -- AI chat fully flush -- */
     .ai-chat-panel { width: 100vw; right: 0; left: 0; bottom: 70px; border-radius: 12px 12px 0 0; }
