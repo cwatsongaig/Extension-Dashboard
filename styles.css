@@ -679,6 +679,24 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
 .gauge-mini-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
 .gauge-acct-pct { font-weight: 700; font-size: 12px; min-width: 36px; text-align: right; }
 
+/* ======== APPROVAL TRACKER ======== */
+.approval-tracker { display: flex; align-items: flex-start; gap: 0; padding: 12px 16px 8px; grid-column: 1 / -1; border-top: 1px solid var(--border-color); overflow-x: auto; }
+.at-step { display: flex; flex-direction: column; align-items: center; min-width: 80px; text-align: center; }
+.at-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+.at-done { background: var(--accent-green); color: #fff; }
+.at-active { background: var(--accent-blue); color: #fff; animation: atPulse 2s infinite; }
+.at-pending { background: #e5e7eb; color: #9ca3af; border: 2px solid #d1d5db; }
+@keyframes atPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(26,58,92,0.3); } 50% { box-shadow: 0 0 0 6px rgba(26,58,92,0); } }
+.at-label { font-size: 10px; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+.at-name { font-size: 9px; color: var(--text-muted); }
+.at-date { font-size: 9px; color: var(--accent-green); font-weight: 500; }
+.at-connector { width: 28px; height: 2px; background: #d1d5db; margin-top: 10px; flex-shrink: 0; }
+.at-conn-done { background: var(--accent-green); }
+
+/* ======== SPARKLINE ======== */
+.sparkline-cell { text-align: center; padding: 6px 8px; }
+.sparkline-svg { vertical-align: middle; }
+
 /* ======== DRAG-AND-DROP WIDGETS ======== */
 .dashboard-widget { transition: opacity 0.2s, transform 0.2s; }
 .dashboard-widget[draggable="true"] { cursor: grab; }
@@ -808,6 +826,14 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
     .gauge-mini-bar { flex: 0 0 60px; }
     .gauge-acct-type { display: none; }
     .dashboard-widget[draggable="true"] { cursor: default; }
+
+    /* -- Approval tracker & sparklines -- */
+    .approval-tracker { padding: 10px 12px 6px; }
+    .at-step { min-width: 60px; }
+    .at-label { font-size: 9px; }
+    .at-connector { width: 16px; }
+    .sparkline-cell { padding: 4px 6px; }
+
     .modal-overlay { align-items: flex-end; }
     .modal { width: 100%; max-width: 100%; max-height: 90vh; border-radius: 12px 12px 0 0; }
     .modal-header { padding: 14px 16px; }

@@ -22,15 +22,59 @@ const sampleARRs = [
 ];
 
 const sampleBondRequests = [
-    { account: 'Hensel Phelps Construction Co', type: 'Performance & Payment', amount: '$2,400,000', obligee: 'CDOT', status: 'Awaiting Approval', branch: 'Cincinnati', date: 'Apr 18, 2024', assignee: 'Jake Miller' },
-    { account: 'Turner Construction Company', type: 'Bid Bond', amount: '$850,000', obligee: 'NYC DOT', status: 'UW Review', branch: 'New York', date: 'Apr 17, 2024', assignee: 'Sarah Mitchell' },
-    { account: 'Clark Construction Group', type: 'Performance', amount: '$5,200,000', obligee: 'US Army Corps', status: 'Awaiting Approval', branch: 'Cincinnati', date: 'Apr 16, 2024', assignee: 'Jake Miller' },
-    { account: 'R.J. Corman Railroad Group', type: 'Maintenance Bond', amount: '$750,000', obligee: 'CSX Transportation', status: 'Draft', branch: 'Lexington', date: 'Apr 15, 2024', assignee: 'Mike Torres' },
-    { account: 'Granite Construction Inc', type: 'Performance & Payment', amount: '$3,100,000', obligee: 'CalTrans', status: 'Approved', branch: 'Cincinnati', date: 'Apr 14, 2024', assignee: 'Jake Miller' },
-    { account: 'Kiewit Corporation', type: 'Performance & Payment', amount: '$7,800,000', obligee: 'Nebraska DOT', status: 'UW Review', branch: 'Cincinnati', date: 'Apr 12, 2024', assignee: 'Jake Miller' },
-    { account: 'Brasfield & Gorrie LLC', type: 'Bid Bond', amount: '$420,000', obligee: 'City of Birmingham', status: 'Approved', branch: 'Cincinnati', date: 'Apr 10, 2024', assignee: 'Jake Miller' },
-    { account: 'McCarthy Building Companies', type: 'Performance', amount: '$4,600,000', obligee: 'MO Dept of Education', status: 'Awaiting Approval', branch: 'Cincinnati', date: 'Apr 8, 2024', assignee: 'Jake Miller' },
-    { account: 'Austin Industries', type: 'Performance & Payment', amount: '$2,950,000', obligee: 'TxDOT', status: 'Draft', branch: 'Cincinnati', date: 'Apr 5, 2024', assignee: 'Jake Miller' }
+    { account: 'Hensel Phelps Construction Co', type: 'Performance & Payment', amount: '$2,400,000', obligee: 'CDOT', status: 'Awaiting Approval', branch: 'Cincinnati', date: 'Apr 18, 2024', assignee: 'Jake Miller',
+      approvalSteps: [
+        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/18/2024' },
+        { role: 'Branch Manager', name: 'Max Miller', status: 'complete', date: '04/19/2024' },
+        { role: 'Regional Manager', name: 'John Webster', status: 'current', date: null },
+        { role: 'VP Underwriting', name: 'Ken Bearley', status: 'pending', date: null }
+      ] },
+    { account: 'Turner Construction Company', type: 'Bid Bond', amount: '$850,000', obligee: 'NYC DOT', status: 'UW Review', branch: 'New York', date: 'Apr 17, 2024', assignee: 'Sarah Mitchell',
+      approvalSteps: [
+        { role: 'Underwriter', name: 'Sarah Mitchell', status: 'current', date: null },
+        { role: 'Regional Manager', name: 'Amy Rodriguez', status: 'pending', date: null }
+      ] },
+    { account: 'Clark Construction Group', type: 'Performance', amount: '$5,200,000', obligee: 'US Army Corps', status: 'Awaiting Approval', branch: 'Cincinnati', date: 'Apr 16, 2024', assignee: 'Jake Miller',
+      approvalSteps: [
+        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/16/2024' },
+        { role: 'Branch Manager', name: 'Max Miller', status: 'complete', date: '04/17/2024' },
+        { role: 'Regional Manager', name: 'John Webster', status: 'complete', date: '04/18/2024' },
+        { role: 'VP Underwriting', name: 'Ken Bearley', status: 'current', date: null }
+      ] },
+    { account: 'R.J. Corman Railroad Group', type: 'Maintenance Bond', amount: '$750,000', obligee: 'CSX Transportation', status: 'Draft', branch: 'Lexington', date: 'Apr 15, 2024', assignee: 'Mike Torres',
+      approvalSteps: [
+        { role: 'Underwriter', name: 'Mike Torres', status: 'current', date: null },
+        { role: 'Branch Manager', name: 'Jake Miller', status: 'pending', date: null }
+      ] },
+    { account: 'Granite Construction Inc', type: 'Performance & Payment', amount: '$3,100,000', obligee: 'CalTrans', status: 'Approved', branch: 'Cincinnati', date: 'Apr 14, 2024', assignee: 'Jake Miller',
+      approvalSteps: [
+        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/14/2024' },
+        { role: 'Branch Manager', name: 'Max Miller', status: 'complete', date: '04/15/2024' },
+        { role: 'Regional Manager', name: 'John Webster', status: 'complete', date: '04/16/2024' }
+      ] },
+    { account: 'Kiewit Corporation', type: 'Performance & Payment', amount: '$7,800,000', obligee: 'Nebraska DOT', status: 'UW Review', branch: 'Cincinnati', date: 'Apr 12, 2024', assignee: 'Jake Miller',
+      approvalSteps: [
+        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/12/2024' },
+        { role: 'Branch Manager', name: 'Max Miller', status: 'current', date: null },
+        { role: 'Regional Manager', name: 'John Webster', status: 'pending', date: null },
+        { role: 'VP Underwriting', name: 'Ken Bearley', status: 'pending', date: null }
+      ] },
+    { account: 'Brasfield & Gorrie LLC', type: 'Bid Bond', amount: '$420,000', obligee: 'City of Birmingham', status: 'Approved', branch: 'Cincinnati', date: 'Apr 10, 2024', assignee: 'Jake Miller',
+      approvalSteps: [
+        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/10/2024' },
+        { role: 'Branch Manager', name: 'Max Miller', status: 'complete', date: '04/11/2024' }
+      ] },
+    { account: 'McCarthy Building Companies', type: 'Performance', amount: '$4,600,000', obligee: 'MO Dept of Education', status: 'Awaiting Approval', branch: 'Cincinnati', date: 'Apr 8, 2024', assignee: 'Jake Miller',
+      approvalSteps: [
+        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/08/2024' },
+        { role: 'Branch Manager', name: 'Max Miller', status: 'current', date: null },
+        { role: 'Regional Manager', name: 'John Webster', status: 'pending', date: null }
+      ] },
+    { account: 'Austin Industries', type: 'Performance & Payment', amount: '$2,950,000', obligee: 'TxDOT', status: 'Draft', branch: 'Cincinnati', date: 'Apr 5, 2024', assignee: 'Jake Miller',
+      approvalSteps: [
+        { role: 'Underwriter', name: 'Jake Miller', status: 'pending', date: null },
+        { role: 'Branch Manager', name: 'Max Miller', status: 'pending', date: null }
+      ] }
 ];
 
 const sampleFinancials = [
@@ -2008,7 +2052,20 @@ function renderBondRequests(containerId, data) {
             <span>Request Details</span>
             <span style="text-align:center;">Underwriter</span>
             <span style="text-align:center;">Status</span>
-        </div>` + data.map(br => `
+        </div>` + data.map(br => {
+        const tracker = br.approvalSteps ? `<div class="approval-tracker">${br.approvalSteps.map((s, i) => {
+            const dotCls = s.status === 'complete' ? 'at-done' : s.status === 'current' ? 'at-active' : 'at-pending';
+            const icon = s.status === 'complete' ? '&#10003;' : s.status === 'current' ? '&#9679;' : '';
+            const connector = i < br.approvalSteps.length - 1
+                ? `<div class="at-connector ${s.status === 'complete' ? 'at-conn-done' : ''}"></div>` : '';
+            return `<div class="at-step">
+                <div class="at-dot ${dotCls}">${icon}</div>
+                <div class="at-label">${s.role}</div>
+                <div class="at-name">${s.name}</div>
+                ${s.date ? '<div class="at-date">' + s.date + '</div>' : ''}
+            </div>${connector}`;
+        }).join('')}</div>` : '';
+        return `
         <div class="bond-request-card ${br.status === 'Awaiting Approval' ? 'awaiting-highlight' : ''}">
             <div class="br-left">
                 <span class="branch-tag">${br.branch}</span>
@@ -2017,8 +2074,9 @@ function renderBondRequests(containerId, data) {
             </div>
             <div class="br-middle"><span class="br-assignee">${br.assignee}</span></div>
             <div class="br-right"><span class="status-badge ${statusClass(br.status)}">${br.status}</span></div>
-        </div>
-    `).join('');
+            ${tracker}
+        </div>`;
+    }).join('');
 }
 
 function filterBondRequests(filter, tabEl) {
@@ -2032,6 +2090,169 @@ function filterBondRequests(filter, tabEl) {
         filtered = sampleBondRequests.filter(br => br.status === filter);
     }
     renderBondRequests('bond-requests-full-list', filtered);
+}
+
+// ==================== ACCOUNT COMPARISON ====================
+
+function openAccountComparison() {
+    const myAccounts = sampleMyAccounts.filter(a => a.assignee === currentUser.name && a.status === 'Active');
+    const options = myAccounts.map(a => `<option value="${a.name.replace(/"/g, '&quot;')}">${a.name}</option>`).join('');
+
+    const body = `
+        <div style="margin-bottom:16px;color:#6b7280;font-size:13px;">Select 2 or 3 accounts to compare side by side on standard contract surety underwriting metrics.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+            <select id="cmp-acct-1" class="form-select" style="flex:1;min-width:180px;"><option value="">— Select Account 1 —</option>${options}</select>
+            <select id="cmp-acct-2" class="form-select" style="flex:1;min-width:180px;"><option value="">— Select Account 2 —</option>${options}</select>
+            <select id="cmp-acct-3" class="form-select" style="flex:1;min-width:180px;"><option value="">— (Optional) Account 3 —</option>${options}</select>
+        </div>
+        <div id="comparison-results"></div>
+    `;
+    const footer = '<button class="btn btn-primary" onclick="runAccountComparison()">Compare</button><button class="btn btn-outline" onclick="closeAllModals()">Close</button>';
+    openModal('Compare Accounts', body, footer);
+    document.getElementById('modal-container').style.maxWidth = '960px';
+}
+
+function runAccountComparison() {
+    const names = [
+        document.getElementById('cmp-acct-1').value,
+        document.getElementById('cmp-acct-2').value,
+        document.getElementById('cmp-acct-3').value
+    ].filter(Boolean);
+    if (names.length < 2) { alert('Please select at least 2 accounts.'); return; }
+    const unique = [...new Set(names)];
+    if (unique.length < 2) { alert('Please select different accounts.'); return; }
+
+    const fmt = n => '$' + (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n.toLocaleString());
+    const results = document.getElementById('comparison-results');
+
+    // Gather data per account
+    const accounts = unique.map(name => {
+        const acct = sampleMyAccounts.find(a => a.name === name) || {};
+        const profile = accountProfiles[name] || {};
+        const arr = sampleARRs.find(a => a.account === name);
+        const loas = sampleLOAData.filter(l => l.account === name && getLOAStatus(l) === 'Active');
+        const bonds = sampleBonds.filter(b => b.principal === name && b.status !== 'Expired');
+        const totalExposure = bonds.reduce((s, b) => s + parseInt(b.amount.replace(/[$,]/g, ''), 10), 0);
+        const totalAgg = loas.reduce((s, l) => s + l.aggregate, 0);
+        const totalUsed = loas.reduce((s, l) => s + l.used, 0);
+        const claims = sampleClaims.filter(c => c.principal === name && c.status !== 'Closed');
+        const claimAmt = claims.reduce((s, c) => s + parseInt(c.amount.replace(/[$,]/g, ''), 10), 0);
+        const visits = sampleVisitations.filter(v => v.account === name && v.visitDate.endsWith('/2024'));
+        const redFlags = sampleRedFlagData[name];
+        const lastVisit = sampleVisitations.filter(v => v.account === name).sort((a, b) => new Date(b.visitDate) - new Date(a.visitDate))[0];
+
+        return {
+            name, grade: acct.accountGrade || 'N/A', branch: acct.branch || 'N/A', status: acct.status || 'N/A',
+            authority: profile.authorityLevel || 'N/A', frequency: profile.arrFrequency || 'N/A',
+            arrStatus: arr ? arr.status : 'N/A', arrRisk: arr ? arr.risk : 'N/A',
+            daysOverdue: arr ? arr.daysOverdue : 0,
+            singleLimit: loas.length > 0 ? fmt(Math.max(...loas.map(l => l.single))) : 'N/A',
+            aggLimit: totalAgg > 0 ? fmt(totalAgg) : 'N/A',
+            aggUsed: totalUsed > 0 ? fmt(totalUsed) : 'N/A',
+            aggAvail: totalAgg > 0 ? fmt(totalAgg - totalUsed) : 'N/A',
+            utilPct: totalAgg > 0 ? Math.round(totalUsed / totalAgg * 100) + '%' : 'N/A',
+            bondCount: bonds.length, bondExposure: totalExposure > 0 ? fmt(totalExposure) : '$0',
+            bondTypes: [...new Set(bonds.map(b => b.bondType))].join(', ') || 'None',
+            claimCount: claims.length, claimAmount: claimAmt > 0 ? fmt(claimAmt) : '$0',
+            visitsYTD: visits.length, lastVisitDate: lastVisit ? lastVisit.visitDate : 'N/A',
+            redFlags: redFlags,
+            flagCount: redFlags ? Object.values(redFlags.ratios).filter(r => r[0] && r[0].flag).length : 'N/A'
+        };
+    });
+
+    const thStyle = 'background:#f8f9fa;color:#6b7280;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb;';
+    const tdStyle = 'padding:9px 12px;font-size:13px;border-bottom:1px solid #f0f0f0;';
+    const sectionStyle = 'background:var(--accent-brand);color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:8px 12px;';
+
+    function row(label, getValue, highlight) {
+        const vals = accounts.map(a => getValue(a));
+        const cells = accounts.map((a, i) => {
+            let cls = '';
+            if (highlight && vals.filter(v => v !== 'N/A').length >= 2) {
+                const numVals = vals.map(v => typeof v === 'number' ? v : parseFloat(String(v).replace(/[^0-9.-]/g, '')));
+                if (!isNaN(numVals[i])) {
+                    const best = highlight === 'low' ? Math.min(...numVals.filter(n => !isNaN(n))) : Math.max(...numVals.filter(n => !isNaN(n)));
+                    if (numVals[i] === best) cls = ' style="' + tdStyle + 'color:var(--accent-green);font-weight:600;"';
+                }
+            }
+            return `<td${cls || ' style="' + tdStyle + '"'}>${vals[i]}</td>`;
+        }).join('');
+        return `<tr><td style="${tdStyle}font-weight:500;">${label}</td>${cells}</tr>`;
+    }
+
+    function sectionHeader(label) {
+        return `<tr><td colspan="${accounts.length + 1}" style="${sectionStyle}">${label}</td></tr>`;
+    }
+
+    const ratioNames = ['Z-Score', 'Debt/Equity', 'Net Quick/LOA', 'Net Worth/LOA', 'Net Quick/WOH', 'Net Worth/WOH', 'UB/Net Quick', 'UB/Net Worth'];
+
+    let table = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">
+        <thead><tr><th style="${thStyle}width:180px;">Metric</th>${accounts.map(a => `<th style="${thStyle}">${accountLink(a.name)}<br><span style="font-weight:400;text-transform:none;letter-spacing:0;">${a.branch}</span></th>`).join('')}</tr></thead>
+        <tbody>
+        ${sectionHeader('Overview')}
+        ${row('Grade', a => a.grade)}
+        ${row('Status', a => a.status)}
+        ${row('Authority Level', a => a.authority)}
+        ${row('ARR Frequency', a => a.frequency)}
+        ${row('ARR Status', a => a.arrStatus)}
+        ${row('Risk Level', a => a.arrRisk)}
+        ${row('Days Overdue', a => a.daysOverdue, 'low')}
+        ${sectionHeader('LOA & Capacity')}
+        ${row('Max Single Limit', a => a.singleLimit)}
+        ${row('Aggregate Limit', a => a.aggLimit)}
+        ${row('Aggregate Used', a => a.aggUsed)}
+        ${row('Available Capacity', a => a.aggAvail)}
+        ${row('Utilization %', a => a.utilPct, 'low')}
+        ${sectionHeader('Bond Exposure')}
+        ${row('Active Bonds', a => a.bondCount)}
+        ${row('Total Exposure', a => a.bondExposure)}
+        ${row('Bond Types', a => a.bondTypes)}
+        ${sectionHeader('Claims')}
+        ${row('Open Claims', a => a.claimCount, 'low')}
+        ${row('Claim Amount', a => a.claimAmount, 'low')}
+        ${sectionHeader('Financial Ratios (Current Period)')}
+        ${ratioNames.map(rn => row(rn, a => {
+            if (!a.redFlags || !a.redFlags.ratios[rn]) return 'N/A';
+            const v = a.redFlags.ratios[rn][0];
+            const display = v.v < 0 ? '(' + Math.abs(v.v).toFixed(2) + ')' : v.v.toFixed(2);
+            return v.flag ? '<span style="color:var(--accent-red);font-weight:600;">' + display + ' &#9873;</span>' : display;
+        })).join('')}
+        ${row('Red Flags (Current)', a => a.flagCount, 'low')}
+        ${sectionHeader('Visits & Engagement')}
+        ${row('Visits YTD', a => a.visitsYTD)}
+        ${row('Last Visit', a => a.lastVisitDate)}
+        </tbody></table></div>`;
+
+    results.innerHTML = table;
+}
+
+// ==================== SPARKLINE HELPER ====================
+
+function buildSparklineSVG(values) {
+    const w = 80, h = 24, pad = 3;
+    const data = [...values].reverse(); // chronological order
+    const nums = data.map(d => d.v);
+    const min = Math.min(...nums);
+    const max = Math.max(...nums);
+    const range = max - min || 1;
+
+    const points = nums.map((v, i) => {
+        const x = pad + (i / (nums.length - 1 || 1)) * (w - pad * 2);
+        const y = h - pad - ((v - min) / range) * (h - pad * 2);
+        return { x, y, flag: data[i].flag };
+    });
+
+    const trending = nums[nums.length - 1] - nums[0];
+    const lineColor = trending > 0.1 ? 'var(--accent-green)' : trending < -0.1 ? 'var(--accent-red)' : 'var(--text-muted)';
+    const polyline = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const dots = points.filter(p => p.flag).map(p =>
+        `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="var(--accent-red)" />`
+    ).join('');
+
+    return `<svg class="sparkline-svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+        <polyline points="${polyline}" fill="none" stroke="${lineColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        ${dots}
+    </svg>`;
 }
 
 // ==================== RENDER: FINANCIAL STATEMENTS ====================
@@ -4010,13 +4231,14 @@ function openRedFlagDetail(accountName) {
         </th>`
     ).join('');
 
-    // Build ratio rows
+    // Build ratio rows with sparkline trend column
     const ratioRows = Object.entries(data.ratios).map(([ratioName, values]) => {
         const cells = values.map(v => {
             const displayVal = v.v < 0 ? `(${Math.abs(v.v).toFixed(2)})` : (ratioName.includes('/LOA') || ratioName.includes('/WOH') || ratioName.includes('UB/') ? v.v.toFixed(1) + '%' : v.v.toFixed(2));
             return `<td class="${v.flag ? 'rf-flagged-cell' : ''}">${displayVal}${v.flag ? ' <span class="rf-flag-icon">&#9873;</span>' : ''}</td>`;
         }).join('');
-        return `<tr><td class="rf-ratio-name">${ratioName}</td>${cells}</tr>`;
+        const sparkline = values.length >= 2 ? `<td class="sparkline-cell">${buildSparklineSVG(values)}</td>` : '<td></td>';
+        return `<tr><td class="rf-ratio-name">${ratioName}</td>${cells}${sparkline}</tr>`;
     }).join('');
 
     const body = `
@@ -4030,6 +4252,7 @@ function openRedFlagDetail(accountName) {
                     <tr>
                         <th class="rf-ratio-header">Ratios</th>
                         ${periodHeaders}
+                        <th class="rf-ratio-header" style="text-align:center;">Trend</th>
                     </tr>
                 </thead>
                 <tbody>
