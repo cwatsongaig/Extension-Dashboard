@@ -709,18 +709,30 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
     .bond-requests-header { display: none; }
     .bond-request-card { grid-template-columns: 1fr; gap: 8px; padding: 12px 14px; }
 
+    /* -- Panels -- */
+    .uw-panel, .uw-panel-full { padding: 14px; }
+
     /* -- ARR list -- */
-    .arr-list { display: block; margin: 0; }
+    .arr-list { display: flex; flex-direction: column; gap: 0; margin: 0 -14px -14px; overflow: visible; border-radius: 0; }
     .arr-header { display: none !important; }
-    .arr-card { display: block !important; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); padding: 12px 14px; }
+    .arr-card {
+        display: flex !important; flex-wrap: wrap; align-items: center; gap: 4px 12px;
+        background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
+        padding: 12px 14px; cursor: pointer;
+    }
     .arr-card:nth-child(even) { background: #f8f9fb; }
-    .arr-card > .arr-cell { display: inline-block; padding: 3px 0; background: transparent !important; }
+    .arr-card > .arr-cell { background: transparent !important; padding: 2px 0; }
     .arr-card > .arr-cell:first-child { padding-left: 0; }
     .arr-card > .arr-cell:last-child { padding-right: 0; }
-    .arr-cell-account { display: block !important; margin-bottom: 6px; }
+    .arr-cell-account { width: 100%; margin-bottom: 4px; }
     .arr-cell-account .arr-account { font-size: 14px; font-weight: 600; }
-    .arr-cell-due, .arr-cell-risk, .arr-cell-grade, .arr-cell-freq, .arr-cell-status { text-align: left; font-size: 12px; margin-right: 10px; }
-    .arr-cell-queue { display: block !important; margin-top: 6px; }
+    .arr-cell-due { order: 1; }
+    .arr-cell-risk { order: 2; }
+    .arr-cell-grade { order: 3; }
+    .arr-cell-freq { order: 4; }
+    .arr-cell-status { order: 5; }
+    .arr-cell-due, .arr-cell-risk, .arr-cell-grade, .arr-cell-freq, .arr-cell-status { text-align: left; font-size: 12px; }
+    .arr-cell-queue { order: 6; width: 100%; margin-top: 4px; }
 
     /* -- Tables -- */
     .data-table th { padding: 8px 10px; font-size: 10px; }
