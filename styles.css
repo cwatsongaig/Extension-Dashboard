@@ -710,8 +710,17 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
     .bond-request-card { grid-template-columns: 1fr; gap: 8px; padding: 12px 14px; }
 
     /* -- ARR list -- */
-    .arr-list { grid-template-columns: 1fr; gap: 0; }
-    .arr-row { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 12px 14px; }
+    .arr-list { display: block; margin: 0; }
+    .arr-header { display: none !important; }
+    .arr-card { display: block !important; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); padding: 12px 14px; }
+    .arr-card:nth-child(even) { background: #f8f9fb; }
+    .arr-card > .arr-cell { display: inline-block; padding: 3px 0; background: transparent !important; }
+    .arr-card > .arr-cell:first-child { padding-left: 0; }
+    .arr-card > .arr-cell:last-child { padding-right: 0; }
+    .arr-cell-account { display: block !important; margin-bottom: 6px; }
+    .arr-cell-account .arr-account { font-size: 14px; font-weight: 600; }
+    .arr-cell-due, .arr-cell-risk, .arr-cell-grade, .arr-cell-freq, .arr-cell-status { text-align: left; font-size: 12px; margin-right: 10px; }
+    .arr-cell-queue { display: block !important; margin-top: 6px; }
 
     /* -- Tables -- */
     .data-table th { padding: 8px 10px; font-size: 10px; }
