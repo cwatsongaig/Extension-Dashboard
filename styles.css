@@ -640,6 +640,13 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
 .action-text { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 .action-go { flex-shrink: 0; }
 
+/* ======== SIDEBAR OVERLAY (mobile) ======== */
+#sidebar-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4); z-index: 150; backdrop-filter: blur(2px);
+}
+#sidebar-overlay.active { display: block; }
+
 /* ======== RESPONSIVE ======== */
 @media (max-width: 1200px) {
     .kpi-grid-4 { grid-template-columns: repeat(2, 1fr); }
@@ -655,15 +662,139 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
     .chat-layout, .account-notes-layout { grid-template-columns: 240px 1fr; }
     .portfolio-pie-layout { flex-direction: column; align-items: center; }
 }
+
 @media (max-width: 768px) {
-    #sidebar { transform: translateX(-100%); }
+    /* -- Sidebar -- */
+    #sidebar { transform: translateX(-100%); width: var(--sidebar-width); z-index: 200; }
     #sidebar.open { transform: translateX(0); }
     #main-content { margin-left: 0; }
-    .kpi-grid-4 { grid-template-columns: 1fr 1fr; }
+
+    /* -- Top bar -- */
+    .top-bar { padding: 0 12px; gap: 8px; }
+    .search-bar { max-width: none; flex: 1; }
+    .search-bar input { font-size: 14px; }
+    .breadcrumb { display: none; }
+    .top-bar-actions { gap: 2px; }
+
+    /* -- Views -- */
+    .view { padding: 14px; }
+    .view-header { margin-bottom: 16px; }
+    .view-header h1 { font-size: 18px; }
+    .view-subtitle { font-size: 11px; }
+    .header-actions { width: 100%; }
+    .header-actions .form-select { flex: 1; }
+
+    /* -- KPI grids -- */
+    .kpi-grid-4 { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .loa-kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .portfolio-kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .red-flag-kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .exposure-kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* -- Layout grids -- */
+    .uw-split-row { grid-template-columns: 1fr; }
     .detail-view-layout { grid-template-columns: 1fr; }
-    .chat-layout, .account-notes-layout { grid-template-columns: 1fr; }
+    .exposure-layout { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid-3 { grid-template-columns: 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .detail-grid-3 { grid-template-columns: 1fr; }
+
+    /* -- Chat / Account Notes -- */
+    .chat-layout, .account-notes-layout { grid-template-columns: 1fr; height: auto; }
     .chat-sidebar, .account-notes-sidebar { max-height: 200px; border-right: none; border-bottom: 1px solid var(--border-color); }
     .secondary-nav { position: static; }
+
+    /* -- Bond request cards -- */
+    .bond-requests-header { display: none; }
+    .bond-request-card { grid-template-columns: 1fr; gap: 8px; padding: 12px 14px; }
+
+    /* -- ARR list -- */
+    .arr-list { grid-template-columns: 1fr; gap: 0; }
+    .arr-row { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 12px 14px; }
+
+    /* -- Tables -- */
+    .data-table th { padding: 8px 10px; font-size: 10px; }
+    .data-table td { padding: 8px 10px; font-size: 12px; }
+
+    /* -- Tabs -- */
+    .tab-group { flex-wrap: wrap; }
+    .tab { padding: 6px 10px; font-size: 11px; }
+
+    /* -- Bid calendar -- */
+    .bid-cal-cell { min-height: 60px; padding: 4px; }
+    .bid-cal-cell-week { min-height: 80px; }
+
+    /* -- Reports grid -- */
+    .reports-grid { grid-template-columns: 1fr; }
+
+    /* -- Modals -- */
+    .modal-overlay { align-items: flex-end; }
+    .modal { width: 100%; max-width: 100%; max-height: 90vh; border-radius: 12px 12px 0 0; }
+    .modal-header { padding: 14px 16px; }
+    .modal-header h2 { font-size: 15px; }
+    .modal-body { padding: 16px; }
+    .modal-footer { padding: 12px 16px; }
+
+    /* -- Notification dropdown -- */
+    .notification-dropdown { width: calc(100vw - 24px); right: -8px; max-height: 70vh; }
+
+    /* -- AI chat panel -- */
+    .ai-chat-panel { width: calc(100vw - 24px); right: 12px; bottom: 80px; max-height: 70vh; }
+    .ai-fab { width: 48px; height: 48px; bottom: 20px; right: 16px; }
+
+    /* -- Portfolio pie -- */
+    .portfolio-pie-layout { flex-direction: column; align-items: center; }
+
+    /* -- Chain of command -- */
+    .chain-of-command { gap: 0; padding: 12px 0; }
+    .chain-step { min-width: 70px; }
+    .chain-label { font-size: 10px; }
+    .chain-connector { width: 20px; }
+
+    /* -- LOA detail -- */
+    .loa-detail-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+    /* -- Single column KPIs on small phones -- */
+    .kpi-grid-4 { grid-template-columns: 1fr; }
+    .loa-kpi-grid { grid-template-columns: 1fr; }
+    .portfolio-kpi-grid { grid-template-columns: 1fr; }
+    .red-flag-kpi-grid { grid-template-columns: 1fr; }
+    .exposure-kpi-grid { grid-template-columns: 1fr; }
+
+    /* -- Even more compact tables -- */
+    .data-table th { padding: 6px 8px; font-size: 9px; }
+    .data-table td { padding: 6px 8px; font-size: 11px; }
+
+    /* -- Shrink view padding -- */
+    .view { padding: 10px; }
+    .view-header h1 { font-size: 16px; }
+
+    /* -- Full-width buttons -- */
+    .header-actions { flex-direction: column; }
+    .header-actions .btn { width: 100%; justify-content: center; }
+    .header-actions .form-select { width: 100%; }
+
+    /* -- Stack top bar search -- */
+    .search-bar { min-width: 0; }
+
+    /* -- AI chat fully flush -- */
+    .ai-chat-panel { width: 100vw; right: 0; left: 0; bottom: 70px; border-radius: 12px 12px 0 0; }
+    .ai-fab { bottom: 14px; right: 12px; width: 44px; height: 44px; }
+}
+
+/* ======== TOUCH-FRIENDLY TARGETS ======== */
+@media (pointer: coarse) {
+    .nav-item { min-height: 44px; }
+    .tab { min-height: 36px; padding: 8px 12px; }
+    .btn { min-height: 40px; }
+    .btn-sm { min-height: 36px; }
+    .icon-btn { min-width: 40px; min-height: 40px; }
+    .toggle-btn { min-width: 40px; min-height: 40px; }
+    .form-select { min-height: 40px; }
+    .account-link { padding: 2px 0; }
 }
 
 /* Queue Badges */

@@ -1662,12 +1662,31 @@ function navigateTo(viewId) {
 
 // Sidebar click handlers
 document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', () => navigateTo(item.dataset.view));
+    item.addEventListener('click', () => {
+        navigateTo(item.dataset.view);
+        // Close sidebar on mobile after navigation
+        if (window.innerWidth <= 768) {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('active');
+        }
+    });
 });
 
 // Sidebar toggle
 document.getElementById('sidebar-toggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('collapsed');
+    const sidebar = document.getElementById('sidebar');
+    if (window.innerWidth <= 768) {
+        sidebar.classList.toggle('open');
+        document.getElementById('sidebar-overlay').classList.toggle('active');
+    } else {
+        sidebar.classList.toggle('collapsed');
+    }
+});
+
+// Close sidebar on mobile when overlay is clicked
+document.getElementById('sidebar-overlay').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('active');
 });
 
 // ==================== GENERIC TABLE SORT UTILITY ====================
