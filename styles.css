@@ -638,6 +638,7 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
 .action-body { flex: 1; min-width: 0; }
 .action-title { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .action-text { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.action-context { font-size: 10px; color: var(--accent-blue); margin-top: 3px; font-weight: 500; letter-spacing: 0.1px; }
 .action-go { flex-shrink: 0; }
 
 /* ======== DAILY BRIEFING ======== */

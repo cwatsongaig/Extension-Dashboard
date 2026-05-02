@@ -1637,6 +1637,53 @@ function renderWeekAtGlance() {
     }
 }
 
+// ==================== ACTION ITEM CONTEXT INTELLIGENCE ====================
+
+function getAccountContext(accountName) {
+    if (!accountName) return '';
+    const fmt = n => '$' + (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : n.toLocaleString());
+    const parts = [];
+
+    // Grade
+    const arr = sampleARRs.find(a => a.account === accountName);
+    const acct = sampleMyAccounts.find(a => a.name === accountName);
+    const grade = acct ? acct.accountGrade : (arr ? arr.grade : null);
+    if (grade) parts.push('Grade ' + grade);
+
+    // LOA utilization
+    const loas = sampleLOAData.filter(l => l.account === accountName && getLOAStatus(l) === 'Active');
+    if (loas.length > 0) {
+        const totalAgg = loas.reduce((s, l) => s + l.aggregate, 0);
+        const totalUsed = loas.reduce((s, l) => s + l.used, 0);
+        const utilPct = totalAgg > 0 ? Math.round(totalUsed / totalAgg * 100) : 0;
+        parts.push(fmt(totalAgg) + ' aggregate');
+        parts.push(utilPct + '% utilized');
+    }
+
+    // Active bonds count
+    const bonds = sampleBonds.filter(b => b.principal === accountName && b.status !== 'Expired');
+    if (bonds.length > 0) {
+        const totalExp = bonds.reduce((s, b) => s + parseInt(b.amount.replace(/[$,]/g, ''), 10), 0);
+        parts.push(bonds.length + ' active bond' + (bonds.length > 1 ? 's' : '') + ' (' + fmt(totalExp) + ')');
+    }
+
+    // Red flags
+    const redFlags = sampleRedFlagData[accountName];
+    if (redFlags) {
+        const flagCount = Object.values(redFlags.ratios).filter(r => r[0] && r[0].flag).length;
+        if (flagCount > 0) parts.push(flagCount + ' red flag' + (flagCount > 1 ? 's' : ''));
+    }
+
+    // Open claims
+    const claims = sampleClaims.filter(c => c.principal === accountName && c.status !== 'Closed');
+    if (claims.length > 0) {
+        const claimAmt = claims.reduce((s, c) => s + parseInt(c.amount.replace(/[$,]/g, ''), 10), 0);
+        parts.push(claims.length + ' open claim' + (claims.length > 1 ? 's' : '') + ' (' + fmt(claimAmt) + ')');
+    }
+
+    return parts.length > 0 ? parts.join(' · ') : '';
+}
+
 function renderActionItems() {
     const today = new Date(2024, 3, 15); // April 15, 2024
     const container = document.getElementById('home-action-items');
@@ -1841,11 +1888,13 @@ function renderActionItems() {
     var displayItems = items.slice(0, maxActions);
     container.innerHTML = displayItems.map(it => {
         const levelClass = it.level === 'urgent' ? 'action-urgent' : it.level === 'warning' ? 'action-warning' : 'action-info';
+        const context = getAccountContext(it.account);
         return `<div class="action-item action-item-${it.level}">
             <div class="action-priority ${levelClass}">${it.category}</div>
             <div class="action-body">
                 <div class="action-title">${it.view === 'bid-calendar' ? it.account : accountLink(it.account)}</div>
                 <div class="action-text">${it.text}</div>
+                ${context ? '<div class="action-context">' + context + '</div>' : ''}
             </div>
             <div class="action-go"><button class="btn btn-outline btn-sm" onclick="navigateTo('${it.view}')">\u2192</button></div>
         </div>`;
