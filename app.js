@@ -698,11 +698,15 @@ function getUserTerritoryStates() {
 
 const DASHBOARD_DEFAULTS = {
     panels: [
-        { id: 'kpi-cards', label: 'KPI Summary Cards', visible: true, order: 0 },
-        { id: 'week-glance', label: 'This Week\'s Bids & Reminders', visible: true, order: 1 },
-        { id: 'action-items', label: 'Action Items', visible: true, order: 2 },
-        { id: 'arr-list', label: 'My Account Review Reports', visible: true, order: 3 },
-        { id: 'bond-requests', label: 'My Bond Requests', visible: true, order: 4 }
+        { id: 'daily-briefing', label: 'Daily Briefing', visible: true, order: 0 },
+        { id: 'quick-actions', label: 'Quick Actions', visible: true, order: 1 },
+        { id: 'kpi-cards', label: 'KPI Summary Cards', visible: true, order: 2 },
+        { id: 'exposure-gauge', label: 'Exposure & Capacity', visible: true, order: 3 },
+        { id: 'week-glance', label: 'This Week\'s Bids & Reminders', visible: true, order: 4 },
+        { id: 'action-items', label: 'Action Items', visible: true, order: 5 },
+        { id: 'arr-list', label: 'My Account Review Reports', visible: true, order: 6 },
+        { id: 'bond-requests', label: 'My Bond Requests', visible: true, order: 7 },
+        { id: 'workload-heatmap', label: 'Workload Heatmap', visible: true, order: 8 }
     ],
     config: {
         actionItemsMaxCount: 10,
@@ -815,6 +819,207 @@ const WIDGET_REGISTRY = {
                 if (c) c.innerHTML += '<div style="text-align:center;padding:8px;color:#6b7280;font-size:12px;">Showing ' + maxBond + ' of ' + sampleBondRequests.filter(b => b.assignee === currentUser.name).length + ' requests &mdash; <a href="#" onclick="event.preventDefault();openDashboardSettings();" style="color:var(--accent-brand);">change limit</a></div>';
             }
         }
+    },
+    'daily-briefing': {
+        label: 'Daily Briefing',
+        render: function(container) {
+            container.innerHTML = '<div class="daily-briefing-card" id="daily-briefing-content"></div>';
+        },
+        postRender: function() {
+            const el = document.getElementById('daily-briefing-content');
+            if (!el) return;
+            const today = new Date(2024, 3, 15);
+            const myARRs = sampleARRs.filter(a => a.assignee === currentUser.name);
+            const overdueARRs = myARRs.filter(a => a.status === 'Overdue').length;
+            const dueARRs = myARRs.filter(a => a.status === 'Due').length;
+            const pendingBonds = sampleBondRequests.filter(b => b.assignee === currentUser.name && (b.status === 'Awaiting Approval' || b.status === 'UW Review')).length;
+            const watchlist = myARRs.filter(a => a.risk === 'high').length;
+            const expiringLOAs = sampleLOAData.filter(l => {
+                if (l.assignee !== currentUser.name || getLOAStatus(l) !== 'Active') return false;
+                const d = Math.ceil((new Date(l.expDate) - today) / (1000*60*60*24));
+                return d >= 0 && d <= 30;
+            }).length;
+            const upcomingBids = sampleBidLog.filter(b => b.status === 'Pending Bid').length;
+
+            const parts = [];
+            if (overdueARRs > 0) parts.push(`<span class="briefing-alert">${overdueARRs} overdue ARR${overdueARRs > 1 ? 's' : ''}</span>`);
+            if (dueARRs > 0) parts.push(`<span class="briefing-warn">${dueARRs} ARR${dueARRs > 1 ? 's' : ''} coming due</span>`);
+            if (pendingBonds > 0) parts.push(`<span class="briefing-warn">${pendingBonds} bond request${pendingBonds > 1 ? 's' : ''}</span> pending`);
+            if (expiringLOAs > 0) parts.push(`<span class="briefing-alert">${expiringLOAs} LOA${expiringLOAs > 1 ? 's' : ''}</span> expiring within 30 days`);
+            if (watchlist > 0) parts.push(`<span class="briefing-warn">${watchlist} watchlist account${watchlist > 1 ? 's' : ''}</span>`);
+            if (upcomingBids > 0) parts.push(`${upcomingBids} upcoming bid${upcomingBids > 1 ? 's' : ''}`);
+
+            const hour = 9;
+            const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+            const firstName = currentUser.name.split(' ')[0];
+
+            let summary = '';
+            if (parts.length === 0) {
+                summary = `${greeting}, ${firstName}. You're all caught up — no urgent items today.`;
+            } else {
+                summary = `${greeting}, ${firstName}. Today you have ${parts.join(', ')}.`;
+            }
+
+            el.innerHTML = `
+                <div class="briefing-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                <div class="briefing-text">
+                    <div class="briefing-summary">${summary}</div>
+                    <div class="briefing-date">${today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                </div>
+            `;
+        }
+    },
+    'quick-actions': {
+        label: 'Quick Actions',
+        render: function(container) {
+            container.innerHTML = `<div class="quick-actions-bar">
+                <button class="quick-action-btn" onclick="navigateTo('account-review')">
+                    <span class="qa-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+                    <span class="qa-label">Start ARR</span>
+                </button>
+                <button class="quick-action-btn" onclick="navigateTo('bond-requests')">
+                    <span class="qa-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+                    <span class="qa-label">Bond Request</span>
+                </button>
+                <button class="quick-action-btn" onclick="openLogVisitModal()">
+                    <span class="qa-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg></span>
+                    <span class="qa-label">Log Visit</span>
+                </button>
+                <button class="quick-action-btn" onclick="navigateTo('account-notes')">
+                    <span class="qa-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>
+                    <span class="qa-label">Account Note</span>
+                </button>
+                <button class="quick-action-btn" onclick="navigateTo('exposure')">
+                    <span class="qa-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                    <span class="qa-label">Exposure Map</span>
+                </button>
+            </div>`;
+        }
+    },
+    'exposure-gauge': {
+        label: 'Exposure & Capacity',
+        render: function(container) {
+            container.innerHTML = '<div class="uw-panel uw-panel-full"><h2 class="uw-panel-title">Exposure & Capacity</h2><div id="exposure-gauge-content"></div></div>';
+        },
+        postRender: function() {
+            const el = document.getElementById('exposure-gauge-content');
+            if (!el) return;
+            const myLOAs = sampleLOAData.filter(l => l.assignee === currentUser.name && getLOAStatus(l) === 'Active');
+            const totalAggregate = myLOAs.reduce((s, l) => s + l.aggregate, 0);
+            const totalUsed = myLOAs.reduce((s, l) => s + l.used, 0);
+            const utilPct = totalAggregate > 0 ? Math.round(totalUsed / totalAggregate * 100) : 0;
+            const fmt = n => '$' + (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n.toLocaleString());
+            const gaugeColor = utilPct >= 80 ? 'var(--accent-red)' : utilPct >= 60 ? 'var(--accent-orange)' : 'var(--accent-green)';
+            const gaugeLabel = utilPct >= 80 ? 'High Utilization' : utilPct >= 60 ? 'Moderate' : 'Healthy';
+
+            // Top accounts by utilization
+            const acctUtil = myLOAs.map(l => ({
+                account: l.account, type: l.type,
+                used: l.used, aggregate: l.aggregate,
+                pct: l.aggregate > 0 ? Math.round(l.used / l.aggregate * 100) : 0
+            })).sort((a, b) => b.pct - a.pct).slice(0, 4);
+
+            el.innerHTML = `
+                <div class="gauge-summary">
+                    <div class="gauge-metric"><span class="gauge-metric-label">Total Authority</span><span class="gauge-metric-value">${fmt(totalAggregate)}</span></div>
+                    <div class="gauge-metric"><span class="gauge-metric-label">Currently Used</span><span class="gauge-metric-value">${fmt(totalUsed)}</span></div>
+                    <div class="gauge-metric"><span class="gauge-metric-label">Available</span><span class="gauge-metric-value" style="color:var(--accent-green)">${fmt(totalAggregate - totalUsed)}</span></div>
+                </div>
+                <div class="gauge-bar-container" onclick="navigateTo('loa')" style="cursor:pointer;" title="Click to view LOAs">
+                    <div class="gauge-bar-track">
+                        <div class="gauge-bar-fill" style="width:${Math.min(utilPct, 100)}%;background:${gaugeColor}"></div>
+                    </div>
+                    <div class="gauge-bar-labels">
+                        <span style="color:${gaugeColor};font-weight:700;">${utilPct}% utilized</span>
+                        <span style="color:var(--text-muted);font-size:11px;">${gaugeLabel}</span>
+                    </div>
+                </div>
+                <div class="gauge-accounts">
+                    <div class="gauge-accounts-title">Top Accounts by Utilization</div>
+                    ${acctUtil.map(a => {
+                        const c = a.pct >= 80 ? 'var(--accent-red)' : a.pct >= 60 ? 'var(--accent-orange)' : 'var(--accent-green)';
+                        return `<div class="gauge-account-row">
+                            <span class="gauge-acct-name">${a.account}</span>
+                            <span class="gauge-acct-type">${a.type}</span>
+                            <div class="gauge-mini-bar"><div class="gauge-mini-fill" style="width:${a.pct}%;background:${c}"></div></div>
+                            <span class="gauge-acct-pct" style="color:${c}">${a.pct}%</span>
+                        </div>`;
+                    }).join('')}
+                </div>
+            `;
+        }
+    },
+    'workload-heatmap': {
+        label: 'Workload Heatmap',
+        render: function(container) {
+            container.innerHTML = '<div class="uw-panel uw-panel-full"><h2 class="uw-panel-title">Workload Heatmap</h2><div id="workload-heatmap-content"></div></div>';
+        },
+        postRender: function() {
+            const el = document.getElementById('workload-heatmap-content');
+            if (!el) return;
+            const today = new Date(2024, 3, 15);
+            const myARRs = sampleARRs.filter(a => a.assignee === currentUser.name);
+
+            // Collect all due dates into a map: dateStr -> [{type, label}]
+            const dateItems = {};
+            function addItem(dateStr, type, label) {
+                if (!dateStr) return;
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return;
+                const key = d.toISOString().slice(0, 10);
+                if (!dateItems[key]) dateItems[key] = [];
+                dateItems[key].push({ type, label });
+            }
+
+            myARRs.forEach(a => addItem(a.dueDate, 'arr', a.account + ' (' + a.type + ')'));
+            sampleLOAData.filter(l => l.assignee === currentUser.name && getLOAStatus(l) === 'Active')
+                .forEach(l => addItem(l.expDate, 'loa', l.account + ' LOA expires'));
+            sampleBondRequests.filter(b => b.assignee === currentUser.name)
+                .forEach(b => addItem(b.date, 'bond', b.account + ' — ' + b.type));
+            sampleBidLog.filter(b => b.status === 'Pending Bid')
+                .forEach(b => addItem(b.bidDate, 'bid', b.projectName));
+
+            // Build 6-week grid starting from Monday of current week
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - ((today.getDay() + 6) % 7)); // Monday
+            const totalDays = 42; // 6 weeks
+            const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+            let headerHTML = dayNames.map(d => `<div class="heatmap-day-header">${d}</div>`).join('');
+            let cellsHTML = '';
+            for (let i = 0; i < totalDays; i++) {
+                const d = new Date(startOfWeek);
+                d.setDate(startOfWeek.getDate() + i);
+                const key = d.toISOString().slice(0, 10);
+                const items = dateItems[key] || [];
+                const count = items.length;
+                const isToday = d.toDateString() === today.toDateString();
+                const isPast = d < today && !isToday;
+                const monthStr = d.toLocaleDateString('en-US', { month: 'short' });
+                const showMonth = d.getDate() === 1 || i === 0;
+                const colorClass = count === 0 ? '' : count === 1 ? 'hm-low' : count === 2 ? 'hm-med' : 'hm-high';
+                const tooltip = items.length > 0 ? items.map(it => it.label).join('\\n') : 'No items';
+
+                cellsHTML += `<div class="heatmap-cell ${colorClass}${isToday ? ' hm-today' : ''}${isPast ? ' hm-past' : ''}" title="${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}:\n${tooltip}">
+                    ${showMonth ? '<span class="hm-month">' + monthStr + '</span>' : ''}
+                    <span class="hm-day">${d.getDate()}</span>
+                    ${count > 0 ? '<span class="hm-count">' + count + '</span>' : ''}
+                </div>`;
+            }
+
+            el.innerHTML = `
+                <div class="heatmap-legend">
+                    <span class="heatmap-legend-item"><span class="hm-swatch"></span> None</span>
+                    <span class="heatmap-legend-item"><span class="hm-swatch hm-low"></span> 1 item</span>
+                    <span class="heatmap-legend-item"><span class="hm-swatch hm-med"></span> 2 items</span>
+                    <span class="heatmap-legend-item"><span class="hm-swatch hm-high"></span> 3+ items</span>
+                </div>
+                <div class="heatmap-grid">
+                    ${headerHTML}
+                    ${cellsHTML}
+                </div>
+            `;
+        }
     }
 };
 
@@ -894,6 +1099,54 @@ function renderDashboardLayout() {
         } catch (e) {
             console.error('renderDashboardLayout: postRender error for panel ' + panel.id, e);
         }
+    });
+
+    // Wire up drag-and-drop reordering
+    let draggedWidget = null;
+    container.querySelectorAll('.dashboard-widget').forEach(w => {
+        w.setAttribute('draggable', 'true');
+        w.addEventListener('dragstart', function(e) {
+            draggedWidget = this;
+            this.classList.add('widget-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        w.addEventListener('dragend', function() {
+            this.classList.remove('widget-dragging');
+            container.querySelectorAll('.widget-drag-over').forEach(el => el.classList.remove('widget-drag-over'));
+            draggedWidget = null;
+        });
+        w.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (draggedWidget && draggedWidget !== this) {
+                this.classList.add('widget-drag-over');
+            }
+        });
+        w.addEventListener('dragleave', function() {
+            this.classList.remove('widget-drag-over');
+        });
+        w.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('widget-drag-over');
+            if (!draggedWidget || draggedWidget === this) return;
+            // Reorder in DOM
+            const allWidgets = [...container.querySelectorAll('.dashboard-widget')];
+            const fromIdx = allWidgets.indexOf(draggedWidget);
+            const toIdx = allWidgets.indexOf(this);
+            if (fromIdx < toIdx) {
+                container.insertBefore(draggedWidget, this.nextSibling);
+            } else {
+                container.insertBefore(draggedWidget, this);
+            }
+            // Save new order to prefs
+            const newOrder = [...container.querySelectorAll('.dashboard-widget')].map(el => el.getAttribute('data-widget-id'));
+            const prefs2 = getDashboardPrefs();
+            prefs2.panels.forEach(p => {
+                const idx = newOrder.indexOf(p.id);
+                if (idx >= 0) p.order = idx;
+            });
+            saveDashboardPrefs(prefs2);
+        });
     });
 }
 
