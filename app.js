@@ -706,7 +706,7 @@ const DASHBOARD_DEFAULTS = {
         { id: 'action-items', label: 'Action Items', visible: true, order: 5 },
         { id: 'arr-list', label: 'My Account Review Reports', visible: true, order: 6 },
         { id: 'bond-requests', label: 'My Bond Requests', visible: true, order: 7 },
-        { id: 'workload-heatmap', label: 'Workload Heatmap', visible: true, order: 8 }
+        { id: 'workload-heatmap', label: 'Workload Heatmap', visible: false, order: 8 }
     ],
     config: {
         actionItemsMaxCount: 10,
@@ -939,7 +939,7 @@ const WIDGET_REGISTRY = {
                     ${acctUtil.map(a => {
                         const c = a.pct >= 80 ? 'var(--accent-red)' : a.pct >= 60 ? 'var(--accent-orange)' : 'var(--accent-green)';
                         return `<div class="gauge-account-row">
-                            <span class="gauge-acct-name">${a.account}</span>
+                            <span class="gauge-acct-name">${accountLink(a.account)}</span>
                             <span class="gauge-acct-type">${a.type}</span>
                             <div class="gauge-mini-bar"><div class="gauge-mini-fill" style="width:${a.pct}%;background:${c}"></div></div>
                             <span class="gauge-acct-pct" style="color:${c}">${a.pct}%</span>
@@ -1658,7 +1658,7 @@ function renderWeekAtGlance() {
                         <div class="week-glance-date">${isToday ? 'Today' : fmtShort(remDate)}</div>
                         <div class="week-glance-detail">
                             <div class="week-glance-title" style="color:#6b21a8;">&#128276; ${r.title}</div>
-                            <div class="week-glance-meta">${r.time}${r.account ? ' &middot; ' + r.account : ''}</div>
+                            <div class="week-glance-meta">${r.time}${r.account ? ' &middot; ' + accountLink(r.account) : ''}</div>
                         </div>
                     </div>`;
                 }).join('') + '</div>';
@@ -2494,7 +2494,7 @@ function renderBidCalWeek(titleEl, grid, bidsByDate, remindersByDate) {
         reminders.forEach(r => {
             bidsHtml += `<div class="bid-cal-entry bid-cal-entry-reminder" onclick="openAddReminderModal(${r.id})" style="cursor:pointer;">
                 <strong>&#128276; ${r.title}</strong><br>
-                <span style="font-size:10px;color:var(--text-muted);">${r.time}${r.account ? ' &bull; ' + r.account : ''}</span>
+                <span style="font-size:10px;color:var(--text-muted);">${r.time}${r.account ? ' &bull; ' + accountLink(r.account) : ''}</span>
             </div>`;
         });
 
@@ -2598,7 +2598,7 @@ function renderUpcomingReminders() {
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:600;font-size:13px;color:#6b21a8;margin-bottom:2px;">${r.title}</div>
                 <div style="font-size:12px;color:var(--text-muted);">
-                    ${r.date} at ${r.time}${r.account ? ' &bull; <span style="color:var(--text-secondary);">' + r.account + '</span>' : ''}
+                    ${r.date} at ${r.time}${r.account ? ' &bull; ' + accountLink(r.account) : ''}
                 </div>
                 ${r.notes ? '<div style="font-size:11px;color:var(--text-muted);margin-top:3px;">' + r.notes + '</div>' : ''}
             </div>
@@ -2862,7 +2862,7 @@ function getARSectionHTML(sectionId) {
             return `
             <div class="section-title">Account Review Info / Sign-Off History</div>
             <div class="detail-grid" style="margin-bottom:20px;">
-                <div class="detail-item"><div class="detail-label">Account Name</div><div class="detail-value">R.J. Corman Railroad Group</div></div>
+                <div class="detail-item"><div class="detail-label">Account Name</div><div class="detail-value">${accountLink('R.J. Corman Railroad Group')}</div></div>
                 <div class="detail-item"><div class="detail-label">Customer Number</div><div class="detail-value">0008397740</div></div>
                 <div class="detail-item"><div class="detail-label">Review Type</div><div class="detail-value">${infoReview.reviewType}</div></div>
                 <div class="detail-item"><div class="detail-label">Review Level</div><div class="detail-value">${infoReview.reviewLevel}</div></div>
@@ -3199,7 +3199,7 @@ function openBondDetail(idx) {
         <div class="detail-grid" style="margin-bottom:20px;">
             <div class="detail-item"><div class="detail-label">Bond Number</div><div class="detail-value">${b.bondNumber}</div></div>
             <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value"><span class="status-badge ${statusClass(b.status)}">${b.status}</span></div></div>
-            <div class="detail-item"><div class="detail-label">Principal</div><div class="detail-value">${b.principal}</div></div>
+                <div class="detail-item"><div class="detail-label">Principal</div><div class="detail-value">${accountLink(b.principal)}</div></div>
             <div class="detail-item"><div class="detail-label">Bond Type</div><div class="detail-value">${b.bondType}</div></div>
             <div class="detail-item"><div class="detail-label">Bond Amount</div><div class="detail-value">${b.amount}</div></div>
             <div class="detail-item"><div class="detail-label">Effective Date</div><div class="detail-value">${b.effectiveDate}</div></div>
@@ -3310,7 +3310,7 @@ function openClaimDetail(idx) {
             <div class="detail-item"><div class="detail-label">Claim Number</div><div class="detail-value">${c.claimNumber}</div></div>
             <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value"><span class="status-badge ${statusClass(c.status)}">${c.status}</span></div></div>
             <div class="detail-item"><div class="detail-label">Bond Number</div><div class="detail-value">${c.bondNumber}</div></div>
-            <div class="detail-item"><div class="detail-label">Principal</div><div class="detail-value">${c.principal}</div></div>
+                <div class="detail-item"><div class="detail-label">Principal</div><div class="detail-value">${accountLink(c.principal)}</div></div>
             <div class="detail-item"><div class="detail-label">Claimant</div><div class="detail-value">${c.claimant}</div></div>
             <div class="detail-item"><div class="detail-label">Claim Amount</div><div class="detail-value">${c.amount}</div></div>
             <div class="detail-item"><div class="detail-label">Filed Date</div><div class="detail-value">${c.filedDate}</div></div>
@@ -3834,7 +3834,7 @@ function openVisitDetailModal(idx) {
     if (!v) return;
     const body = `
         <div class="form-grid" style="grid-template-columns:1fr 1fr;">
-            <div class="form-group"><label class="form-label">Account</label><div class="form-static">${v.account}</div></div>
+                <div class="form-group"><label class="form-label">Account</label><div class="form-static">${accountLink(v.account)}</div></div>
             <div class="form-group"><label class="form-label">Visit Date</label><div class="form-static">${v.visitDate}</div></div>
             <div class="form-group"><label class="form-label">Visited By</label><div class="form-static">${v.visitedBy}</div></div>
             <div class="form-group"><label class="form-label">Agency</label><div class="form-static">${v.agency || '—'}</div></div>
@@ -4266,7 +4266,7 @@ function openLOADetail(idx) {
     const remaining = l.aggregate - l.used;
     const body = `
         <div class="loa-detail-grid">
-            <div class="detail-item"><div class="detail-label">Account</div><div class="detail-value">${l.account}</div></div>
+                <div class="detail-item"><div class="detail-label">Account</div><div class="detail-value">${accountLink(l.account)}</div></div>
             <div class="detail-item"><div class="detail-label">LOA Type</div><div class="detail-value">${l.type}</div></div>
             <div class="detail-item"><div class="detail-label">Branch</div><div class="detail-value">${l.branch}</div></div>
             <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value"><span class="status-badge ${statusClass(getLOAStatus(l))}">${getLOAStatus(l)}</span></div></div>
