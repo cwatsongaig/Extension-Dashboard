@@ -103,7 +103,7 @@ body {
 .badge { position: absolute; top: 0; right: 0; background: var(--accent-red); color: white; font-size: 9px; font-weight: 700; width: 15px; height: 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
 /* ======== VIEWS ======== */
-.view { display: none; padding: 24px; flex: 1; animation: fadeIn 0.3s ease; border-top: 3px solid var(--accent-brand); }
+.view { display: none; padding: 24px; padding-bottom: 80px; flex: 1; animation: fadeIn 0.3s ease; border-top: 3px solid var(--accent-brand); }
 .view.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .view-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
@@ -968,7 +968,7 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
 /* ======== AI HELP ASSISTANT ======== */
 .ai-fab {
     position: fixed; bottom: 28px; right: 28px; z-index: 9000;
-    width: 56px; height: 56px; border-radius: 50%;
+    width: 44px; height: 44px; border-radius: 50%;
     background: var(--accent-brand); color: #fff; border: none;
     box-shadow: 0 4px 16px rgba(0,0,0,0.25); cursor: pointer;
     display: flex; align-items: center; justify-content: center;
@@ -978,7 +978,7 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
 .ai-fab.active { background: var(--text-muted); }
 
 .ai-chat-panel {
-    position: fixed; bottom: 96px; right: 28px; z-index: 9001;
+    position: fixed; bottom: 82px; right: 28px; z-index: 9001;
     width: 400px; max-height: 560px; border-radius: 12px;
     background: var(--bg-secondary); border: 1px solid var(--border-color);
     box-shadow: 0 12px 40px rgba(0,0,0,0.18);
