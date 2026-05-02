@@ -693,6 +693,30 @@ textarea.modal-input { resize: vertical; font-family: inherit; }
 .at-connector { width: 28px; height: 2px; background: #d1d5db; margin-top: 10px; flex-shrink: 0; }
 .at-conn-done { background: var(--accent-green); }
 
+/* ======== WATCHLIST ======== */
+.watchlist-star { color: var(--accent-orange); font-size: 14px; vertical-align: middle; margin-right: 2px; }
+
+/* ======== NOTE TEMPLATES ======== */
+.notes-input-toolbar { display: flex; gap: 6px; margin-bottom: 6px; }
+.template-dropdown { position: relative; }
+.template-menu { display: none; position: absolute; bottom: 100%; left: 0; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 220px; z-index: 50; padding: 4px 0; margin-bottom: 4px; }
+.template-menu.open { display: block; }
+.template-option { padding: 8px 14px; font-size: 13px; cursor: pointer; color: var(--text-primary); transition: background 0.1s; }
+.template-option:hover { background: var(--bg-primary); }
+
+/* ======== @-MENTIONS ======== */
+.mention-tag { background: var(--accent-blue-bg); color: var(--accent-blue); font-weight: 600; padding: 1px 4px; border-radius: 4px; font-size: 12px; }
+.mention-autocomplete { position: absolute; bottom: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 60; max-height: 180px; overflow-y: auto; margin-bottom: 4px; }
+.mention-option { padding: 8px 12px; font-size: 13px; cursor: pointer; color: var(--text-primary); }
+.mention-option:hover { background: var(--accent-blue-bg); }
+
+/* ======== ACCOUNT TAGS IN MESSAGES ======== */
+.msg-account-chip { display: inline-block; background: var(--accent-purple-bg); color: var(--accent-purple); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; margin-bottom: 4px; cursor: pointer; transition: background 0.15s; }
+.msg-account-chip:hover { background: #e9d5ff; }
+.account-tag-pill { display: inline-block; background: var(--accent-purple-bg); color: var(--accent-purple); font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 12px; }
+.account-tag-inline { background: var(--accent-purple-bg); color: var(--accent-purple); font-weight: 600; padding: 1px 4px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+.account-tag-inline:hover { text-decoration: underline; }
+
 /* ======== SPARKLINE ======== */
 .sparkline-cell { text-align: center; padding: 6px 8px; }
 .sparkline-svg { vertical-align: middle; }

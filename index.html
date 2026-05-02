@@ -169,6 +169,7 @@
                         <button class="tab active" onclick="filterMyAccounts('all', this)">All Accounts</button>
                         <button class="tab" onclick="filterMyAccounts('Active', this)">Active</button>
                         <button class="tab" onclick="filterMyAccounts('Suspended', this)">Suspended</button>
+                        <button class="tab" onclick="filterMyAccounts('Watchlist', this)">Watchlist</button>
                     </div>
                 </div>
             </div>
@@ -627,8 +628,13 @@
                         <div class="chat-header" id="chat-header"></div>
                         <div class="chat-messages" id="chat-messages"></div>
                         <div class="chat-input-area">
-                            <textarea class="form-input chat-input" id="chat-input" rows="1" placeholder="Type a message..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
-                            <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                            <div id="msg-tag-pill" style="display:none;margin-bottom:4px;"></div>
+                            <div style="display:flex;gap:6px;align-items:flex-end;width:100%;">
+                                <button class="btn btn-outline btn-sm" onclick="toggleMessageAccountTag()" title="Tag an account" style="flex-shrink:0;padding:6px 8px;">#</button>
+                                <textarea class="form-input chat-input" id="chat-input" rows="1" placeholder="Type a message... (use @ to mention)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+                                <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                            </div>
+                            <div id="msg-account-tag-selector" style="display:none;margin-top:6px;"></div>
                         </div>
                     </div>
                 </div>
@@ -659,7 +665,8 @@
                         <div class="notes-detail-header" id="notes-detail-header"></div>
                         <div class="notes-feed" id="notes-feed"></div>
                         <div class="notes-input-area">
-                            <textarea class="form-input chat-input" id="note-input" rows="2" placeholder="Add a note..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addAccountNote();}"></textarea>
+                            <div class="notes-input-toolbar" id="notes-input-toolbar"></div>
+                            <textarea class="form-input chat-input" id="note-input" rows="2" placeholder="Add a note... (use @ to mention)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addAccountNote();}"></textarea>
                             <button class="btn btn-primary" onclick="addAccountNote()">Add Note</button>
                         </div>
                     </div>

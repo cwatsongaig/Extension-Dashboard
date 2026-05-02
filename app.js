@@ -1283,10 +1283,10 @@ const sampleConversations = [
         with: 'Sarah Mitchell',
         unread: 2,
         messages: [
-            { from: 'Sarah Mitchell', text: 'Hey Doug, did you get a chance to review the Turner Construction financials?', time: 'Apr 18, 2024 9:15 AM' },
-            { from: 'Jake Miller', text: 'Yes, I looked at the 12/31 statements. The debt-to-equity ratio is a bit high but within our tolerance.', time: 'Apr 18, 2024 9:32 AM' },
+            { from: 'Sarah Mitchell', text: 'Hey Doug, did you get a chance to review the Turner Construction financials?', time: 'Apr 18, 2024 9:15 AM', accountTag: 'Turner Construction Company' },
+            { from: 'Jake Miller', text: 'Yes, I looked at the 12/31 statements. The debt-to-equity ratio is a bit high but within our tolerance.', time: 'Apr 18, 2024 9:32 AM', accountTag: 'Turner Construction Company' },
             { from: 'Sarah Mitchell', text: 'Good. Can you also check the WIP schedule? I noticed some overbilling on the I-75 project.', time: 'Apr 18, 2024 9:45 AM' },
-            { from: 'Sarah Mitchell', text: 'Also, the LOA renewal for Corman is coming up — we need to discuss the aggregate limit.', time: 'Apr 18, 2024 10:02 AM' }
+            { from: 'Sarah Mitchell', text: 'Also, the LOA renewal for Corman is coming up — we need to discuss the aggregate limit.', time: 'Apr 18, 2024 10:02 AM', accountTag: 'R.J. Corman Railroad Group' }
         ]
     },
     {
@@ -3817,12 +3817,13 @@ function renderMyAccounts(data) {
         const openBonds = sampleBondRequests.filter(b => b.account === acct.name && b.status !== 'Approved' && b.status !== 'Declined').length;
         const arr = sampleARRs.find(a => a.account === acct.name);
         const arrStatus = arr ? arr.status : 'N/A';
+        const isWatchlist = arr && arr.risk === 'high';
         const visitsYTD = sampleVisitations.filter(v => v.account === acct.name && v.visitDate.endsWith('/2024')).length;
         const statusCls = acct.status === 'Suspended' ? 'status-overdue' : 'status-approved';
             const gradeCls = getGradeCssClass(acct.accountGrade);
 
         return `<tr${acct.status === 'Suspended' ? ' style="opacity:0.75;"' : ''}>
-            <td>${accountLink(acct.name)}${acct.status === 'Suspended' ? '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;" title="' + (acct.suspendedReason || '') + '">Suspended</div>' : ''}</td>
+            <td>${isWatchlist ? '<span class="watchlist-star" title="Watchlist — High Risk">&#9733;</span> ' : ''}${accountLink(acct.name)}${acct.status === 'Suspended' ? '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;" title="' + (acct.suspendedReason || '') + '">Suspended</div>' : ''}</td>
             <td>${acct.branch}</td>
             <td><span class="status-badge ${statusCls}">${acct.status}</span></td>
             <td><span class="status-badge ${gradeCls}">${acct.accountGrade}</span></td>
@@ -3842,6 +3843,10 @@ function filterMyAccounts(status, tabEl) {
     let filtered = all;
     if (status === 'Active') filtered = all.filter(a => a.status === 'Active');
     else if (status === 'Suspended') filtered = all.filter(a => a.status === 'Suspended');
+    else if (status === 'Watchlist') {
+        const highRiskAccts = sampleARRs.filter(a => a.risk === 'high').map(a => a.account);
+        filtered = all.filter(a => highRiskAccts.includes(a.name));
+    }
     renderMyAccounts(filtered);
 }
 
@@ -5820,14 +5825,17 @@ function openConversation(idx) {
 
     renderMessages(conv);
     renderConversationList();
+    setupMentionAutocomplete('chat-input');
 }
 
 function renderMessages(conv) {
     const container = document.getElementById('chat-messages');
     container.innerHTML = conv.messages.map(m => {
         const isMine = m.from === currentUser.name;
+        const tagChip = m.accountTag ? `<div class="msg-account-chip" onclick="openAccountNotesDetail('${m.accountTag.replace(/'/g, "\\'")}'); navigateTo('account-notes');">#${m.accountTag}</div>` : '';
         return `<div class="chat-bubble ${isMine ? 'sent' : 'received'}">
-            <div class="bubble-text">${m.text}</div>
+            ${tagChip}
+            <div class="bubble-text">${parseRichText(m.text)}</div>
             <div class="bubble-meta">${m.from.split(' ')[0]} &bull; ${m.time}</div>
         </div>`;
     }).join('');
@@ -5843,7 +5851,9 @@ function sendMessage() {
     const now = new Date();
     const timeStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' +
                     now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-    conv.messages.push({ from: currentUser.name, text: text, time: timeStr });
+    const msg = { from: currentUser.name, text: text, time: timeStr };
+    if (pendingMessageAccountTag) { msg.accountTag = pendingMessageAccountTag; clearMessageAccountTag(); }
+    conv.messages.push(msg);
     input.value = '';
     renderMessages(conv);
     renderConversationList();
@@ -5904,6 +5914,13 @@ function openAccountNotesDetail(acctName) {
 
     renderNotesFeed(acctName);
     renderAccountNotesList();
+
+    // Render template dropdown toolbar
+    const toolbar = document.getElementById('notes-input-toolbar');
+    if (toolbar) toolbar.innerHTML = buildTemplateDropdown('note-input');
+
+    // Setup @-mention autocomplete on note input
+    setupMentionAutocomplete('note-input');
 }
 
 function renderNotesFeed(acctName) {
@@ -5917,7 +5934,7 @@ function renderNotesFeed(acctName) {
                 <span class="note-author">${n.author}</span>
                 <span class="note-date">${n.date}</span>
             </div>
-            <div class="note-text">${n.text}</div>
+            <div class="note-text">${parseRichText(n.text)}</div>
             <div class="note-actions">
                 <button class="btn-icon" onclick="togglePinNote('${acctName.replace(/'/g, "\\'")}', ${realIdx})" title="${n.pinned ? 'Unpin' : 'Pin'}">
                     <svg viewBox="0 0 24 24" fill="${n.pinned ? 'var(--accent-blue)' : 'none'}" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><path d="M12 2L12 22M12 2L8 6M12 2L16 6"/></svg>
@@ -5942,6 +5959,166 @@ function deleteNote(acctName, idx) {
     renderNotesFeed(acctName);
     renderAccountNotesList();
     showToast('Note deleted');
+}
+
+// ==================== NOTE TEMPLATES ====================
+
+const NOTE_TEMPLATES = [
+    { name: 'Site Visit Summary', text: 'Visit Type: [In-Person / Virtual / Job Site]\nContact Met: \nPurpose: \nBacklog Discussed: [Yes/No]\nFinancials Discussed: [Yes/No]\nSafety Reviewed: [Yes/No]\nOverall Impression: \nFollow-Up Required: [Yes/No]\nFollow-Up Date: \nNotes: ' },
+    { name: 'Financial Review Notes', text: 'Financial Statement Date: \nAudit Status: [Audited / Reviewed / Company Prepared]\nKey Ratios:\n  - Z-Score: \n  - Debt/Equity: \n  - Working Capital: \n  - Current Ratio: \nTrend: [Improving / Stable / Declining]\nConcerns: \nRecommendation: ' },
+    { name: 'Claim Update', text: 'Claim Number: \nClaimant: \nCurrent Status: [Open / Investigating / Closed]\nReserve Amount: $\nPrincipal Response: \nNext Steps: \nTarget Resolution Date: ' },
+    { name: 'LOA Renewal Discussion', text: 'Current LOA:\n  - Single Limit: $\n  - Aggregate Limit: $\n  - Utilization: %\nProposed Changes:\n  - New Single Limit: $\n  - New Aggregate Limit: $\nRationale: \nApproval Required: [Branch / Region / CAO]\nTarget Renewal Date: ' },
+    { name: 'Bond Request Notes', text: 'Project: \nObligee: \nBond Type: [Performance & Payment / Bid Bond / Maintenance]\nContract Value: $\nBond Amount: $\nRisk Assessment: [Low / Medium / High]\nKey Considerations: \nRecommendation: [Approve / Decline / Escalate]' }
+];
+
+function insertNoteTemplate(templateIdx) {
+    const tpl = NOTE_TEMPLATES[templateIdx];
+    if (!tpl) return;
+    const input = document.getElementById('note-input');
+    if (input) { input.value = tpl.text; input.focus(); }
+    const modalInput = document.getElementById('new-note-text');
+    if (modalInput && !input) { modalInput.value = tpl.text; modalInput.focus(); }
+}
+
+function buildTemplateDropdown(targetId) {
+    return `<div class="template-dropdown">
+        <button class="btn btn-outline btn-sm template-trigger" onclick="this.nextElementSibling.classList.toggle('open')">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Template
+        </button>
+        <div class="template-menu">
+            ${NOTE_TEMPLATES.map((t, i) => `<div class="template-option" onclick="insertNoteTemplate(${i});this.parentElement.classList.remove('open');">${t.name}</div>`).join('')}
+        </div>
+    </div>`;
+}
+
+// ==================== @-MENTION SYSTEM ====================
+
+const mentionableUsers = [
+    'Jake Miller', 'Sarah Mitchell', 'Mike Torres', 'Max Miller',
+    'John Webster', 'Ken Bearley', 'Amy Rodriguez', 'Lisa Chen', 'James Park'
+];
+
+function parseMentions(text) {
+    return text.replace(/@([A-Z][a-z]+ [A-Z][a-z]+)/g, function(match, name) {
+        if (mentionableUsers.includes(name)) {
+            return '<span class="mention-tag">@' + name + '</span>';
+        }
+        return match;
+    });
+}
+
+function parseAccountTags(text) {
+    return text.replace(/\[#([^\]]+)\]/g, function(match, acctName) {
+        return '<span class="account-tag-inline" onclick="openAccountNotesDetail(\'' + acctName.replace(/'/g, "\\'") + '\'); navigateTo(\'account-notes\');">#' + acctName + '</span>';
+    });
+}
+
+function parseRichText(text) {
+    return parseAccountTags(parseMentions(text));
+}
+
+let mentionDropdownActive = false;
+
+function setupMentionAutocomplete(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.addEventListener('input', function() {
+        const val = this.value;
+        const cursorPos = this.selectionStart;
+        const textBefore = val.substring(0, cursorPos);
+        const atMatch = textBefore.match(/@(\w*)$/);
+
+        let existing = document.getElementById('mention-autocomplete');
+        if (!atMatch) {
+            if (existing) existing.remove();
+            mentionDropdownActive = false;
+            return;
+        }
+
+        const query = atMatch[1].toLowerCase();
+        const matches = mentionableUsers.filter(u => u.toLowerCase().includes(query));
+        if (matches.length === 0) {
+            if (existing) existing.remove();
+            mentionDropdownActive = false;
+            return;
+        }
+
+        if (!existing) {
+            existing = document.createElement('div');
+            existing.id = 'mention-autocomplete';
+            existing.className = 'mention-autocomplete';
+            input.parentElement.style.position = 'relative';
+            input.parentElement.appendChild(existing);
+        }
+        mentionDropdownActive = true;
+
+        existing.innerHTML = matches.map(u => `<div class="mention-option" onmousedown="insertMention('${inputId}', '${u}', ${atMatch.index})">${u}</div>`).join('');
+    });
+
+    input.addEventListener('blur', function() {
+        setTimeout(() => {
+            const el = document.getElementById('mention-autocomplete');
+            if (el) el.remove();
+            mentionDropdownActive = false;
+        }, 200);
+    });
+}
+
+function insertMention(inputId, userName, atStart) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const val = input.value;
+    const before = val.substring(0, atStart);
+    const after = val.substring(input.selectionStart);
+    input.value = before + '@' + userName + ' ' + after;
+    input.focus();
+    const newPos = atStart + userName.length + 2;
+    input.setSelectionRange(newPos, newPos);
+    const el = document.getElementById('mention-autocomplete');
+    if (el) el.remove();
+    mentionDropdownActive = false;
+}
+
+// ==================== ACCOUNT TAGGING IN MESSAGES ====================
+
+let pendingMessageAccountTag = null;
+
+function toggleMessageAccountTag() {
+    const container = document.getElementById('msg-account-tag-selector');
+    if (!container) return;
+    if (container.style.display === 'none') {
+        const accounts = [...new Set([...sampleARRs.map(a => a.account), ...Object.keys(sampleAccountNotes)])].sort();
+        container.innerHTML = `<select id="msg-account-tag-select" class="form-select" style="font-size:12px;" onchange="selectMessageAccountTag(this.value)">
+            <option value="">— Tag an account —</option>
+            ${accounts.map(a => `<option value="${a}">${a}</option>`).join('')}
+        </select>`;
+        container.style.display = 'flex';
+    } else {
+        container.style.display = 'none';
+        pendingMessageAccountTag = null;
+    }
+}
+
+function selectMessageAccountTag(acctName) {
+    pendingMessageAccountTag = acctName || null;
+    const pill = document.getElementById('msg-tag-pill');
+    if (pill) {
+        if (acctName) {
+            pill.innerHTML = `<span class="account-tag-pill">#${acctName} <span onclick="clearMessageAccountTag()" style="cursor:pointer;margin-left:4px;">&times;</span></span>`;
+            pill.style.display = 'block';
+        } else {
+            pill.innerHTML = '';
+            pill.style.display = 'none';
+        }
+    }
+    document.getElementById('msg-account-tag-selector').style.display = 'none';
+}
+
+function clearMessageAccountTag() {
+    pendingMessageAccountTag = null;
+    const pill = document.getElementById('msg-tag-pill');
+    if (pill) { pill.innerHTML = ''; pill.style.display = 'none'; }
 }
 
 function addAccountNote() {
