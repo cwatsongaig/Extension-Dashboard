@@ -27,7 +27,7 @@ const sampleBondRequests = [
         { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/18/2024' },
         { role: 'Branch Manager', name: 'Max Miller', status: 'complete', date: '04/19/2024' },
         { role: 'Regional Manager', name: 'John Webster', status: 'current', date: null },
-        { role: 'VP Underwriting', name: 'Ken Bearley', status: 'pending', date: null }
+        { role: 'President', name: 'Ken Bearley', status: 'pending', date: null }
       ] },
     { account: 'Turner Construction Company', type: 'Bid Bond', amount: '$850,000', obligee: 'NYC DOT', status: 'UW Review', branch: 'New York', date: 'Apr 17, 2024', assignee: 'Sarah Mitchell',
       approvalSteps: [
@@ -39,7 +39,7 @@ const sampleBondRequests = [
         { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/16/2024' },
         { role: 'Branch Manager', name: 'Max Miller', status: 'complete', date: '04/17/2024' },
         { role: 'Regional Manager', name: 'John Webster', status: 'complete', date: '04/18/2024' },
-        { role: 'VP Underwriting', name: 'Ken Bearley', status: 'current', date: null }
+        { role: 'President', name: 'Ken Bearley', status: 'current', date: null }
       ] },
     { account: 'R.J. Corman Railroad Group', type: 'Maintenance Bond', amount: '$750,000', obligee: 'CSX Transportation', status: 'Draft', branch: 'Lexington', date: 'Apr 15, 2024', assignee: 'Mike Torres',
       approvalSteps: [
@@ -57,7 +57,7 @@ const sampleBondRequests = [
         { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/12/2024' },
         { role: 'Branch Manager', name: 'Max Miller', status: 'current', date: null },
         { role: 'Regional Manager', name: 'John Webster', status: 'pending', date: null },
-        { role: 'VP Underwriting', name: 'Ken Bearley', status: 'pending', date: null }
+        { role: 'President', name: 'Ken Bearley', status: 'pending', date: null }
       ] },
     { account: 'Brasfield & Gorrie LLC', type: 'Bid Bond', amount: '$420,000', obligee: 'City of Birmingham', status: 'Approved', branch: 'Cincinnati', date: 'Apr 10, 2024', assignee: 'Jake Miller',
       approvalSteps: [
