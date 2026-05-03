@@ -7358,10 +7358,11 @@ document.addEventListener('DOMContentLoaded', () => {
     try { renderExposureMap(); } catch(e) { console.error('Init Exposure Map:', e); }
     try { initMapTooltips(); } catch(e) { console.error('Init Map Tooltips:', e); }
 
-    // Show prototype banner
-    const banner = document.createElement('div');
-    banner.id = 'demo-mode-banner';
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#dbeafe;color:#1e40af;text-align:center;padding:6px 16px;font-size:12px;font-weight:600;border-bottom:1px solid #93c5fd;';
-    banner.innerHTML = 'BondBox Prototype &mdash; Real report data &bull; ' + USER_PROFILES.length + ' user profiles available &bull; Click user in sidebar to switch';
-    document.body.prepend(banner);
+    // Show prototype indicator — small dismissible badge, not a full-width banner
+    const badge = document.createElement('div');
+    badge.id = 'demo-mode-banner';
+    badge.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;background:#dbeafe;color:#1e40af;padding:8px 14px;font-size:11px;font-weight:600;border-radius:8px;border:1px solid #93c5fd;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;max-width:220px;line-height:1.4;';
+    badge.innerHTML = 'Prototype <span style="font-weight:400;">&bull; ' + USER_PROFILES.length + ' users</span> <span onclick="event.stopPropagation();this.parentElement.remove();" style="margin-left:6px;opacity:0.6;font-size:14px;">&times;</span>';
+    badge.onclick = function() { openUserSwitcher(); };
+    document.body.appendChild(badge);
 });
