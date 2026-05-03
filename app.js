@@ -2258,7 +2258,7 @@ function filterBidLog() {
 
 // ==================== BID CALENDAR ====================
 
-let bidCalYear = 2024, bidCalMonth = 3; // 0-indexed: 3 = April
+let bidCalYear = BondBoxClock.getNow().getFullYear(), bidCalMonth = BondBoxClock.getNow().getMonth();
 let bidCalViewMode = 'month';
 let bidCalWeekStart = null; // Date object for week view start (Sunday)
 
