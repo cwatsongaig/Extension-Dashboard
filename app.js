@@ -4,6 +4,39 @@
    All sample data + render + navigation
    ======================================== */
 
+// ==================== CLOCK SERVICE ====================
+// Single source of truth for "now" across the entire app.
+// Production: returns real current date/time.
+// Demo mode: returns a fixed reference date so sample data makes sense.
+// Test mode: allows injection of any date.
+
+const BondBoxClock = (() => {
+    let _override = null;
+
+    function getNow() {
+        if (_override) return new Date(_override.getTime());
+        return new Date();
+    }
+
+    function setOverride(date) {
+        _override = date ? new Date(date.getTime()) : null;
+    }
+
+    function clearOverride() {
+        _override = null;
+    }
+
+    function isOverridden() {
+        return _override !== null;
+    }
+
+    return { getNow, setOverride, clearOverride, isOverridden };
+})();
+
+// Demo mode: use reference date that aligns with sample data.
+// Remove or comment out this line to use real current date in production.
+BondBoxClock.setOverride(new Date(2024, 3, 15, 9, 0, 0));
+
 // ==================== SAMPLE DATA ====================
 
 const sampleARRs = [
@@ -697,7 +730,7 @@ function getGradeCssClass(grade) {
 // Computes LOA status from expDate — if expDate is in the past, status is always 'Expired'
 function getLOAStatus(loa) {
     const exp = new Date(loa.expDate);
-    const now = new Date();
+    const now = BondBoxClock.getNow();
     // Zero out time components for date-only comparison
     now.setHours(0, 0, 0, 0);
     exp.setHours(0, 0, 0, 0);
@@ -871,7 +904,7 @@ const WIDGET_REGISTRY = {
         postRender: function() {
             const el = document.getElementById('daily-briefing-content');
             if (!el) return;
-            const today = new Date(2024, 3, 15);
+            const today = BondBoxClock.getNow();
             const myARRs = sampleARRs.filter(a => a.assignee === currentUser.name);
             const overdueARRs = myARRs.filter(a => a.status === 'Overdue').length;
             const dueARRs = myARRs.filter(a => a.status === 'Due').length;
@@ -892,7 +925,7 @@ const WIDGET_REGISTRY = {
             if (watchlist > 0) parts.push(`<span class="briefing-warn">${watchlist} watchlist account${watchlist > 1 ? 's' : ''}</span>`);
             if (upcomingBids > 0) parts.push(`${upcomingBids} upcoming bid${upcomingBids > 1 ? 's' : ''}`);
 
-            const hour = 9;
+            const hour = BondBoxClock.getNow().getHours();
             const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
             const firstName = currentUser.name.split(' ')[0];
 
@@ -1368,7 +1401,7 @@ function statusClass(s) {
 
 function daysInQueue(dateStr) {
     if (!dateStr) return null;
-    const ref = new Date(2024, 3, 15); // April 15, 2024 — reference "today"
+    const ref = BondBoxClock.getNow();
     const entered = new Date(dateStr);
     const diff = Math.floor((ref - entered) / (1000 * 60 * 60 * 24));
     return diff >= 0 ? diff : 0;
@@ -1403,7 +1436,7 @@ function formatDueDate(dateObj) {
 
 function arrDeadlineHTML(fsDateReceived) {
     if (!fsDateReceived) return '<span class="deadline-badge deadline-na">No FS date</span>';
-    const ref = new Date(2024, 3, 15); // April 15, 2024
+    const ref = BondBoxClock.getNow();
     const due = computeARRDueDate(fsDateReceived);
     const daysLeft = Math.ceil((due - ref) / (1000 * 60 * 60 * 24));
     const label = formatDueDate(due);
@@ -1448,7 +1481,7 @@ function frequencyBadgeHTML(accountName) {
 
 // BR-2: Active accounts require annual CPA + at least one interim FS per year
 function checkFSCompliance(accountName) {
-    const ref = new Date(2024, 3, 15); // April 15, 2024
+    const ref = BondBoxClock.getNow();
     const profile = accountProfiles[accountName];
     const issues = [];
 
@@ -1531,7 +1564,7 @@ function updateKPIValues() {
     const expiringLOACount = myLOAs.filter(l => {
         if (getLOAStatus(l) !== 'Active') return false;
         const exp = new Date(l.expDate);
-        const now = new Date();
+        const now = BondBoxClock.getNow();
         const diff = (exp - now) / (1000 * 60 * 60 * 24);
         return diff <= 30 && diff >= 0;
     }).length;
@@ -1569,8 +1602,7 @@ function updateBondRequestBadge() {
 
 function renderWeekAtGlance() {
     // Determine current week boundaries (Sun—Sat containing "today")
-    // Using April 15, 2024 as reference date to match sample data
-    const today = new Date(2024, 3, 15); // April 15, 2024
+    const today = BondBoxClock.getNow();
     const dayOfWeek = today.getDay();
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() - dayOfWeek);
@@ -1685,7 +1717,7 @@ function getAccountContext(accountName) {
 }
 
 function renderActionItems() {
-    const today = new Date(2024, 3, 15); // April 15, 2024
+    const today = BondBoxClock.getNow();
     const container = document.getElementById('home-action-items');
     if (!container) return;
 
@@ -2623,7 +2655,7 @@ function renderBidCalMonth(titleEl, grid, bidsByDate, remindersByDate) {
         const key = `${bidCalYear}-${String(bidCalMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const bids = bidsByDate[key] || [];
         const reminders = remindersByDate[key] || [];
-        const today = new Date();
+        const today = BondBoxClock.getNow();
         const isToday = (d === today.getDate() && bidCalMonth === today.getMonth() && bidCalYear === today.getFullYear());
         let cls = 'bid-cal-cell';
         if (isToday) cls += ' bid-cal-cell-today';
@@ -2673,7 +2705,7 @@ function renderBidCalWeek(titleEl, grid, bidsByDate, remindersByDate) {
         const key = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
         const bids = bidsByDate[key] || [];
         const reminders = remindersByDate[key] || [];
-        const today = new Date();
+        const today = BondBoxClock.getNow();
         const isToday = (day.getDate() === today.getDate() && day.getMonth() === today.getMonth() && day.getFullYear() === today.getFullYear());
 
         let cls = 'bid-cal-cell bid-cal-cell-week';
@@ -4403,7 +4435,7 @@ function renderLOAView(filter) {
     const totalUsed = activeLOAs.reduce((s, l) => s + l.used, 0);
     const expiringCount = activeLOAs.filter(l => {
         const exp = new Date(l.expDate);
-        const now = new Date();
+        const now = BondBoxClock.getNow();
         return (exp - now) / (1000 * 60 * 60 * 24) <= 30;
     }).length;
 
@@ -4426,7 +4458,7 @@ function renderLOAView(filter) {
     else if (filter === 'Expired') data = expiredLOAs;
     else if (filter === 'Expiring') data = activeLOAs.filter(l => {
         const exp = new Date(l.expDate);
-        return (exp - new Date()) / (1000 * 60 * 60 * 24) <= 30;
+        return (exp - BondBoxClock.getNow()) / (1000 * 60 * 60 * 24) <= 30;
     });
 
     const tbody = document.getElementById('loa-view-table-body');
@@ -4517,7 +4549,7 @@ function openLOAKPIDrillDown(type) {
         title = 'LOAs Expiring Within 30 Days';
         filtered = activeLOAs.filter(l => {
             const exp = new Date(l.expDate);
-            return (exp - new Date()) / (1000 * 60 * 60 * 24) <= 30;
+            return (exp - BondBoxClock.getNow()) / (1000 * 60 * 60 * 24) <= 30;
         });
     }
 
@@ -5467,7 +5499,7 @@ function promoteReview(idx) {
     const currentQIdx = fullChain.indexOf(currentQ);
     const nextReviewer = (currentQIdx >= 0 && currentQIdx < fullChain.length - 1) ? fullChain[currentQIdx + 1] : null;
 
-    const today = new Date(2024, 3, 15);
+    const today = BondBoxClock.getNow();
     const dateStr = (today.getMonth() + 1).toString().padStart(2, '0') + '/' + today.getDate().toString().padStart(2, '0') + '/' + today.getFullYear();
 
     // Add sign-off entry
@@ -5483,7 +5515,7 @@ function promoteReview(idx) {
     // Move queue
     if (nextReviewer) {
         review.currentQueue = nextReviewer;
-        review.queueEnteredDate = 'Apr 15, 2024';
+        review.queueEnteredDate = formatDueDate(BondBoxClock.getNow());
         review.reviewState = 'In Review - ' + (chainTitles[nextReviewer] || '');
         alert('Review promoted to ' + nextReviewer + ' (' + (chainTitles[nextReviewer] || '') + ')');
     } else {
@@ -5529,8 +5561,10 @@ function submitNewBond() {
     const principal = document.getElementById('nb-principal').value || 'New Principal';
     const bondType = document.getElementById('nb-type').value;
     const amount = document.getElementById('nb-amount').value || '$500,000';
-    const eff = document.getElementById('nb-eff').value ? new Date(document.getElementById('nb-eff').value).toLocaleDateString('en-US') : '04/28/2025';
-    const exp = document.getElementById('nb-exp').value ? new Date(document.getElementById('nb-exp').value).toLocaleDateString('en-US') : '04/28/2026';
+    const effDefault = BondBoxClock.getNow();
+    const expDefault = new Date(effDefault.getTime()); expDefault.setFullYear(expDefault.getFullYear() + 1);
+    const eff = document.getElementById('nb-eff').value ? new Date(document.getElementById('nb-eff').value).toLocaleDateString('en-US') : effDefault.toLocaleDateString('en-US');
+    const exp = document.getElementById('nb-exp').value ? new Date(document.getElementById('nb-exp').value).toLocaleDateString('en-US') : expDefault.toLocaleDateString('en-US');
     sampleBonds.push({
         bondNumber: String(9000000 + sampleBonds.length + 1),
         principal, bondType, amount, effectiveDate: eff, expirationDate: exp, status: 'Active'
@@ -6246,7 +6280,7 @@ function renderPremiumAR() {
     const fmt = v => '$' + v.toLocaleString();
 
     // As-of line
-    const today = new Date();
+    const today = BondBoxClock.getNow();
     const asof = document.getElementById('premium-ar-asof');
     if (asof) asof.textContent = `As of ${today.toISOString().slice(0,10)} \u00B7 ${totalInvoices} open invoices`;
 
@@ -6913,29 +6947,42 @@ function matchAIResponse(text) {
 // ==================== INITIALIZATION ====================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Render dashboard via widget system
-    renderDashboardLayout();
-    // Render non-dashboard views
-    renderBondRequests('bond-requests-full-list', sampleBondRequests);
-    renderFinancials();
-    renderWIPSummary();
-    renderMasterJobs();
-    renderLargestJobs();
-    renderLOAGrid();
-    renderBidLog();
-    renderAccountReviewSummary();
-    renderBonds();
-    renderClaims();
-    renderExposureMap();
-    initMapTooltips();
-    renderConversationList();
-    renderAccountNotesList();
-    renderMyAccounts();
-    renderRedFlags();
-    renderVisitations();
-    renderBidCalendar();
-    renderPortfolioAnalysis();
-    renderLOAView();
-    updateBondRequestBadge();
-    renderPremiumAR();
+    const initSteps = [
+        ['Dashboard', renderDashboardLayout],
+        ['Bond Requests', () => renderBondRequests('bond-requests-full-list', sampleBondRequests)],
+        ['Financials', renderFinancials],
+        ['WIP Summary', renderWIPSummary],
+        ['Master Jobs', renderMasterJobs],
+        ['Largest Jobs', renderLargestJobs],
+        ['LOA Grid', renderLOAGrid],
+        ['Bid Log', renderBidLog],
+        ['Account Review', renderAccountReviewSummary],
+        ['Bonds', renderBonds],
+        ['Claims', renderClaims],
+        ['Exposure Map', renderExposureMap],
+        ['Map Tooltips', initMapTooltips],
+        ['Conversations', renderConversationList],
+        ['Account Notes', renderAccountNotesList],
+        ['My Accounts', renderMyAccounts],
+        ['Red Flags', renderRedFlags],
+        ['Visitations', renderVisitations],
+        ['Bid Calendar', renderBidCalendar],
+        ['Portfolio Analysis', renderPortfolioAnalysis],
+        ['LOA View', renderLOAView],
+        ['Bond Request Badge', updateBondRequestBadge],
+        ['Premium AR', renderPremiumAR]
+    ];
+    initSteps.forEach(([name, fn]) => {
+        try { fn(); } catch (e) { console.error('Init failed: ' + name, e); }
+    });
+
+    // Show demo mode banner if clock is overridden
+    if (BondBoxClock.isOverridden()) {
+        const banner = document.createElement('div');
+        banner.id = 'demo-mode-banner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#fef3c7;color:#92400e;text-align:center;padding:6px 16px;font-size:12px;font-weight:600;border-bottom:1px solid #fcd34d;';
+        const refDate = BondBoxClock.getNow();
+        banner.innerHTML = 'Demo Mode &mdash; App date: ' + refDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' &bull; <a href="#" onclick="BondBoxClock.clearOverride(); this.parentElement.remove(); location.reload(); return false;" style="color:#92400e;text-decoration:underline;">Switch to live date</a>';
+        document.body.prepend(banner);
+    }
 });
