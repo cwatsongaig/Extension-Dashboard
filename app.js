@@ -1788,7 +1788,8 @@ function navigateTo(viewId) {
         'portfolio-analysis': 'Portfolio Analysis', 'red-flags': 'Red Flag Accounts',
         'premium-ar': 'Premium AR by Agency', 'visitations': 'Agency Visits',
         'service-activity': 'Service & Activity Report',
-        'approved-reviews': 'Approved Account Reviews'
+        'approved-reviews': 'Approved Account Reviews',
+        'rating-calculators': 'Rating Calculators'
     };
     if (crumb) crumb.innerHTML = `<span>${names[viewId] || viewId}</span>`;
 }
@@ -6886,6 +6887,26 @@ function matchAIResponse(text) {
         <p>Try asking about one of these topics, or rephrase your question and I'll do my best to help!</p>`,
         suggestions: ['How do I submit an ARR?', 'What accounts need attention?', 'Explain bond request workflow']
     };
+}
+
+// ==================== RATING CALCULATORS ====================
+
+const CALC_URLS = {
+    contract: 'https://contract-surety-rating-calculator-ldcbibjhekwelxyo9ubjum.streamlit.app/',
+    commercial: 'https://commercial-surety-calculator-cbvqzf9ntdc7ntnra5pyih.streamlit.app/'
+};
+
+function switchCalcTab(type, tabEl) {
+    // Update active tab
+    document.querySelectorAll('#calc-tabs .tab').forEach(t => t.classList.remove('active'));
+    if (tabEl) tabEl.classList.add('active');
+
+    // Switch iframe src
+    const iframe = document.getElementById('calc-iframe');
+    if (iframe) {
+        iframe.src = CALC_URLS[type] || CALC_URLS.contract;
+        iframe.title = (type === 'commercial' ? 'Commercial' : 'Contract') + ' Surety Rating Calculator';
+    }
 }
 
 // ==================== APPROVED REVIEWS REPORT ====================
