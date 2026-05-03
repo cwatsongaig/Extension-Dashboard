@@ -7159,6 +7159,7 @@ function renderAllViews() {
         ['LOA View', renderLOAView],
         ['Bond Request Badge', updateBondRequestBadge],
         ['Premium AR', renderPremiumAR],
+        ['Exposure Map', renderExposureMap],
         ['Service Activity', renderServiceActivity],
         ['Approved Reviews', renderApprovedReviews]
     ];
