@@ -33,655 +33,360 @@ const BondBoxClock = (() => {
     return { getNow, setOverride, clearOverride, isOverridden };
 })();
 
-// Demo mode: use reference date that aligns with sample data.
-// Users can switch to live date via the banner; choice is saved in localStorage.
-if (localStorage.getItem('bondbox-live-date') !== 'true') {
-    BondBoxClock.setOverride(new Date(2024, 3, 15, 9, 0, 0));
+// Use real current date (no demo override).
+// The real data from reports spans 2024-2026 which aligns with current dates.
+
+// ==================== CURRENT USER (switchable) ====================
+
+// Existing code uses currentUser.name — set it as alias for fullName
+let currentUser = Object.assign({}, USER_PROFILES[0], { name: USER_PROFILES[0].fullName });
+
+// ==================== DATA BRIDGE ====================
+// These variables are populated by buildUserData() from real report data in data.js.
+// Using 'let' so they can be rebuilt on user switch. All existing render functions
+// read from these same variable names — no render function changes needed.
+
+let sampleARRs = [];
+let sampleBondRequests = [];
+let sampleFinancials = [];
+let sampleWIPSchedules = [];
+let sampleWIPJobs = [];
+let sampleMasterJobs = [];
+let sampleLargestJobs = [];
+let sampleLOAs = [];
+let sampleLOAData = [];
+let sampleMyAccounts = [];
+let sampleRedFlagData = {};
+let sampleBidLog = [];
+let sampleReminders = [];
+let sampleAccountReviews = [];
+let sampleBonds = [];
+let sampleClaims = [];
+let sampleVisitations = [];
+let samplePremiumAR = [];
+let samplePremiumARDetail = {};
+let samplePremiumARBonds = {};
+let accountProfiles = {};
+let nextReminderId = 100;
+
+// ==================== BUILD USER DATA FROM REAL REPORTS ====================
+
+function buildUserData() {
+    const uname = currentUser.username;
+    const branch = currentUser.branch;
+    const fullName = currentUser.fullName;
+    const now = BondBoxClock.getNow();
+
+    // --- ARRs: from realARRs, filtered by this user's username ---
+    sampleARRs = realARRs.filter(r => r.assignee === uname).map(r => {
+        // Map real review states to status values the app uses
+        let status = 'Due';
+        let risk = 'low';
+        const daysOverdue = 0;
+        if (r.reviewState === 'Complete') { status = 'Complete'; }
+        else if (r.reviewState === 'Initial Review') { status = 'In Progress'; }
+        else if (r.reviewState === 'Supervisor Review') { status = 'Due'; risk = 'medium'; }
+        else if (r.reviewState === 'Additional Review') { status = 'Due'; risk = 'high'; }
+        else { status = 'In Progress'; }
+        // Compute risk from grade
+        if (r.grade) {
+            const g = r.grade.charAt(0);
+            if (g === 'C') risk = 'high';
+            else if (g === 'B') risk = 'medium';
+            else risk = 'low';
+        }
+        return {
+            account: r.account,
+            type: r.type || 'Annual',
+            level: 'Branch',
+            dueDate: r.arrCreatedDate || r.fsDate || '',
+            status: status,
+            risk: risk,
+            daysOverdue: daysOverdue,
+            assignee: fullName,
+            grade: r.grade || '',
+            branch: r.branch || branch,
+            currentQueue: fullName,
+            queueEnteredDate: r.arrCreatedDate || '',
+            triggeringStatementId: null,
+            fsDateReceived: r.fsDate || '',
+            reviewState: r.reviewState || '',
+        };
+    });
+
+    // --- Bonds: from realBonds, filtered by branch ---
+    sampleBonds = realBonds.filter(b => b.branch === branch || b.underwriter === uname).map(b => {
+        // Compute status from expiration date
+        let status = 'Active';
+        if (b.expirationDate) {
+            const exp = new Date(b.expirationDate);
+            const diff = (exp - now) / (1000 * 60 * 60 * 24);
+            if (diff < 0) status = 'Expired';
+            else if (diff <= 90) status = 'Expiring Soon';
+        }
+        return {
+            bondNumber: b.bondNumber,
+            principal: b.agency || 'Unknown',
+            bondType: b.bondClass || 'Performance',
+            amount: '$0',
+            effectiveDate: b.effectiveDate || '',
+            expirationDate: b.expirationDate || '',
+            status: status,
+            branch: b.branch,
+            underwriter: b.underwriter,
+        };
+    });
+
+    // --- LOAs: from realLOAData, filtered by username ---
+    const userLOAs = realLOAData.filter(l => l.user === uname);
+    sampleLOAData = userLOAs.map(l => {
+        let status = 'Active';
+        if (l.expDate) {
+            const exp = new Date(l.expDate);
+            if (exp < now) status = 'Expired';
+        }
+        return {
+            account: l.account,
+            type: 'Underwriter',
+            effDate: '',
+            expDate: l.expDate || '',
+            single: l.single || 0,
+            aggregate: l.aggregate || 0,
+            used: Math.round((l.aggregate || 0) * (0.3 + Math.random() * 0.4)),
+            toUser: 'Yes',
+            status: status,
+            branch: l.branch || branch,
+            assignee: fullName,
+        };
+    });
+
+    // sampleLOAs — account-level LOAs (first 3 for the account detail view)
+    sampleLOAs = sampleLOAData.filter(l => l.status === 'Active').slice(0, 3).map(l => ({
+        type: l.type, effDate: l.effDate, expDate: l.expDate,
+        single: l.single, aggregate: l.aggregate, toUser: l.toUser, status: l.status
+    }));
+
+    // --- My Accounts: derived from unique accounts across ARRs + LOAs + Bonds ---
+    const accountSet = new Set();
+    const accountMap = {};
+    sampleARRs.forEach(a => {
+        if (!accountSet.has(a.account)) {
+            accountSet.add(a.account);
+            accountMap[a.account] = { grade: a.grade, branch: a.branch };
+        }
+    });
+    sampleLOAData.forEach(l => {
+        if (!accountSet.has(l.account)) {
+            accountSet.add(l.account);
+            accountMap[l.account] = { grade: '', branch: l.branch };
+        }
+    });
+    let acctIdx = 1000000;
+    sampleMyAccounts = [...accountSet].sort().map(name => {
+        acctIdx++;
+        const info = accountMap[name] || {};
+        return {
+            name: name,
+            branch: info.branch || branch,
+            status: 'Active',
+            customerNumber: String(acctIdx).padStart(10, '0'),
+            accountId: String(acctIdx),
+            accountGrade: info.grade || 'B',
+            assignee: fullName,
+        };
+    });
+
+    // --- Red Flags: from realRedFlagData keyed by branch ---
+    const branchFlags = realRedFlagData[branch] || [];
+    sampleRedFlagData = {};
+    branchFlags.forEach(rf => {
+        sampleRedFlagData[rf.account] = {
+            branch: branch, grade: '', assignee: fullName,
+            periods: [
+                { fsType: 'Current', date: rf.financialStatement || '', auditStatus: 'Reported' }
+            ],
+            ratios: {
+                'Z-Score': [{ v: rf.zScore, flag: rf.zScore !== null && rf.zScore < 3.0 }],
+                'Debt/Equity': [{ v: rf.debtEquity, flag: rf.debtEquity !== null && rf.debtEquity > 3.0 }],
+                'Net Quick/LOA': [{ v: rf.nqLOA, flag: rf.nqLOA !== null && rf.nqLOA < 0.07 }],
+                'Net Worth/LOA': [{ v: rf.nwLOA, flag: rf.nwLOA !== null && rf.nwLOA < 0.07 }],
+                'Net Quick/WOH': [{ v: rf.nqWOH, flag: rf.nqWOH !== null && rf.nqWOH < 0.07 }],
+                'Net Worth/WOH': [{ v: rf.nwWOH, flag: rf.nwWOH !== null && rf.nwWOH < 0.07 }],
+                'UB/Net Quick': [{ v: rf.ubNQ, flag: rf.ubNQ !== null && (rf.ubNQ < 0 || rf.ubNQ > 40) }],
+                'UB/Net Worth': [{ v: rf.ubNW, flag: rf.ubNW !== null && (rf.ubNW < 0 || rf.ubNW > 40) }],
+            }
+        };
+    });
+
+    // --- Financial Timeliness → sampleFinancials ---
+    const userFS = realFinancialTimeliness.filter(f => f.branch === branch);
+    sampleFinancials = userFS.slice(0, 20).map((f, i) => ({
+        id: 'FS-' + String(10000 + i),
+        date: '',
+        term: '12',
+        fye: 'Yes',
+        preparer: f.underwriter || fullName,
+        firm: '',
+        auditStatus: f.profitabilityStatus === 'Not Yet Received' ? 'Pending' : 'Received',
+        balanced: true,
+        approved: f.profitabilityStatus !== 'Not Yet Received',
+        statementType: 'Annual CPA',
+        dateReceived: '',
+        source: 'System',
+        account: f.account,
+        profitabilityStatus: f.profitabilityStatus,
+        netIncome2025: f.netIncome2025,
+        netIncome2024: f.netIncome2024,
+    }));
+
+    // --- Agencies → samplePremiumAR ---
+    const branchAgencies = realAgencies.filter(a => a.branch === branch && a.status === 'Active');
+    samplePremiumAR = branchAgencies.slice(0, 10).map(a => ({
+        agency: a.agency,
+        type: 'CARRIER_INVITED',
+        current: Math.round(Math.random() * 20000),
+        d1_30: Math.round(Math.random() * 15000),
+        d31_60: Math.round(Math.random() * 12000),
+        d61_90: Math.round(Math.random() * 8000),
+        d90plus: Math.round(Math.random() * 50000),
+        invoices: Math.round(10 + Math.random() * 40),
+    }));
+    samplePremiumARDetail = {};
+    samplePremiumARBonds = {};
+
+    // --- Synthetic data for views without report sources ---
+    // Bond Requests (synthetic based on user's accounts)
+    const topAccounts = sampleMyAccounts.slice(0, 6);
+    const bondTypes = ['Performance & Payment', 'Bid Bond', 'Performance', 'Maintenance Bond'];
+    const reqStatuses = ['Awaiting Approval', 'UW Review', 'Approved', 'Draft'];
+    sampleBondRequests = topAccounts.slice(0, 4).map((a, i) => ({
+        account: a.name,
+        type: bondTypes[i % bondTypes.length],
+        amount: '$' + (500000 + Math.round(Math.random() * 5000000)).toLocaleString(),
+        obligee: 'State DOT',
+        status: reqStatuses[i],
+        branch: branch,
+        date: new Date().toLocaleDateString('en-US'),
+        assignee: fullName,
+        approvalSteps: [
+            { role: 'Underwriter', name: fullName, status: i > 0 ? 'complete' : 'current', date: i > 0 ? new Date().toLocaleDateString('en-US') : null },
+            { role: 'Branch Manager', name: 'Manager', status: i > 1 ? 'complete' : 'pending', date: null }
+        ]
+    }));
+
+    // WIP data (synthetic)
+    sampleWIPSchedules = [
+        { date: '12/31/2024', contractPrice: 8750000, billedToDate: 6200000, costToDate: 5100000, costToComplete: 2850000, totalCost: 7950000, grossProfit: 800000, lastUpdated: '01/15/2025' },
+    ];
+    sampleWIPJobs = topAccounts.slice(0, 3).map((a, i) => ({
+        sort: i + 1, name: a.name + ' Project', contractPrice: 1000000 + i * 500000,
+        billedToDate: 600000 + i * 300000, costToDate: 500000 + i * 250000,
+        costToComplete: 400000, totalCost: 900000 + i * 250000,
+        grossProfit: 100000 + i * 50000, pctComplete: 55 + i * 5
+    }));
+    sampleMasterJobs = sampleWIPJobs.map(j => ({
+        name: j.name, source: 'WIP', contractAmount: j.contractPrice,
+        status: 'In Progress', bondNumber: '', yearCompleted: '-'
+    }));
+    sampleLargestJobs = sampleWIPJobs.slice(0, 3).map(j => ({
+        description: j.name, contractAmount: j.contractPrice,
+        grossProfit: j.grossProfit, yearCompleted: '-'
+    }));
+
+    // Bid Log (synthetic)
+    sampleBidLog = topAccounts.slice(0, 5).map((a, i) => ({
+        bidDate: new Date(now.getTime() - (i * 5 + 2) * 86400000).toLocaleDateString('en-US', {month:'2-digit',day:'2-digit',year:'numeric'}),
+        projectName: a.name + ' Project', obligee: 'State DOT',
+        contractValue: 1000000 + Math.round(Math.random() * 5000000),
+        warranty: '24 Mo.', bidBondAmt: 50000 + Math.round(Math.random() * 200000),
+        potentialBacklog: 1000000, bidResult: i < 2 ? 'Low' : 'Pending',
+        bidResultAmt: i < 2 ? 1000000 : 0,
+        status: i < 2 ? 'Approved Bid' : 'Pending Bid', doa: 'Branch'
+    }));
+
+    // Reminders (synthetic)
+    let remId = 1;
+    sampleReminders = topAccounts.slice(0, 3).map((a, i) => ({
+        id: remId++,
+        title: 'Follow up on ' + a.name,
+        date: new Date(now.getTime() + (i * 3 + 1) * 86400000).toLocaleDateString('en-US', {month:'2-digit',day:'2-digit',year:'numeric'}),
+        time: '09:00 AM',
+        account: a.name,
+        notes: 'Scheduled follow-up',
+        alertOnDashboard: true,
+        status: 'Active'
+    }));
+
+    // Account Reviews (keep minimal for the detail view)
+    sampleAccountReviews = sampleARRs.slice(0, 3).map((a, i) => ({
+        reviewDate: a.dueDate || '', reviewLevel: a.level || 'Branch',
+        reviewType: a.type || 'Annual', fsDate: a.fsDateReceived || '',
+        reviewState: a.reviewState || a.status, reviewedBy: fullName,
+        reviewRating: a.grade || '-',
+        originatingUW: fullName, currentQueue: a.currentQueue || fullName,
+        queueEnteredDate: a.queueEnteredDate || '',
+        triggeringStatementId: null, fsDateReceived: a.fsDateReceived || '',
+        signOffHistory: [
+            { reviewer: fullName, title: currentUser.role, action: 'Created',
+              date: a.dueDate || '', state: a.reviewState || 'Initial Review', comments: 'Review initiated' }
+        ]
+    }));
+
+    // Claims (synthetic)
+    sampleClaims = [];
+
+    // Visitations (synthetic)
+    sampleVisitations = topAccounts.slice(0, 3).map((a, i) => ({
+        account: a.name,
+        visitDate: new Date(now.getTime() - (30 + i * 15) * 86400000).toLocaleDateString('en-US', {month:'2-digit',day:'2-digit',year:'numeric'}),
+        visitType: i === 0 ? 'In-Person' : 'Virtual',
+        visitedBy: fullName,
+        agency: '',
+        location: branch + ' Office',
+        contactMet: 'Account Contact',
+        purpose: 'Annual Visit',
+        backlogDiscussed: true, financialsDiscussed: true,
+        equipmentReviewed: false, safetyReviewed: false,
+        overallImpression: 'Positive',
+        followUpRequired: i < 2,
+        followUpDate: i < 2 ? new Date(now.getTime() + (30 + i * 15) * 86400000).toLocaleDateString('en-US', {month:'2-digit',day:'2-digit',year:'numeric'}) : '',
+        notes: 'Routine visit — account in good standing.',
+        branch: branch
+    }));
+
+    // Conversations (synthetic — generate from other user profiles)
+    const otherUsers = USER_PROFILES.filter(u => u.username !== uname).slice(0, 4);
+    sampleConversations = otherUsers.map((u, i) => ({
+        with: u.fullName,
+        unread: i === 0 ? 1 : 0,
+        messages: [
+            { from: u.fullName, text: 'Hi ' + fullName.split(' ')[0] + ', do you have the latest on the ' + (topAccounts[i] ? topAccounts[i].name : 'account') + ' review?', time: 'May 1, 2026 9:00 AM' },
+            { from: fullName, text: 'Working on it — should have the analysis done by end of week.', time: 'May 1, 2026 9:15 AM' }
+        ]
+    }));
+
+    // Account Notes (synthetic)
+    sampleAccountNotes = {};
+    topAccounts.slice(0, 4).forEach(a => {
+        sampleAccountNotes[a.name] = [
+            { author: fullName, date: 'Apr 28, 2026 10:30 AM', text: 'Reviewed latest financials — account in good standing.', pinned: true },
+            { author: fullName, date: 'Apr 15, 2026 2:00 PM', text: 'Follow-up meeting scheduled with agent.', pinned: false }
+        ];
+    });
+
+    // Account Profiles (for FS compliance checks)
+    accountProfiles = {};
+    sampleMyAccounts.forEach(a => {
+        accountProfiles[a.name] = {
+            authorityLevel: 'Branch',
+            arrFrequency: 'Annual',
+            frequencyOverride: null,
+            lastAnnualCPADate: null,
+            lastInterimDate: null
+        };
+    });
 }
 
-// ==================== SAMPLE DATA ====================
-
-const sampleARRs = [
-    { account: 'R.J. Corman Railroad Group', type: 'Annual', level: 'Branch', dueDate: 'Apr 15, 2024', status: 'Overdue', risk: 'medium', daysOverdue: 12, assignee: 'Jake Miller', grade: 'B+', branch: 'Cincinnati', currentQueue: 'Jake Miller', queueEnteredDate: 'Apr 03, 2024', triggeringStatementId: 'FS-09644', fsDateReceived: '04/01/2024' },
-    { account: 'Hensel Phelps Construction Co', type: 'Annual', level: 'Region', dueDate: 'Apr 22, 2024', status: 'Due', risk: 'low', daysOverdue: 0, assignee: 'Jake Miller', grade: 'A', branch: 'Cincinnati', currentQueue: 'Max Miller', queueEnteredDate: 'Apr 10, 2024', triggeringStatementId: 'FS-10247', fsDateReceived: '03/28/2024' },
-    { account: 'Turner Construction Company', type: 'Interim', level: 'CAO', dueDate: 'Apr 28, 2024', status: 'In Progress', risk: 'high', daysOverdue: 0, assignee: 'Sarah Mitchell', grade: 'C+', branch: 'New York', currentQueue: 'John Webster', queueEnteredDate: 'Apr 08, 2024', triggeringStatementId: 'FS-09871', fsDateReceived: '04/14/2024' },
-    { account: 'Clark Construction Group', type: 'Submission', level: 'Branch', dueDate: 'May 1, 2024', status: 'Due', risk: 'low', daysOverdue: 0, assignee: 'Jake Miller', grade: 'A+', branch: 'Cincinnati', currentQueue: 'Jake Miller', queueEnteredDate: 'Apr 14, 2024', triggeringStatementId: 'FS-10247', fsDateReceived: '04/17/2024' },
-    { account: 'Granite Construction Inc', type: 'Annual', level: 'Branch', dueDate: 'May 5, 2024', status: 'Due', risk: 'medium', daysOverdue: 0, assignee: 'Mike Torres', grade: 'B', branch: 'Sacramento', currentQueue: 'Mike Torres', queueEnteredDate: 'Apr 12, 2024', triggeringStatementId: 'FS-09320', fsDateReceived: '04/21/2024' },
-    { account: 'Skanska USA Civil', type: 'Annual', level: 'Branch', dueDate: 'Apr 10, 2024', status: 'Overdue', risk: 'high', daysOverdue: 17, assignee: 'Jake Miller', grade: 'C', branch: 'Cincinnati', currentQueue: 'Max Miller', queueEnteredDate: 'Mar 29, 2024', triggeringStatementId: null, fsDateReceived: '03/27/2024' },
-    { account: 'Kiewit Corporation', type: 'Annual', level: 'Region', dueDate: 'May 8, 2024', status: 'In Progress', risk: 'low', daysOverdue: 0, assignee: 'Jake Miller', grade: 'A-', branch: 'Cincinnati', currentQueue: 'Jake Miller', queueEnteredDate: 'Apr 15, 2024', triggeringStatementId: null, fsDateReceived: '04/24/2024' },
-    { account: 'Brasfield & Gorrie LLC', type: 'Interim', level: 'Branch', dueDate: 'May 12, 2024', status: 'Due', risk: 'medium', daysOverdue: 0, assignee: 'Jake Miller', grade: 'B-', branch: 'Cincinnati', currentQueue: 'Max Miller', queueEnteredDate: 'Apr 11, 2024', triggeringStatementId: null, fsDateReceived: '04/28/2024' },
-    { account: 'Walsh Construction Co', type: 'Submission', level: 'Branch', dueDate: 'Apr 20, 2024', status: 'Overdue', risk: 'medium', daysOverdue: 7, assignee: 'Jake Miller', grade: 'B+', branch: 'Cincinnati', currentQueue: 'Jake Miller', queueEnteredDate: 'Apr 01, 2024', triggeringStatementId: null, fsDateReceived: '04/06/2024' },
-    { account: 'Flatiron Construction', type: 'Annual', level: 'Region', dueDate: 'May 15, 2024', status: 'Due', risk: 'low', daysOverdue: 0, assignee: 'Jake Miller', grade: 'A+', branch: 'Cincinnati', currentQueue: 'John Webster', queueEnteredDate: 'Apr 13, 2024', triggeringStatementId: null, fsDateReceived: '05/01/2024' },
-    { account: 'Manhattan Construction Group', type: 'Annual', level: 'Branch', dueDate: 'May 20, 2024', status: 'In Progress', risk: 'low', daysOverdue: 0, assignee: 'Jake Miller', grade: 'A', branch: 'Cincinnati', currentQueue: 'Jake Miller', queueEnteredDate: 'Apr 12, 2024', triggeringStatementId: null, fsDateReceived: '05/06/2024' },
-    { account: 'Sundt Construction', type: 'Interim', level: 'Branch', dueDate: 'May 3, 2024', status: 'Overdue', risk: 'high', daysOverdue: 4, assignee: 'Jake Miller', grade: 'C-', branch: 'Cincinnati', currentQueue: 'Ken Bearley', queueEnteredDate: 'Mar 25, 2024', triggeringStatementId: null, fsDateReceived: '04/19/2024' }
-];
-
-const sampleBondRequests = [
-    { account: 'Hensel Phelps Construction Co', type: 'Performance & Payment', amount: '$2,400,000', obligee: 'CDOT', status: 'Awaiting Approval', branch: 'Cincinnati', date: 'Apr 18, 2024', assignee: 'Jake Miller',
-      approvalSteps: [
-        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/18/2024' },
-        { role: 'Branch Manager', name: 'Max Miller', status: 'complete', date: '04/19/2024' },
-        { role: 'Regional Manager', name: 'John Webster', status: 'current', date: null },
-        { role: 'President', name: 'Ken Bearley', status: 'pending', date: null }
-      ] },
-    { account: 'Turner Construction Company', type: 'Bid Bond', amount: '$850,000', obligee: 'NYC DOT', status: 'UW Review', branch: 'New York', date: 'Apr 17, 2024', assignee: 'Sarah Mitchell',
-      approvalSteps: [
-        { role: 'Underwriter', name: 'Sarah Mitchell', status: 'current', date: null },
-        { role: 'Regional Manager', name: 'Amy Rodriguez', status: 'pending', date: null }
-      ] },
-    { account: 'Clark Construction Group', type: 'Performance', amount: '$5,200,000', obligee: 'US Army Corps', status: 'Awaiting Approval', branch: 'Cincinnati', date: 'Apr 16, 2024', assignee: 'Jake Miller',
-      approvalSteps: [
-        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/16/2024' },
-        { role: 'Branch Manager', name: 'Max Miller', status: 'complete', date: '04/17/2024' },
-        { role: 'Regional Manager', name: 'John Webster', status: 'complete', date: '04/18/2024' },
-        { role: 'President', name: 'Ken Bearley', status: 'current', date: null }
-      ] },
-    { account: 'R.J. Corman Railroad Group', type: 'Maintenance Bond', amount: '$750,000', obligee: 'CSX Transportation', status: 'Draft', branch: 'Lexington', date: 'Apr 15, 2024', assignee: 'Mike Torres',
-      approvalSteps: [
-        { role: 'Underwriter', name: 'Mike Torres', status: 'current', date: null },
-        { role: 'Branch Manager', name: 'Jake Miller', status: 'pending', date: null }
-      ] },
-    { account: 'Granite Construction Inc', type: 'Performance & Payment', amount: '$3,100,000', obligee: 'CalTrans', status: 'Approved', branch: 'Cincinnati', date: 'Apr 14, 2024', assignee: 'Jake Miller',
-      approvalSteps: [
-        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/14/2024' },
-        { role: 'Branch Manager', name: 'Max Miller', status: 'complete', date: '04/15/2024' },
-        { role: 'Regional Manager', name: 'John Webster', status: 'complete', date: '04/16/2024' }
-      ] },
-    { account: 'Kiewit Corporation', type: 'Performance & Payment', amount: '$7,800,000', obligee: 'Nebraska DOT', status: 'UW Review', branch: 'Cincinnati', date: 'Apr 12, 2024', assignee: 'Jake Miller',
-      approvalSteps: [
-        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/12/2024' },
-        { role: 'Branch Manager', name: 'Max Miller', status: 'current', date: null },
-        { role: 'Regional Manager', name: 'John Webster', status: 'pending', date: null },
-        { role: 'President', name: 'Ken Bearley', status: 'pending', date: null }
-      ] },
-    { account: 'Brasfield & Gorrie LLC', type: 'Bid Bond', amount: '$420,000', obligee: 'City of Birmingham', status: 'Approved', branch: 'Cincinnati', date: 'Apr 10, 2024', assignee: 'Jake Miller',
-      approvalSteps: [
-        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/10/2024' },
-        { role: 'Branch Manager', name: 'Max Miller', status: 'complete', date: '04/11/2024' }
-      ] },
-    { account: 'McCarthy Building Companies', type: 'Performance', amount: '$4,600,000', obligee: 'MO Dept of Education', status: 'Awaiting Approval', branch: 'Cincinnati', date: 'Apr 8, 2024', assignee: 'Jake Miller',
-      approvalSteps: [
-        { role: 'Underwriter', name: 'Jake Miller', status: 'complete', date: '04/08/2024' },
-        { role: 'Branch Manager', name: 'Max Miller', status: 'current', date: null },
-        { role: 'Regional Manager', name: 'John Webster', status: 'pending', date: null }
-      ] },
-    { account: 'Austin Industries', type: 'Performance & Payment', amount: '$2,950,000', obligee: 'TxDOT', status: 'Draft', branch: 'Cincinnati', date: 'Apr 5, 2024', assignee: 'Jake Miller',
-      approvalSteps: [
-        { role: 'Underwriter', name: 'Jake Miller', status: 'pending', date: null },
-        { role: 'Branch Manager', name: 'Max Miller', status: 'pending', date: null }
-      ] }
-];
-
-const sampleFinancials = [
-    { id: 'FS-10247', date: '12/31/2023', term: '12', fye: 'Yes', preparer: 'Jake Miller', firm: 'Deloitte & Touche LLP', auditStatus: 'Audited', balanced: true, approved: true, statementType: 'Annual CPA', dateReceived: '03/28/2024', source: 'Agent' },
-    { id: 'FS-10102', date: '12/31/2022', term: '12', fye: 'Yes', preparer: 'Sarah Mitchell', firm: 'Deloitte & Touche LLP', auditStatus: 'Audited', balanced: true, approved: true, statementType: 'Annual CPA', dateReceived: '03/15/2023', source: 'Principal' },
-    { id: 'FS-09871', date: '06/30/2023', term: '6', fye: 'No', preparer: 'Jake Miller', firm: 'Deloitte & Touche LLP', auditStatus: 'Reviewed', balanced: true, approved: false, statementType: 'Interim', dateReceived: '09/10/2023', source: 'Agent' },
-    { id: 'FS-09644', date: '12/31/2021', term: '12', fye: 'Yes', preparer: 'Mike Torres', firm: 'PricewaterhouseCoopers', auditStatus: 'Audited', balanced: true, approved: true, statementType: 'Annual CPA', dateReceived: '03/20/2022', source: 'System Upload' },
-    { id: 'FS-09320', date: '12/31/2020', term: '12', fye: 'Yes', preparer: 'Sarah Mitchell', firm: 'PricewaterhouseCoopers', auditStatus: 'Audited', balanced: false, approved: true, statementType: 'Annual CPA', dateReceived: '04/02/2021', source: 'Principal' },
-    { id: 'FS-10401', date: '06/30/2024', term: '6', fye: 'No', preparer: 'Jake Miller', firm: 'Deloitte & Touche LLP', auditStatus: 'Company Prepared', balanced: true, approved: false, statementType: 'Interim', dateReceived: '04/10/2024', source: 'Agent' },
-    { id: 'FS-09110', date: '12/31/2019', term: '12', fye: 'Yes', preparer: 'Mike Torres', firm: 'KPMG LLP', auditStatus: 'Audited', balanced: true, approved: true, statementType: 'Annual CPA', dateReceived: '03/25/2020', source: 'Principal' },
-    { id: 'FS-08950', date: '06/30/2022', term: '6', fye: 'No', preparer: 'Jake Miller', firm: 'Deloitte & Touche LLP', auditStatus: 'Reviewed', balanced: true, approved: true, statementType: 'Interim', dateReceived: '08/22/2022', source: 'Agent' }
-];
-
-const sampleWIPSchedules = [
-    { date: '11/17/2023', contractPrice: 8750000, billedToDate: 6200000, costToDate: 5100000, costToComplete: 2850000, totalCost: 7950000, grossProfit: 800000, lastUpdated: '11/20/2023' },
-    { date: '12/31/2022', contractPrice: 6500000, billedToDate: 6500000, costToDate: 5800000, costToComplete: 0, totalCost: 5800000, grossProfit: 700000, lastUpdated: '01/15/2023' },
-    { date: '12/31/2021', contractPrice: 5200000, billedToDate: 5200000, costToDate: 4600000, costToComplete: 0, totalCost: 4600000, grossProfit: 600000, lastUpdated: '01/10/2022' },
-    { date: '06/30/2023', contractPrice: 7400000, billedToDate: 4850000, costToDate: 4200000, costToComplete: 2400000, totalCost: 6600000, grossProfit: 800000, lastUpdated: '07/05/2023' },
-    { date: '12/31/2020', contractPrice: 4100000, billedToDate: 4100000, costToDate: 3650000, costToComplete: 0, totalCost: 3650000, grossProfit: 450000, lastUpdated: '01/12/2021' }
-];
-
-const sampleWIPJobs = [
-    { sort: 1, name: 'Highway 50 Bridge Replacement', contractPrice: 3200000, billedToDate: 2100000, costToDate: 1800000, costToComplete: 1100000, totalCost: 2900000, grossProfit: 300000, pctComplete: 62 },
-    { sort: 2, name: 'I-75 Overpass Rehabilitation', contractPrice: 2150000, billedToDate: 1600000, costToDate: 1350000, costToComplete: 650000, totalCost: 2000000, grossProfit: 150000, pctComplete: 68 },
-    { sort: 3, name: 'Municipal Water Treatment Plant', contractPrice: 1800000, billedToDate: 1200000, costToDate: 1050000, costToComplete: 600000, totalCost: 1650000, grossProfit: 150000, pctComplete: 64 },
-    { sort: 4, name: 'School District Admin Building', contractPrice: 950000, billedToDate: 800000, costToDate: 600000, costToComplete: 300000, totalCost: 900000, grossProfit: 50000, pctComplete: 67 },
-    { sort: 5, name: 'County Park Pavilion', contractPrice: 450000, billedToDate: 350000, costToDate: 200000, costToComplete: 150000, totalCost: 350000, grossProfit: 100000, pctComplete: 57 },
-    { sort: 6, name: 'Railroad Siding Extension', contractPrice: 200000, billedToDate: 150000, costToDate: 100000, costToComplete: 50000, totalCost: 150000, grossProfit: 50000, pctComplete: 67 }
-];
-
-const sampleMasterJobs = [
-    { name: 'Highway 50 Bridge Replacement', source: 'WIP', contractAmount: 3200000, status: 'In Progress', bondNumber: '8921045', yearCompleted: '-' },
-    { name: 'I-75 Overpass Rehabilitation', source: 'WIP', contractAmount: 2150000, status: 'In Progress', bondNumber: '8453916', yearCompleted: '-' },
-    { name: 'Municipal Water Treatment Plant', source: 'WIP', contractAmount: 1800000, status: 'In Progress', bondNumber: 'F801457', yearCompleted: '-' },
-    { name: 'Airport Terminal Expansion', source: 'Bonded', contractAmount: 4500000, status: 'Completed', bondNumber: '7124603', yearCompleted: '2023' },
-    { name: 'State Capitol Renovation', source: 'Bonded', contractAmount: 3800000, status: 'Completed', bondNumber: 'F634219', yearCompleted: '2022' },
-    { name: 'Hospital Wing Addition', source: 'Bonded', contractAmount: 6200000, status: 'Completed', bondNumber: '5012847', yearCompleted: '2021' },
-    { name: 'University Science Building', source: 'Bonded', contractAmount: 2800000, status: 'Completed', bondNumber: '4230198', yearCompleted: '2020' }
-];
-
-const sampleLargestJobs = [
-    { description: 'Hospital Wing Addition', contractAmount: 6200000, grossProfit: 480000, yearCompleted: '2021' },
-    { description: 'Airport Terminal Expansion', contractAmount: 4500000, grossProfit: 350000, yearCompleted: '2023' },
-    { description: 'State Capitol Renovation', contractAmount: 3800000, grossProfit: 310000, yearCompleted: '2022' },
-    { description: 'Highway 50 Bridge Replacement', contractAmount: 3200000, grossProfit: 300000, yearCompleted: '-' },
-    { description: 'University Science Building', contractAmount: 2800000, grossProfit: 220000, yearCompleted: '2020' }
-];
-
-const sampleLOAs = [
-    { type: 'Underwriter', effDate: '01/01/2024', expDate: '12/31/2024', single: 5000000, aggregate: 15000000, toUser: 'Yes', status: 'Active' },
-    { type: 'Agent', effDate: '04/01/2023', expDate: '05/01/2024', single: 2000000, aggregate: 8000000, toUser: 'Yes', status: 'Active' },
-    { type: 'Underwriter', effDate: '01/01/2023', expDate: '12/31/2023', single: 5000000, aggregate: 15000000, toUser: 'No', status: 'Expired' }
-];
-
-// LOA Data for dedicated LOA View
-// Today's reference: 04/15/2024 (aligned with BondBoxClock demo date)
-const sampleLOAData = [
-    // Active - well into the future
-    { account: 'R.J. Corman Railroad Group', type: 'Underwriter', effDate: '01/01/2024', expDate: '12/31/2024', single: 5000000, aggregate: 15000000, used: 8750000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Hensel Phelps Construction Co', type: 'Underwriter', effDate: '03/01/2024', expDate: '02/28/2025', single: 10000000, aggregate: 30000000, used: 12800000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Clark Construction Group', type: 'Underwriter', effDate: '01/01/2024', expDate: '12/31/2024', single: 8000000, aggregate: 25000000, used: 5950000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Mortenson Construction', type: 'Underwriter', effDate: '07/01/2023', expDate: '06/30/2024', single: 6000000, aggregate: 18000000, used: 7200000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Skanska USA Civil', type: 'Underwriter', effDate: '01/01/2024', expDate: '12/31/2024', single: 7000000, aggregate: 20000000, used: 11200000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Kiewit Corporation', type: 'Underwriter', effDate: '04/01/2023', expDate: '03/31/2025', single: 10000000, aggregate: 30000000, used: 14500000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Walsh Construction Co', type: 'Underwriter', effDate: '07/01/2023', expDate: '06/30/2024', single: 5000000, aggregate: 15000000, used: 6800000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Flatiron Construction', type: 'Underwriter', effDate: '01/01/2024', expDate: '12/31/2024', single: 12000000, aggregate: 35000000, used: 15300000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Manhattan Construction Group', type: 'Underwriter', effDate: '02/01/2024', expDate: '01/31/2025', single: 5000000, aggregate: 15000000, used: 7100000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Sundt Construction', type: 'Underwriter', effDate: '09/01/2023', expDate: '08/31/2024', single: 4000000, aggregate: 12000000, used: 5800000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Turner Construction Company', type: 'Underwriter', effDate: '06/01/2023', expDate: '05/31/2024', single: 15000000, aggregate: 50000000, used: 22000000, toUser: 'Yes', status: 'Active', branch: 'New York', assignee: 'Sarah Mitchell' },
-    { account: 'Whiting-Turner Contracting', type: 'Underwriter', effDate: '04/01/2024', expDate: '03/31/2025', single: 12000000, aggregate: 35000000, used: 8500000, toUser: 'Yes', status: 'Active', branch: 'Baltimore', assignee: 'Sarah Mitchell' },
-    // Expiring within 30 days (exp between 04/15/2024 and 05/15/2024)
-    { account: 'R.J. Corman Railroad Group', type: 'Agent', effDate: '05/01/2023', expDate: '05/01/2024', single: 2000000, aggregate: 8000000, used: 3200000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Brasfield & Gorrie LLC', type: 'Underwriter', effDate: '05/08/2023', expDate: '05/08/2024', single: 4000000, aggregate: 12000000, used: 6100000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Austin Industries', type: 'Underwriter', effDate: '04/20/2023', expDate: '04/20/2024', single: 3500000, aggregate: 10000000, used: 4800000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    // Expired
-    { account: 'R.J. Corman Railroad Group', type: 'Underwriter', effDate: '01/01/2023', expDate: '12/31/2023', single: 5000000, aggregate: 15000000, used: 15000000, toUser: 'No', status: 'Expired', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Granite Construction Inc', type: 'Underwriter', effDate: '07/01/2022', expDate: '06/30/2023', single: 7000000, aggregate: 20000000, used: 9000000, toUser: 'No', status: 'Expired', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Cadell Construction Co', type: 'Underwriter', effDate: '01/01/2023', expDate: '12/31/2023', single: 3000000, aggregate: 9000000, used: 9000000, toUser: 'No', status: 'Expired', branch: 'Cincinnati', assignee: 'Jake Miller' }
-];
-
-// Master Accounts List (Active + Suspended)
-const sampleMyAccounts = [
-    { name: 'R.J. Corman Railroad Group', branch: 'Cincinnati', status: 'Active', customerNumber: '0008397740', accountId: '1016829', accountGrade: 'B+', assignee: 'Jake Miller' },
-    { name: 'Hensel Phelps Construction Co', branch: 'Cincinnati', status: 'Active', customerNumber: '0008451220', accountId: '1018445', accountGrade: 'A', assignee: 'Jake Miller' },
-    { name: 'Clark Construction Group', branch: 'Cincinnati', status: 'Active', customerNumber: '0008503100', accountId: '1019102', accountGrade: 'A+', assignee: 'Jake Miller' },
-    { name: 'Granite Construction Inc', branch: 'Cincinnati', status: 'Active', customerNumber: '0008390112', accountId: '1016550', accountGrade: 'B', assignee: 'Jake Miller' },
-    { name: 'McCarthy Building Companies', branch: 'Cincinnati', status: 'Active', customerNumber: '0008522080', accountId: '1019877', accountGrade: 'A-', assignee: 'Jake Miller' },
-    { name: 'Brasfield & Gorrie LLC', branch: 'Cincinnati', status: 'Active', customerNumber: '0008534410', accountId: '1020134', accountGrade: 'B', assignee: 'Jake Miller' },
-    { name: 'Austin Industries', branch: 'Cincinnati', status: 'Active', customerNumber: '0008540990', accountId: '1020388', accountGrade: 'B-', assignee: 'Jake Miller' },
-    { name: 'Mortenson Construction', branch: 'Cincinnati', status: 'Active', customerNumber: '0008551770', accountId: '1020645', accountGrade: 'A', assignee: 'Jake Miller' },
-    { name: 'Skanska USA Civil', branch: 'Cincinnati', status: 'Active', customerNumber: '0008560330', accountId: '1020901', accountGrade: 'C', assignee: 'Jake Miller' },
-    { name: 'Kiewit Corporation', branch: 'Cincinnati', status: 'Active', customerNumber: '0008571440', accountId: '1021155', accountGrade: 'A-', assignee: 'Jake Miller' },
-    { name: 'Walsh Construction Co', branch: 'Cincinnati', status: 'Active', customerNumber: '0008582550', accountId: '1021410', accountGrade: 'B+', assignee: 'Jake Miller' },
-    { name: 'Flatiron Construction', branch: 'Cincinnati', status: 'Active', customerNumber: '0008593660', accountId: '1021664', accountGrade: 'A+', assignee: 'Jake Miller' },
-    { name: 'Manhattan Construction Group', branch: 'Cincinnati', status: 'Active', customerNumber: '0008604770', accountId: '1021918', accountGrade: 'A', assignee: 'Jake Miller' },
-    { name: 'Sundt Construction', branch: 'Cincinnati', status: 'Active', customerNumber: '0008615880', accountId: '1022172', accountGrade: 'C-', assignee: 'Jake Miller' },
-    { name: 'Cadell Construction Co', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008410550', accountId: '1017201', accountGrade: 'C-', assignee: 'Jake Miller', suspendedReason: 'Financial deterioration — negative working capital and Z-Score below threshold for 3 consecutive quarters' },
-    { name: 'Traylor Bros Inc', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008425880', accountId: '1017590', accountGrade: 'C-', assignee: 'Jake Miller', suspendedReason: 'LOA expired 12/31/2023 — pending annual review completion and updated financials' },
-    { name: 'Primoris Services Corp', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008438220', accountId: '1017845', accountGrade: 'C', assignee: 'Jake Miller', suspendedReason: 'Outstanding claim (CL-2024-0102) exceeds 10% of bonding program — account under claims review hold' }
-];
-
-const sampleRedFlagData = {
-    'R.J. Corman Railroad Group': {
-        branch: 'Cincinnati', grade: 'B+', assignee: 'Jake Miller',
-        periods: [
-            { fsType: 'Interim', date: '09/30/2023', auditStatus: 'Management' },
-            { fsType: 'Fiscal', date: '12/31/2022', auditStatus: 'Audited' },
-            { fsType: 'Prior', date: '12/31/2021', auditStatus: 'Audited' },
-            { fsType: 'Prior', date: '12/31/2020', auditStatus: 'Audited' }
-        ],
-        ratios: {
-            'Z-Score':       [{ v: -0.05, flag: true },  { v: -0.73, flag: true },  { v: 0.43, flag: false }, { v: 0.53, flag: true }],
-            'Debt/Equity':   [{ v: 1.28, flag: false },   { v: 1.45, flag: false },   { v: 1.06, flag: false },  { v: 1.04, flag: false }],
-            'Net Quick/LOA': [{ v: 0.0, flag: true },     { v: 0.0, flag: true },     { v: 0.0, flag: true },    { v: 0.0, flag: true }],
-            'Net Worth/LOA': [{ v: 0.0, flag: true },     { v: 0.0, flag: true },     { v: 0.0, flag: true },    { v: 0.0, flag: true }],
-            'Net Quick/WOH': [{ v: 4.6, flag: true },     { v: 4.0, flag: true },     { v: 5.0, flag: false },   { v: 5.3, flag: false }],
-            'Net Worth/WOH': [{ v: 7.1, flag: true },     { v: 6.2, flag: true },     { v: 6.0, flag: false },   { v: 6.1, flag: false }],
-            'UB/Net Quick':  [{ v: 16.3, flag: false },   { v: 18.0, flag: false },   { v: 14.3, flag: false },  { v: 15.5, flag: false }],
-            'UB/Net Worth':  [{ v: 10.5, flag: false },   { v: 12.6, flag: false },   { v: 11.2, flag: false },  { v: 13.4, flag: false }]
-        }
-    },
-    'Turner Construction Company': {
-        branch: 'New York', grade: 'C+', assignee: 'Sarah Mitchell',
-        periods: [
-            { fsType: 'Interim', date: '06/30/2023', auditStatus: 'Management' },
-            { fsType: 'Fiscal', date: '12/31/2022', auditStatus: 'Audited' },
-            { fsType: 'Prior', date: '12/31/2021', auditStatus: 'Audited' },
-            { fsType: 'Prior', date: '12/31/2020', auditStatus: 'Audited' }
-        ],
-        ratios: {
-            'Z-Score':       [{ v: -1.20, flag: true },  { v: -0.85, flag: true },  { v: -0.30, flag: true },  { v: 0.15, flag: false }],
-            'Debt/Equity':   [{ v: 2.10, flag: true },    { v: 1.95, flag: true },    { v: 1.60, flag: false },  { v: 1.35, flag: false }],
-            'Net Quick/LOA': [{ v: 0.0, flag: true },     { v: 0.0, flag: true },     { v: 2.1, flag: false },   { v: 3.5, flag: false }],
-            'Net Worth/LOA': [{ v: 0.0, flag: true },     { v: 0.0, flag: true },     { v: 1.8, flag: false },   { v: 2.9, flag: false }],
-            'Net Quick/WOH': [{ v: 2.1, flag: true },     { v: 3.2, flag: true },     { v: 4.8, flag: false },   { v: 5.1, flag: false }],
-            'Net Worth/WOH': [{ v: 3.5, flag: true },     { v: 4.1, flag: true },     { v: 5.5, flag: false },   { v: 6.0, flag: false }],
-            'UB/Net Quick':  [{ v: 22.5, flag: true },    { v: 19.8, flag: false },   { v: 15.0, flag: false },  { v: 13.2, flag: false }],
-            'UB/Net Worth':  [{ v: 18.2, flag: true },    { v: 15.5, flag: false },   { v: 12.0, flag: false },  { v: 10.8, flag: false }]
-        }
-    },
-    'Hensel Phelps Construction Co': {
-        branch: 'Cincinnati', grade: 'A-', assignee: 'Jake Miller',
-        periods: [
-            { fsType: 'Fiscal', date: '12/31/2023', auditStatus: 'Audited' },
-            { fsType: 'Prior', date: '12/31/2022', auditStatus: 'Audited' },
-            { fsType: 'Prior', date: '12/31/2021', auditStatus: 'Audited' },
-            { fsType: 'Prior', date: '12/31/2020', auditStatus: 'Audited' }
-        ],
-        ratios: {
-            'Z-Score':       [{ v: 1.85, flag: false },   { v: 1.60, flag: false },   { v: 1.40, flag: false },  { v: 1.25, flag: false }],
-            'Debt/Equity':   [{ v: 0.65, flag: false },   { v: 0.72, flag: false },   { v: 0.80, flag: false },  { v: 0.85, flag: false }],
-            'Net Quick/LOA': [{ v: 8.5, flag: false },    { v: 7.2, flag: false },    { v: 6.0, flag: false },   { v: 5.5, flag: false }],
-            'Net Worth/LOA': [{ v: 12.0, flag: false },   { v: 10.5, flag: false },   { v: 9.8, flag: false },   { v: 9.0, flag: false }],
-            'Net Quick/WOH': [{ v: 10.2, flag: false },   { v: 9.0, flag: false },    { v: 8.5, flag: false },   { v: 7.8, flag: false }],
-            'Net Worth/WOH': [{ v: 14.5, flag: false },   { v: 13.0, flag: false },   { v: 12.2, flag: false },  { v: 11.5, flag: false }],
-            'UB/Net Quick':  [{ v: 8.0, flag: false },    { v: 9.5, flag: false },    { v: 10.2, flag: false },  { v: 11.0, flag: false }],
-            'UB/Net Worth':  [{ v: 5.5, flag: false },    { v: 6.8, flag: false },    { v: 7.5, flag: false },   { v: 8.0, flag: false }]
-        }
-    },
-    'Granite Construction Inc': {
-        branch: 'Sacramento', grade: 'B-', assignee: 'Mike Torres',
-        periods: [
-            { fsType: 'Interim', date: '06/30/2023', auditStatus: 'Management' },
-            { fsType: 'Fiscal', date: '12/31/2022', auditStatus: 'Audited' },
-            { fsType: 'Prior', date: '12/31/2021', auditStatus: 'Audited' },
-            { fsType: 'Prior', date: '12/31/2020', auditStatus: 'Audited' }
-        ],
-        ratios: {
-            'Z-Score':       [{ v: 0.20, flag: false },   { v: -0.15, flag: true },   { v: 0.35, flag: false },  { v: 0.60, flag: false }],
-            'Debt/Equity':   [{ v: 1.55, flag: true },    { v: 1.70, flag: true },    { v: 1.30, flag: false },  { v: 1.15, flag: false }],
-            'Net Quick/LOA': [{ v: 0.0, flag: true },     { v: 0.0, flag: true },     { v: 1.5, flag: false },   { v: 2.0, flag: false }],
-            'Net Worth/LOA': [{ v: 0.0, flag: true },     { v: 0.0, flag: true },     { v: 1.2, flag: false },   { v: 1.8, flag: false }],
-            'Net Quick/WOH': [{ v: 3.8, flag: true },     { v: 3.5, flag: true },     { v: 5.2, flag: false },   { v: 5.8, flag: false }],
-            'Net Worth/WOH': [{ v: 5.5, flag: false },    { v: 5.0, flag: true },     { v: 6.8, flag: false },   { v: 7.2, flag: false }],
-            'UB/Net Quick':  [{ v: 20.0, flag: true },    { v: 21.5, flag: true },    { v: 16.0, flag: false },  { v: 14.5, flag: false }],
-            'UB/Net Worth':  [{ v: 14.8, flag: false },   { v: 16.0, flag: true },    { v: 12.5, flag: false },  { v: 11.0, flag: false }]
-        }
-    }
-};
-
-const sampleBidLog = [
-    { bidDate: '04/15/2024', projectName: 'Highway 50 Bridge Replacement', obligee: 'State DOT', contractValue: 3200000, warranty: '24 Mo.', bidBondAmt: 160000, potentialBacklog: 3200000, bidResult: 'Low', bidResultAmt: 3200000, status: 'Approved Bid', doa: 'Branch' },
-    { bidDate: '04/10/2024', projectName: 'County Water Main Extension', obligee: 'County Utilities', contractValue: 1500000, warranty: '12 Mo.', bidBondAmt: 75000, potentialBacklog: 1500000, bidResult: 'Pending', bidResultAmt: 0, status: 'Pending Bid', doa: 'Branch' },
-    { bidDate: '04/05/2024', projectName: 'Municipal Parking Garage', obligee: 'City of Springfield', contractValue: 4800000, warranty: '24 Mo.', bidBondAmt: 240000, potentialBacklog: 4800000, bidResult: 'Low', bidResultAmt: 4800000, status: 'Approved Bid', doa: 'Region' },
-    { bidDate: '04/22/2024', projectName: 'Wastewater Treatment Plant Upgrade', obligee: 'Metro Water District', contractValue: 6500000, warranty: '36 Mo.', bidBondAmt: 325000, potentialBacklog: 6500000, bidResult: 'Pending', bidResultAmt: 0, status: 'Pending Bid', doa: 'Region' },
-    { bidDate: '04/18/2024', projectName: 'Elementary School HVAC Replacement', obligee: 'Jefferson County Schools', contractValue: 890000, warranty: '12 Mo.', bidBondAmt: 44500, potentialBacklog: 890000, bidResult: 'Pending', bidResultAmt: 0, status: 'Pending Bid', doa: 'Branch' },
-    { bidDate: '04/25/2024', projectName: 'Downtown Parking Structure', obligee: 'City of Lexington', contractValue: 3800000, warranty: '24 Mo.', bidBondAmt: 190000, potentialBacklog: 3800000, bidResult: 'Pending', bidResultAmt: 0, status: 'Pending Bid', doa: 'Branch' },
-    { bidDate: '04/02/2024', projectName: 'Fire Station #12 Construction', obligee: 'City of Denver', contractValue: 2200000, warranty: '24 Mo.', bidBondAmt: 110000, potentialBacklog: 2200000, bidResult: 'Low', bidResultAmt: 2200000, status: 'Approved Bid', doa: 'Branch' },
-    { bidDate: '03/28/2024', projectName: 'School Gymnasium Renovation', obligee: 'School District 42', contractValue: 920000, warranty: '12 Mo.', bidBondAmt: 46000, potentialBacklog: 920000, bidResult: '2nd', bidResultAmt: 950000, status: 'Closed Bid', doa: 'Branch' },
-    { bidDate: '03/20/2024', projectName: 'Airport Runway Repair', obligee: 'FAA', contractValue: 2100000, warranty: '36 Mo.', bidBondAmt: 105000, potentialBacklog: 0, bidResult: 'Low', bidResultAmt: 2100000, status: 'Convert to Bond', doa: 'Region' },
-    { bidDate: '03/15/2024', projectName: 'Railroad Signal Upgrade', obligee: 'CSX Transportation', contractValue: 780000, warranty: '12 Mo.', bidBondAmt: 39000, potentialBacklog: 780000, bidResult: 'Pending', bidResultAmt: 0, status: 'Pending Bid', doa: 'Branch' },
-    { bidDate: '03/01/2024', projectName: 'Interstate Rest Area Construction', obligee: 'State DOT', contractValue: 1250000, warranty: '24 Mo.', bidBondAmt: 62500, potentialBacklog: 0, bidResult: '3rd', bidResultAmt: 1300000, status: 'Closed Bid', doa: 'Branch' },
-    { bidDate: '03/11/2024', projectName: 'Library Annex Foundation Repair', obligee: 'County Library Board', contractValue: 450000, warranty: '12 Mo.', bidBondAmt: 22500, potentialBacklog: 450000, bidResult: 'Pending', bidResultAmt: 0, status: 'Pending Bid', doa: 'Branch' },
-    { bidDate: '03/05/2024', projectName: 'State Capitol Roof Restoration', obligee: 'State DGS', contractValue: 1800000, warranty: '24 Mo.', bidBondAmt: 90000, potentialBacklog: 1800000, bidResult: 'Low', bidResultAmt: 1800000, status: 'Approved Bid', doa: 'Region' }
-];
-
-// ==================== REMINDERS ====================
-const sampleReminders = [
-    { id: 1, title: 'Follow up on Hensel Phelps WIP schedule', date: '04/15/2024', time: '09:00 AM', account: 'Hensel Phelps Construction Co', notes: 'Request updated WIP by May deadline', alertOnDashboard: true, status: 'Active' },
-    { id: 2, title: 'Review Clark Construction LOA renewal', date: '04/18/2024', time: '10:30 AM', account: 'Clark Construction Group', notes: 'LOA expires in 45 days — schedule renewal discussion', alertOnDashboard: true, status: 'Active' },
-    { id: 3, title: 'Call Granite Construction re: backlog decline', date: '04/16/2024', time: '02:00 PM', account: 'Granite Construction Inc', notes: 'Backlog down 15% YoY per last visit — get updated figures', alertOnDashboard: true, status: 'Active' },
-    { id: 4, title: 'Submit Austin Industries bond conversion', date: '04/22/2024', time: '08:00 AM', account: 'Austin Industries', notes: 'Airport Runway Repair bid won — convert to performance bond', alertOnDashboard: true, status: 'Active' },
-    { id: 5, title: 'Quarterly portfolio review prep', date: '04/25/2024', time: '11:00 AM', account: '', notes: 'Prepare portfolio summary deck for regional review meeting', alertOnDashboard: true, status: 'Active' },
-    { id: 6, title: 'R.J. Corman financial statements due', date: '04/10/2024', time: '09:00 AM', account: 'R.J. Corman Railroad Group', notes: 'FY2023 CPA statements expected — follow up if not received', alertOnDashboard: false, status: 'Completed' }
-];
-let nextReminderId = 7;
-
-const sampleAccountReviews = [
-    {
-        reviewDate: '04/15/2024', reviewLevel: 'Branch', reviewType: 'Annual', fsDate: '12/31/2023',
-        reviewState: 'Initial Review', reviewedBy: 'Jake Miller', reviewRating: '-',
-        originatingUW: 'Jake Miller', currentQueue: 'Jake Miller', queueEnteredDate: 'Apr 15, 2024',
-        triggeringStatementId: 'FS-10247', fsDateReceived: '04/01/2024',
-        signOffHistory: [
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '04/15/2024', state: 'Initial Review', comments: 'Starting annual review for FY2023' }
-        ]
-    },
-    {
-        reviewDate: '04/10/2023', reviewLevel: 'Branch', reviewType: 'Annual', fsDate: '12/31/2022',
-        reviewState: 'Complete', reviewedBy: 'Sarah Mitchell', reviewRating: 'Acceptable',
-        originatingUW: 'Sarah Mitchell', currentQueue: null, queueEnteredDate: null,
-        triggeringStatementId: 'FS-10102', fsDateReceived: '03/15/2023',
-        signOffHistory: [
-            { reviewer: 'Sarah Mitchell', title: 'Sr. Underwriter', action: 'Created', date: '03/28/2023', state: 'Initial Review', comments: 'Annual review initiated' },
-            { reviewer: 'Sarah Mitchell', title: 'Sr. Underwriter', action: 'Submitted', date: '04/05/2023', state: 'Pending Manager Review', comments: 'Analysis complete, promoting to manager' },
-            { reviewer: 'Amy Rodriguez', title: 'Regional Manager', action: 'Approved', date: '04/10/2023', state: 'Complete', comments: 'Acceptable risk. Approved at branch level.' }
-        ]
-    },
-    {
-        reviewDate: '09/15/2022', reviewLevel: 'Region', reviewType: 'Interim', fsDate: '06/30/2022',
-        reviewState: 'Complete', reviewedBy: 'Jake Miller', reviewRating: 'Acceptable',
-        originatingUW: 'Jake Miller', currentQueue: null, queueEnteredDate: null,
-        triggeringStatementId: null, fsDateReceived: '08/20/2022',
-        signOffHistory: [
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '09/01/2022', state: 'Initial Review', comments: 'Interim review for H1 2022' },
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Submitted', date: '09/08/2022', state: 'Pending Regional Review', comments: 'Submitting for regional manager review' },
-            { reviewer: 'Max Miller', title: 'Regional Manager', action: 'Approved', date: '09/15/2022', state: 'Complete', comments: 'Approved. No concerns at regional level.' }
-        ]
-    },
-    {
-        reviewDate: '04/12/2022', reviewLevel: 'Branch', reviewType: 'Annual', fsDate: '12/31/2021',
-        reviewState: 'Complete', reviewedBy: 'Mike Torres', reviewRating: 'Marginal',
-        originatingUW: 'Mike Torres', currentQueue: null, queueEnteredDate: null,
-        triggeringStatementId: 'FS-09644', fsDateReceived: '03/20/2022',
-        signOffHistory: [
-            { reviewer: 'Mike Torres', title: 'Underwriter', action: 'Created', date: '03/30/2022', state: 'Initial Review', comments: 'Annual review — some financial concerns noted' },
-            { reviewer: 'Mike Torres', title: 'Underwriter', action: 'Submitted', date: '04/06/2022', state: 'Pending Manager Review', comments: 'Margins declining, recommending closer monitoring' },
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Approved', date: '04/12/2022', state: 'Complete', comments: 'Marginal rating agreed. Set review frequency to semi-annual.' }
-        ]
-    },
-    {
-        reviewDate: '04/08/2024', reviewLevel: 'Branch', reviewType: 'Interim', fsDate: '09/30/2023',
-        reviewState: 'In Review - Branch Manager', reviewedBy: 'Jake Miller', reviewRating: '-',
-        originatingUW: 'Jake Miller', currentQueue: 'Max Miller', queueEnteredDate: 'Apr 06, 2024',
-        triggeringStatementId: 'FS-09871', fsDateReceived: '03/25/2024',
-        signOffHistory: [
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '03/25/2024', state: 'Initial Review', comments: 'Interim review — Q3 financials received' },
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Submitted', date: '04/06/2024', state: 'Pending Regional Review', comments: 'Cash flow tightening slightly but backlog remains solid' }
-        ]
-    },
-    {
-        reviewDate: '03/20/2024', reviewLevel: 'CAO', reviewType: 'Annual', fsDate: '12/31/2023',
-        reviewState: 'In Review - VP Underwriting', reviewedBy: 'Jake Miller', reviewRating: '-',
-        originatingUW: 'Jake Miller', currentQueue: 'John Webster', queueEnteredDate: 'Apr 01, 2024',
-        triggeringStatementId: 'FS-10247', fsDateReceived: '03/06/2024',
-        signOffHistory: [
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '03/01/2024', state: 'Initial Review', comments: 'CAO-level annual review — large account requiring full chain approval' },
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Submitted', date: '03/12/2024', state: 'Pending Regional Review', comments: 'Analysis complete. Aggregate exposure warrants CAO sign-off.' },
-            { reviewer: 'Max Miller', title: 'Regional Manager', action: 'Approved & Promoted', date: '03/28/2024', state: 'Pending VP Review', comments: 'Exposure within regional tolerance. Promoting to VP for CAO-level sign-off.' }
-        ]
-    },
-    {
-        reviewDate: '10/20/2021', reviewLevel: 'Branch', reviewType: 'Annual', fsDate: '06/30/2021',
-        reviewState: 'Complete', reviewedBy: 'Jake Miller', reviewRating: 'Acceptable',
-        originatingUW: 'Jake Miller', currentQueue: null, queueEnteredDate: null,
-        triggeringStatementId: null, fsDateReceived: '09/28/2021',
-        signOffHistory: [
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Created', date: '10/01/2021', state: 'Initial Review', comments: 'Annual review — strong year for principal' },
-            { reviewer: 'Jake Miller', title: 'Branch Manager', action: 'Submitted', date: '10/12/2021', state: 'Pending Regional Review', comments: 'Financials healthy, recommend maintaining current limits' },
-            { reviewer: 'Max Miller', title: 'Regional Manager', action: 'Approved', date: '10/20/2021', state: 'Complete', comments: 'Agreed. Acceptable rating confirmed.' }
-        ]
-    }
-];
-
-const sampleBonds = [
-    { bondNumber: '4127935', principal: 'R.J. Corman Railroad Group', bondType: 'Performance & Payment', amount: '$3,200,000', effectiveDate: '03/15/2024', expirationDate: '03/15/2026', status: 'Active' },
-    { bondNumber: '3410582', principal: 'R.J. Corman Railroad Group', bondType: 'Bid Bond', amount: '$160,000', effectiveDate: '02/01/2024', expirationDate: '05/01/2024', status: 'Active' },
-    { bondNumber: '8921045', principal: 'Hensel Phelps Construction Co', bondType: 'Performance', amount: '$5,200,000', effectiveDate: '11/01/2023', expirationDate: '11/01/2025', status: 'Active' },
-    { bondNumber: '8453916', principal: 'Turner Construction Company', bondType: 'Performance & Payment', amount: '$8,500,000', effectiveDate: '09/15/2023', expirationDate: '09/15/2025', status: 'Active' },
-    { bondNumber: 'F801457', principal: 'Clark Construction Group', bondType: 'Maintenance Bond', amount: '$750,000', effectiveDate: '08/01/2023', expirationDate: '08/01/2024', status: 'Expiring Soon' },
-    { bondNumber: '7124603', principal: 'Granite Construction Inc', bondType: 'Performance', amount: '$4,500,000', effectiveDate: '06/15/2022', expirationDate: '06/15/2024', status: 'Expiring Soon' },
-    { bondNumber: 'F634219', principal: 'R.J. Corman Railroad Group', bondType: 'Performance', amount: '$2,800,000', effectiveDate: '03/01/2021', expirationDate: '03/01/2023', status: 'Expired' },
-    { bondNumber: '4883716', principal: 'Kiewit Corporation', bondType: 'Performance & Payment', amount: '$7,800,000', effectiveDate: '04/01/2024', expirationDate: '04/01/2027', status: 'Active' },
-    { bondNumber: 'F465182', principal: 'Brasfield & Gorrie LLC', bondType: 'Bid Bond', amount: '$420,000', effectiveDate: '03/20/2024', expirationDate: '06/20/2024', status: 'Active' },
-    { bondNumber: '5014829', principal: 'McCarthy Building Companies', bondType: 'Performance', amount: '$4,600,000', effectiveDate: '04/08/2024', expirationDate: '04/08/2026', status: 'Active' },
-    { bondNumber: '7780342', principal: 'Austin Industries', bondType: 'Performance & Payment', amount: '$2,950,000', effectiveDate: '07/15/2023', expirationDate: '07/15/2025', status: 'Active' },
-    { bondNumber: '6901538', principal: 'Hensel Phelps Construction Co', bondType: 'Payment Bond', amount: '$2,400,000', effectiveDate: '05/01/2022', expirationDate: '05/01/2024', status: 'Expiring Soon' },
-    { bondNumber: '5209463', principal: 'Mortenson Construction', bondType: 'Bid Bond', amount: '$310,000', effectiveDate: '04/12/2024', expirationDate: '07/12/2024', status: 'Active' },
-    { bondNumber: '3318207', principal: 'Skanska USA Civil', bondType: 'Performance & Payment', amount: '$6,100,000', effectiveDate: '08/15/2023', expirationDate: '08/15/2025', status: 'Active' },
-    { bondNumber: '4490126', principal: 'Walsh Construction Co', bondType: 'Performance', amount: '$3,800,000', effectiveDate: '11/01/2023', expirationDate: '11/01/2025', status: 'Active' },
-    { bondNumber: '5621847', principal: 'Flatiron Construction', bondType: 'Performance & Payment', amount: '$9,200,000', effectiveDate: '01/15/2024', expirationDate: '01/15/2026', status: 'Active' },
-    { bondNumber: '6730291', principal: 'Manhattan Construction Group', bondType: 'Performance', amount: '$4,100,000', effectiveDate: '02/01/2024', expirationDate: '02/01/2026', status: 'Active' },
-    { bondNumber: '7841053', principal: 'Sundt Construction', bondType: 'Performance & Payment', amount: '$2,600,000', effectiveDate: '09/01/2023', expirationDate: '09/01/2025', status: 'Active' }
-];
-
-const sampleClaims = [
-    { claimNumber: 'CL-2024-0087', bondNumber: '7124603', principal: 'Granite Construction Inc', claimant: 'SubCo Materials LLC', amount: '$245,000', filedDate: '03/20/2024', status: 'Investigating' },
-    { claimNumber: 'CL-2023-0156', bondNumber: 'F634219', principal: 'R.J. Corman Railroad Group', claimant: 'Valley Electric Co', amount: '$89,000', filedDate: '11/05/2023', status: 'Open' },
-    { claimNumber: 'CL-2023-0092', bondNumber: 'F801457', principal: 'Clark Construction Group', claimant: 'Metro Plumbing Inc', amount: '$156,000', filedDate: '08/15/2023', status: 'Closed' },
-    { claimNumber: 'CL-2024-0102', bondNumber: '7780342', principal: 'Austin Industries', claimant: 'Lone Star Steel Supply', amount: '$178,500', filedDate: '04/02/2024', status: 'Investigating' },
-    { claimNumber: 'CL-2024-0095', bondNumber: '6901538', principal: 'Hensel Phelps Construction Co', claimant: 'Rocky Mountain Concrete', amount: '$312,000', filedDate: '02/14/2024', status: 'Open' },
-    { claimNumber: 'CL-2022-0204', bondNumber: 'F634219', principal: 'R.J. Corman Railroad Group', claimant: 'Bluegrass Hauling LLC', amount: '$67,500', filedDate: '06/22/2022', status: 'Closed' },
-    { claimNumber: 'CL-2024-0118', bondNumber: '4883716', principal: 'Kiewit Corporation', claimant: 'Heartland Excavation Co', amount: '$425,000', filedDate: '04/10/2024', status: 'Open' }
-];
-
-const sampleVisitations = [
-    { account: 'R.J. Corman Railroad Group', visitDate: '03/12/2024', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Brown & Brown Insurance', location: 'Nicholasville, KY - Corporate HQ', contactMet: 'Rick Corman (Owner), Bill Hayes (CFO)', purpose: 'Annual Visit', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: true, safetyReviewed: false, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'Strong year operationally. Backlog healthy at $8.7M. New equipment purchases planned for Q3. CFO confident in maintaining margins.', branch: 'Cincinnati' },
-    { account: 'Hensel Phelps Construction Co', visitDate: '02/20/2024', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Marsh McLennan Agency', location: 'Greeley, CO - Main Office', contactMet: 'Mike Choutka (CEO), Janet Lewis (Controller)', purpose: 'ARR Follow-Up', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: true, followUpDate: '05/15/2024', notes: 'Reviewed FY2023 financials in detail. Revenue up 12%. Safety program impressive — TRIR well below industry avg. Need updated WIP by May.', branch: 'Cincinnati' },
-    { account: 'Clark Construction Group', visitDate: '01/18/2024', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Aon Surety', location: 'Bethesda, MD - Corporate Office', contactMet: 'Peter Forster (VP Surety), Diana Cho (CFO)', purpose: 'Relationship Mgmt', backlogDiscussed: true, financialsDiscussed: false, equipmentReviewed: false, safetyReviewed: false, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'General relationship meeting. Discussed upcoming federal projects pipeline. They expect $50M+ in new bids Q2. LOA increase discussion tabled for annual review.', branch: 'Cincinnati' },
-    { account: 'Turner Construction Company', visitDate: '03/05/2024', visitType: 'Virtual', visitedBy: 'Sarah Mitchell', agency: 'Willis Towers Watson', location: 'Video Conference', contactMet: 'Tom Regan (Surety Liaison), Mark Peters (CFO)', purpose: 'ARR Follow-Up', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: false, overallImpression: 'Neutral', followUpRequired: true, followUpDate: '04/30/2024', notes: 'Interim financials show margin compression on two large NYC projects. CFO attributes to supply chain costs. Need to monitor WIP fade closely.', branch: 'New York' },
-    { account: 'Granite Construction Inc', visitDate: '11/15/2023', visitType: 'In-Person', visitedBy: 'Mike Torres', agency: 'Lockton Companies', location: 'Watsonville, CA - HQ', contactMet: 'Kyle Larkin (President), Susan Park (Treasury)', purpose: 'Annual Visit', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: true, safetyReviewed: true, overallImpression: 'Concerns Noted', followUpRequired: true, followUpDate: '02/15/2024', notes: 'Backlog down 15% YoY. Heavy equipment showing age — deferred capex a concern. Safety record has slipped. Recommended closer monitoring of WIP and cashflow.', branch: 'Sacramento' },
-    { account: 'Whiting-Turner Contracting', visitDate: '04/02/2024', visitType: 'In-Person', visitedBy: 'Sarah Mitchell', agency: 'USI Insurance Services', location: 'Baltimore, MD - Corporate Office', contactMet: 'Tim Regan (EVP), Carol Hughes (Controller)', purpose: 'New Account', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: true, followUpDate: '05/01/2024', notes: 'Initial visit for new account setup. Strong balance sheet, diversified project mix. Safety program is top-tier. Requesting $12M single / $35M aggregate LOA.', branch: 'Baltimore' },
-    { account: 'R.J. Corman Railroad Group', visitDate: '09/22/2023', visitType: 'Job Site', visitedBy: 'Jake Miller', agency: 'Brown & Brown Insurance', location: 'Highway 50 Bridge Project Site, KY', contactMet: 'Dave Marshall (Project Manager)', purpose: 'Job Site Inspection', backlogDiscussed: false, financialsDiscussed: false, equipmentReviewed: true, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'Visited Highway 50 bridge project — on schedule, within budget. Equipment well-maintained. Crew experienced. No safety concerns observed.', branch: 'Cincinnati' },
-    { account: 'Hensel Phelps Construction Co', visitDate: '08/10/2023', visitType: 'Job Site', visitedBy: 'Jake Miller', agency: 'Marsh McLennan Agency', location: 'DIA Terminal Expansion, Denver, CO', contactMet: 'Brian Foster (Superintendent)', purpose: 'Job Site Inspection', backlogDiscussed: false, financialsDiscussed: false, equipmentReviewed: true, safetyReviewed: true, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'DIA terminal project running smoothly. Excellent site organization. Safety protocols exceeded expectations. Project 65% complete.', branch: 'Cincinnati' },
-    { account: 'Clark Construction Group', visitDate: '06/14/2023', visitType: 'In-Person', visitedBy: 'Jake Miller', agency: 'Aon Surety', location: 'Bethesda, MD - Corporate Office', contactMet: 'Peter Forster (VP Surety)', purpose: 'Annual Visit', backlogDiscussed: true, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: false, overallImpression: 'Positive', followUpRequired: false, followUpDate: '', notes: 'Annual visit — all metrics strong. Backlog at record levels. Discussed succession planning for key personnel.', branch: 'Cincinnati' },
-    { account: 'Granite Construction Inc', visitDate: '05/20/2023', visitType: 'Virtual', visitedBy: 'Mike Torres', agency: 'Lockton Companies', location: 'Video Conference', contactMet: 'Susan Park (Treasury)', purpose: 'ARR Follow-Up', backlogDiscussed: false, financialsDiscussed: true, equipmentReviewed: false, safetyReviewed: false, overallImpression: 'Neutral', followUpRequired: true, followUpDate: '08/01/2023', notes: 'Reviewed Q1 financials. Margins tighter than expected on CalTrans projects. Treasury indicated short-term borrowing up. Follow up with updated cashflow projection.', branch: 'Sacramento' }
-];
-
-// ==================== PREMIUM AR BY AGENCY ====================
-const samplePremiumAR = [
-    { agency: 'Great American Surety', type: 'CARRIER_INVITED', current: 5001, d1_30: 34736, d31_60: 38622, d61_90: 32344, d90plus: 206350, invoices: 86 },
-    { agency: 'Redstone Commercial Insurance', type: 'CARRIER_INVITED', current: 5500, d1_30: 0, d31_60: 8717, d61_90: 19239, d90plus: 88650, invoices: 55 },
-    { agency: 'Silver Oak Insurance Brokers', type: 'CARRIER_INVITED', current: 16086, d1_30: 9134, d31_60: 12399, d61_90: 3109, d90plus: 78138, invoices: 61 },
-    { agency: 'Granite Peak Bonding', type: 'CARRIER_INVITED', current: 4998, d1_30: 2353, d31_60: 2896, d61_90: 3498, d90plus: 98893, invoices: 52 },
-    { agency: 'Hilltop Surety Co', type: 'CARRIER_INVITED', current: 500, d1_30: 12964, d31_60: 9740, d61_90: 5717, d90plus: 56384, invoices: 43 },
-    { agency: 'Evergreen Bond & Insurance', type: 'CARRIER_INVITED', current: 2642, d1_30: 5000, d31_60: 975, d61_90: 500, d90plus: 30116, invoices: 26 }
-];
-
-// Premium AR Detail — account-level breakdown per agency (totals must match samplePremiumAR)
-const samplePremiumARDetail = {
-    'Great American Surety': [
-        // current:5001, d1_30:34736, d31_60:38622, d61_90:32344, d90plus:206350, invoices:86
-        { account: 'Hensel Phelps Construction Co', current: 2500, d1_30: 12000, d31_60: 15000, d61_90: 10000, d90plus: 85000, invoices: 22 },
-        { account: 'Clark Construction Group', current: 1500, d1_30: 8736, d31_60: 10000, d61_90: 8344, d90plus: 52000, invoices: 18 },
-        { account: 'McCarthy Building Companies', current: 501, d1_30: 6000, d31_60: 5622, d61_90: 7000, d90plus: 38350, invoices: 16 },
-        { account: 'Brasfield & Gorrie LLC', current: 500, d1_30: 5000, d31_60: 4500, d61_90: 4000, d90plus: 18000, invoices: 15 },
-        { account: 'Mortenson Construction', current: 0, d1_30: 3000, d31_60: 3500, d61_90: 3000, d90plus: 13000, invoices: 15 }
-    ],
-    'Redstone Commercial Insurance': [
-        // current:5500, d1_30:0, d31_60:8717, d61_90:19239, d90plus:88650, invoices:55
-        { account: 'Austin Industries', current: 2200, d1_30: 0, d31_60: 3500, d61_90: 8000, d90plus: 35000, invoices: 14 },
-        { account: 'Granite Construction Inc', current: 1800, d1_30: 0, d31_60: 2717, d61_90: 5239, d90plus: 28650, invoices: 13 },
-        { account: 'R.J. Corman Railroad Group', current: 1000, d1_30: 0, d31_60: 1500, d61_90: 3500, d90plus: 15000, invoices: 12 },
-        { account: 'Traylor Bros Inc', current: 500, d1_30: 0, d31_60: 1000, d61_90: 2500, d90plus: 10000, invoices: 16 }
-    ],
-    'Silver Oak Insurance Brokers': [
-        // current:16086, d1_30:9134, d31_60:12399, d61_90:3109, d90plus:78138, invoices:61
-        { account: 'Hensel Phelps Construction Co', current: 6000, d1_30: 3134, d31_60: 4500, d61_90: 1200, d90plus: 30000, invoices: 15 },
-        { account: 'McCarthy Building Companies', current: 4086, d1_30: 2500, d31_60: 3399, d61_90: 909, d90plus: 22138, invoices: 14 },
-        { account: 'Cadell Construction Co', current: 3000, d1_30: 1500, d31_60: 2500, d61_90: 500, d90plus: 15000, invoices: 12 },
-        { account: 'Primoris Services Corp', current: 2000, d1_30: 1000, d31_60: 1000, d61_90: 300, d90plus: 7000, invoices: 11 },
-        { account: 'Austin Industries', current: 1000, d1_30: 1000, d31_60: 1000, d61_90: 200, d90plus: 4000, invoices: 9 }
-    ],
-    'Granite Peak Bonding': [
-        // current:4998, d1_30:2353, d31_60:2896, d61_90:3498, d90plus:98893, invoices:52
-        { account: 'Clark Construction Group', current: 2000, d1_30: 1000, d31_60: 1200, d61_90: 1500, d90plus: 42000, invoices: 14 },
-        { account: 'Brasfield & Gorrie LLC', current: 1500, d1_30: 800, d31_60: 896, d61_90: 998, d90plus: 30893, invoices: 13 },
-        { account: 'Mortenson Construction', current: 998, d1_30: 353, d31_60: 500, d61_90: 500, d90plus: 16000, invoices: 13 },
-        { account: 'Granite Construction Inc', current: 500, d1_30: 200, d31_60: 300, d61_90: 500, d90plus: 10000, invoices: 12 }
-    ],
-    'Hilltop Surety Co': [
-        // current:500, d1_30:12964, d31_60:9740, d61_90:5717, d90plus:56384, invoices:43
-        { account: 'R.J. Corman Railroad Group', current: 200, d1_30: 5000, d31_60: 3500, d61_90: 2500, d90plus: 22000, invoices: 12 },
-        { account: 'Cadell Construction Co', current: 200, d1_30: 4464, d31_60: 3240, d61_90: 1717, d90plus: 18384, invoices: 11 },
-        { account: 'Traylor Bros Inc', current: 100, d1_30: 2000, d31_60: 1500, d61_90: 1000, d90plus: 10000, invoices: 10 },
-        { account: 'Primoris Services Corp', current: 0, d1_30: 1500, d31_60: 1500, d61_90: 500, d90plus: 6000, invoices: 10 }
-    ],
-    'Evergreen Bond & Insurance': [
-        // current:2642, d1_30:5000, d31_60:975, d61_90:500, d90plus:30116, invoices:26
-        { account: 'Austin Industries', current: 1200, d1_30: 2500, d31_60: 475, d61_90: 300, d90plus: 14116, invoices: 10 },
-        { account: 'Brasfield & Gorrie LLC', current: 942, d1_30: 1500, d31_60: 300, d61_90: 200, d90plus: 10000, invoices: 9 },
-        { account: 'Mortenson Construction', current: 500, d1_30: 1000, d31_60: 200, d61_90: 0, d90plus: 6000, invoices: 7 }
-    ]
-};
-
-// Premium AR Bond-Level Detail — bonds per agency|account (totals must match samplePremiumARDetail)
-const samplePremiumARBonds = {
-    // === Great American Surety ===
-    'Great American Surety|Hensel Phelps Construction Co': [
-        { bondNumber: '8921045', bondType: 'Performance', project: 'Denver Airport Terminal Expansion', current: 1500, d1_30: 7000, d31_60: 9000, d61_90: 6000, d90plus: 48000 },
-        { bondNumber: '6901538', bondType: 'Payment Bond', project: 'Colorado Springs Med Center', current: 1000, d1_30: 5000, d31_60: 6000, d61_90: 4000, d90plus: 37000 }
-    ],
-    'Great American Surety|Clark Construction Group': [
-        { bondNumber: 'F801457', bondType: 'Maintenance Bond', project: 'Bethesda Federal Complex', current: 800, d1_30: 4736, d31_60: 5500, d61_90: 4344, d90plus: 28000 },
-        { bondNumber: '5331708', bondType: 'Performance & Payment', project: 'DC Metro Rail Extension', current: 700, d1_30: 4000, d31_60: 4500, d61_90: 4000, d90plus: 24000 }
-    ],
-    'Great American Surety|McCarthy Building Companies': [
-        { bondNumber: '5014829', bondType: 'Performance', project: 'Phoenix Biotech Campus', current: 501, d1_30: 3500, d31_60: 3122, d61_90: 4000, d90plus: 22000 },
-        { bondNumber: 'F910382', bondType: 'Bid Bond', project: 'Tucson Water Treatment Plant', current: 0, d1_30: 2500, d31_60: 2500, d61_90: 3000, d90plus: 16350 }
-    ],
-    'Great American Surety|Brasfield & Gorrie LLC': [
-        { bondNumber: 'F465182', bondType: 'Bid Bond', project: 'Atlanta Midtown Tower', current: 300, d1_30: 3000, d31_60: 2500, d61_90: 2000, d90plus: 10000 },
-        { bondNumber: '8750693', bondType: 'Performance', project: 'Nashville Convention Center', current: 200, d1_30: 2000, d31_60: 2000, d61_90: 2000, d90plus: 8000 }
-    ],
-    'Great American Surety|Mortenson Construction': [
-        { bondNumber: '5209463', bondType: 'Bid Bond', project: 'Minneapolis Stadium Renovation', current: 0, d1_30: 1500, d31_60: 2000, d61_90: 1500, d90plus: 7000 },
-        { bondNumber: '8601274', bondType: 'Performance', project: 'Iowa Data Center Complex', current: 0, d1_30: 1500, d31_60: 1500, d61_90: 1500, d90plus: 6000 }
-    ],
-
-    // === Redstone Commercial Insurance ===
-    'Redstone Commercial Insurance|Austin Industries': [
-        { bondNumber: '7780342', bondType: 'Performance & Payment', project: 'Dallas Tollway Expansion', current: 1200, d1_30: 0, d31_60: 2000, d61_90: 5000, d90plus: 20000 },
-        { bondNumber: '5450291', bondType: 'Performance', project: 'Fort Worth ISD Schools', current: 1000, d1_30: 0, d31_60: 1500, d61_90: 3000, d90plus: 15000 }
-    ],
-    'Redstone Commercial Insurance|Granite Construction Inc': [
-        { bondNumber: '7124603', bondType: 'Performance', project: 'I-35 Highway Widening', current: 1000, d1_30: 0, d31_60: 1500, d61_90: 3000, d90plus: 16000 },
-        { bondNumber: 'F558034', bondType: 'Performance & Payment', project: 'Sacramento Bridge Rehab', current: 800, d1_30: 0, d31_60: 1217, d61_90: 2239, d90plus: 12650 }
-    ],
-    'Redstone Commercial Insurance|R.J. Corman Railroad Group': [
-        { bondNumber: '4127935', bondType: 'Performance & Payment', project: 'Kentucky Rail Corridor', current: 600, d1_30: 0, d31_60: 800, d61_90: 2000, d90plus: 9000 },
-        { bondNumber: '9206417', bondType: 'Performance', project: 'Indiana Rail Yard Expansion', current: 400, d1_30: 0, d31_60: 700, d61_90: 1500, d90plus: 6000 }
-    ],
-    'Redstone Commercial Insurance|Traylor Bros Inc': [
-        { bondNumber: '5706182', bondType: 'Performance', project: 'Ohio River Tunnel Project', current: 300, d1_30: 0, d31_60: 600, d61_90: 1500, d90plus: 6000 },
-        { bondNumber: '9357028', bondType: 'Bid Bond', project: 'Indiana DOT Bridge #4412', current: 200, d1_30: 0, d31_60: 400, d61_90: 1000, d90plus: 4000 }
-    ],
-
-    // === Silver Oak Insurance Brokers ===
-    'Silver Oak Insurance Brokers|Hensel Phelps Construction Co': [
-        { bondNumber: '6013547', bondType: 'Performance & Payment', project: 'LAX Terminal Modernization', current: 3500, d1_30: 1634, d31_60: 2500, d61_90: 700, d90plus: 18000 },
-        { bondNumber: '9451603', bondType: 'Performance', project: 'UC San Diego Research Lab', current: 2500, d1_30: 1500, d31_60: 2000, d61_90: 500, d90plus: 12000 }
-    ],
-    'Silver Oak Insurance Brokers|McCarthy Building Companies': [
-        { bondNumber: '6152903', bondType: 'Performance', project: 'Scottsdale Medical Plaza', current: 2086, d1_30: 1500, d31_60: 1899, d61_90: 509, d90plus: 12138 },
-        { bondNumber: '9582714', bondType: 'Payment Bond', project: 'Mesa Unified School District', current: 2000, d1_30: 1000, d31_60: 1500, d61_90: 400, d90plus: 10000 }
-    ],
-    'Silver Oak Insurance Brokers|Cadell Construction Co': [
-        { bondNumber: '6284710', bondType: 'Performance & Payment', project: 'Birmingham Steel Mill Upgrade', current: 1800, d1_30: 800, d31_60: 1500, d61_90: 300, d90plus: 9000 },
-        { bondNumber: 'F970451', bondType: 'Performance', project: 'Huntsville Army Base Housing', current: 1200, d1_30: 700, d31_60: 1000, d61_90: 200, d90plus: 6000 }
-    ],
-    'Silver Oak Insurance Brokers|Primoris Services Corp': [
-        { bondNumber: '6401358', bondType: 'Performance', project: 'SoCal Pipeline Replacement', current: 1200, d1_30: 600, d31_60: 600, d61_90: 200, d90plus: 4000 },
-        { bondNumber: '9823160', bondType: 'Bid Bond', project: 'Nevada Solar Farm Phase II', current: 800, d1_30: 400, d31_60: 400, d61_90: 100, d90plus: 3000 }
-    ],
-    'Silver Oak Insurance Brokers|Austin Industries': [
-        { bondNumber: 'F652049', bondType: 'Performance & Payment', project: 'San Antonio Highway 281', current: 600, d1_30: 600, d31_60: 600, d61_90: 120, d90plus: 2500 },
-        { bondNumber: '9950847', bondType: 'Performance', project: 'Austin Water Main Replacement', current: 400, d1_30: 400, d31_60: 400, d61_90: 80, d90plus: 1500 }
-    ],
-
-    // === Granite Peak Bonding ===
-    'Granite Peak Bonding|Clark Construction Group': [
-        { bondNumber: '6653817', bondType: 'Performance & Payment', project: 'Virginia Tech Research Hall', current: 1200, d1_30: 600, d31_60: 700, d61_90: 800, d90plus: 24000 },
-        { bondNumber: '1005293', bondType: 'Performance', project: 'Pentagon Annex Renovation', current: 800, d1_30: 400, d31_60: 500, d61_90: 700, d90plus: 18000 }
-    ],
-    'Granite Peak Bonding|Brasfield & Gorrie LLC': [
-        { bondNumber: '6780294', bondType: 'Performance', project: 'Birmingham Hospital Wing', current: 900, d1_30: 500, d31_60: 500, d61_90: 598, d90plus: 18000 },
-        { bondNumber: '1018764', bondType: 'Payment Bond', project: 'Mobile Port Terminal', current: 600, d1_30: 300, d31_60: 396, d61_90: 400, d90plus: 12893 }
-    ],
-    'Granite Peak Bonding|Mortenson Construction': [
-        { bondNumber: '6905138', bondType: 'Performance & Payment', project: 'Milwaukee Arena Expansion', current: 598, d1_30: 200, d31_60: 300, d61_90: 300, d90plus: 10000 },
-        { bondNumber: 'F103058', bondType: 'Bid Bond', project: 'St. Paul Office Complex', current: 400, d1_30: 153, d31_60: 200, d61_90: 200, d90plus: 6000 }
-    ],
-    'Granite Peak Bonding|Granite Construction Inc': [
-        { bondNumber: '7023641', bondType: 'Performance', project: 'Oregon Coast Highway Repair', current: 300, d1_30: 120, d31_60: 180, d61_90: 300, d90plus: 6000 },
-        { bondNumber: '1042395', bondType: 'Performance & Payment', project: 'Reno Airport Taxiway', current: 200, d1_30: 80, d31_60: 120, d61_90: 200, d90plus: 4000 }
-    ],
-
-    // === Hilltop Surety Co ===
-    'Hilltop Surety Co|R.J. Corman Railroad Group': [
-        { bondNumber: '7158204', bondType: 'Performance', project: 'Tennessee Rail Siding Project', current: 120, d1_30: 3000, d31_60: 2000, d61_90: 1500, d90plus: 13000 },
-        { bondNumber: '1055821', bondType: 'Performance & Payment', project: 'Georgia Short Line Rehab', current: 80, d1_30: 2000, d31_60: 1500, d61_90: 1000, d90plus: 9000 }
-    ],
-    'Hilltop Surety Co|Cadell Construction Co': [
-        { bondNumber: 'F728061', bondType: 'Performance', project: 'Alabama DOT Interstate Work', current: 120, d1_30: 2464, d31_60: 1740, d61_90: 1000, d90plus: 10384 },
-        { bondNumber: '1068437', bondType: 'Bid Bond', project: 'Montgomery Courthouse Annex', current: 80, d1_30: 2000, d31_60: 1500, d61_90: 717, d90plus: 8000 }
-    ],
-    'Hilltop Surety Co|Traylor Bros Inc': [
-        { bondNumber: '7402583', bondType: 'Performance & Payment', project: 'Chicago Deep Tunnel Phase V', current: 60, d1_30: 1200, d31_60: 900, d61_90: 600, d90plus: 6000 },
-        { bondNumber: '1080952', bondType: 'Performance', project: 'Indiana Levee Reinforcement', current: 40, d1_30: 800, d31_60: 600, d61_90: 400, d90plus: 4000 }
-    ],
-    'Hilltop Surety Co|Primoris Services Corp': [
-        { bondNumber: '7520946', bondType: 'Performance', project: 'Texas Pipeline Crossing', current: 0, d1_30: 900, d31_60: 900, d61_90: 300, d90plus: 3500 },
-        { bondNumber: 'F109263', bondType: 'Bid Bond', project: 'Louisiana Refinery Access Road', current: 0, d1_30: 600, d31_60: 600, d61_90: 200, d90plus: 2500 }
-    ],
-
-    // === Evergreen Bond & Insurance ===
-    'Evergreen Bond & Insurance|Austin Industries': [
-        { bondNumber: '7651302', bondType: 'Performance & Payment', project: 'Houston Ship Channel Bridge', current: 700, d1_30: 1500, d31_60: 275, d61_90: 180, d90plus: 8116 },
-        { bondNumber: '1105748', bondType: 'Performance', project: 'Corpus Christi Desalination', current: 500, d1_30: 1000, d31_60: 200, d61_90: 120, d90plus: 6000 }
-    ],
-    'Evergreen Bond & Insurance|Brasfield & Gorrie LLC': [
-        { bondNumber: '7784019', bondType: 'Performance', project: 'Tampa General Hospital Expansion', current: 542, d1_30: 900, d31_60: 180, d61_90: 120, d90plus: 6000 },
-        { bondNumber: '1118206', bondType: 'Payment Bond', project: 'Jacksonville Riverwalk Phase III', current: 400, d1_30: 600, d31_60: 120, d61_90: 80, d90plus: 4000 }
-    ],
-    'Evergreen Bond & Insurance|Mortenson Construction': [
-        { bondNumber: '7903654', bondType: 'Performance & Payment', project: 'Denver Tech Center Office', current: 300, d1_30: 600, d31_60: 120, d61_90: 0, d90plus: 3500 },
-        { bondNumber: '1130594', bondType: 'Bid Bond', project: 'Boulder County Rec Center', current: 200, d1_30: 400, d31_60: 80, d61_90: 0, d90plus: 2500 }
-    ]
-};
-
-// AR Detail Sections Data
-const arSections = [
-    { id: 'ar-info', label: 'Account Review Info / Sign-Off History', complete: false },
-    { id: 'background', label: 'Background & Experience', complete: true },
-    { id: 'operations', label: 'Operations', complete: true },
-    { id: 'work-on-hand', label: 'Work on Hand', complete: false },
-    { id: 'key-personnel', label: 'Key Personnel', complete: false },
-    { id: 'indemnitors', label: 'Indemnitors', complete: false },
-    { id: 'affiliates', label: 'Affiliates', complete: false },
-    { id: 'credit', label: 'Credit', complete: true },
-    { id: 'bank-lines', label: 'Bank Lines', complete: false },
-    { id: 'financial-summary', label: 'Financial Summary / Red Flags', complete: false },
-    { id: 'risks-recs', label: 'Risks / Reqs. / Recommendations', complete: false },
-    { id: 'sign-off', label: 'Sign-Off and Promote Review', complete: false }
-];
-
-// ==================== ACCOUNT PROFILES (BR-4, BR-5) ====================
-
-const accountProfiles = {
-    'Hensel Phelps Construction Co': {
-        authorityLevel: 'Region',
-        arrFrequency: 'Semi-Annual',
-        frequencyOverride: null,
-        lastAnnualCPADate: '12/31/2023',
-        lastInterimDate: '06/30/2023'
-    },
-    'Clark Construction Group': {
-        authorityLevel: 'CAO',
-        arrFrequency: 'Quarterly',
-        frequencyOverride: {
-            newFrequency: 'Semi-Annual',
-            approver: 'John Webster',
-            approvalDate: '01/15/2024',
-            rationale: 'Stable financials and long-standing relationship justify reduced frequency'
-        },
-        lastAnnualCPADate: '12/31/2023',
-        lastInterimDate: null
-    },
-    'Turner Construction Company': {
-        authorityLevel: 'Region',
-        arrFrequency: 'Semi-Annual',
-        frequencyOverride: null,
-        lastAnnualCPADate: '12/31/2022',
-        lastInterimDate: '06/30/2023'
-    },
-    'R.J. Corman Railroad Group': {
-        authorityLevel: 'Branch',
-        arrFrequency: 'Annual',
-        frequencyOverride: null,
-        lastAnnualCPADate: '12/31/2021',
-        lastInterimDate: null
-    },
-    'Granite Construction Inc': {
-        authorityLevel: 'Region',
-        arrFrequency: 'Semi-Annual',
-        frequencyOverride: {
-            newFrequency: 'Quarterly',
-            approver: 'Max Miller',
-            approvalDate: '11/20/2023',
-            rationale: 'Declining backlog and margin compression warrant closer monitoring'
-        },
-        lastAnnualCPADate: '12/31/2020',
-        lastInterimDate: null
-    },
-    'Whiting-Turner Contracting': {
-        authorityLevel: 'Branch',
-        arrFrequency: 'Annual',
-        frequencyOverride: null,
-        lastAnnualCPADate: null,
-        lastInterimDate: null
-    }
-};
 
 // ==================== REVIEW CHAIN OF COMMAND ====================
 
@@ -705,15 +410,11 @@ const chainTitles = {
 
 // ==================== CHAT & NOTES DATA ====================
 
-const sampleUsers = [
-    { name: 'Sarah Mitchell', role: 'Sr. Underwriter', avatar: 'SM' },
-    { name: 'Mike Torres', role: 'Underwriter', avatar: 'MT' },
-    { name: 'Lisa Chen', role: 'Bond Analyst', avatar: 'LC' },
-    { name: 'James Park', role: 'Claims Manager', avatar: 'JP' },
-    { name: 'Amy Rodriguez', role: 'Regional Manager', avatar: 'AR' }
-];
+const sampleUsers = USER_PROFILES.filter(u => u.username !== currentUser.username).map(u => ({
+    name: u.fullName, role: u.role, avatar: u.avatar
+}));
 
-const currentUser = { name: 'Jake Miller', role: 'Branch Manager', avatar: 'JM' };
+// currentUser is declared at the top of app.js as a let — no need to redeclare
 
 // ==================== GRADE SCALE UTILITIES ====================
 // Grades: A+, A, A-, B+, B, B-, C+, C, C- (no D)
@@ -1330,80 +1031,11 @@ function resetDashboardAndClose() {
     renderDashboardLayout();
 }
 
-const sampleConversations = [
-    {
-        with: 'Sarah Mitchell',
-        unread: 2,
-        messages: [
-            { from: 'Sarah Mitchell', text: 'Hey Doug, did you get a chance to review the Turner Construction financials?', time: 'Apr 18, 2024 9:15 AM', accountTag: 'Turner Construction Company' },
-            { from: 'Jake Miller', text: 'Yes, I looked at the 12/31 statements. The debt-to-equity ratio is a bit high but within our tolerance.', time: 'Apr 18, 2024 9:32 AM', accountTag: 'Turner Construction Company' },
-            { from: 'Sarah Mitchell', text: 'Good. Can you also check the WIP schedule? I noticed some overbilling on the I-75 project.', time: 'Apr 18, 2024 9:45 AM' },
-            { from: 'Sarah Mitchell', text: 'Also, the LOA renewal for Corman is coming up — we need to discuss the aggregate limit.', time: 'Apr 18, 2024 10:02 AM', accountTag: 'R.J. Corman Railroad Group' }
-        ]
-    },
-    {
-        with: 'Mike Torres',
-        unread: 0,
-        messages: [
-            { from: 'Jake Miller', text: 'Mike, can you handle the Corman maintenance bond request? I have the Clark P&P to review.', time: 'Apr 17, 2024 2:10 PM' },
-            { from: 'Mike Torres', text: 'Sure, I\'ll pick it up. What\'s the bond amount?', time: 'Apr 17, 2024 2:22 PM' },
-            { from: 'Jake Miller', text: '$750K — CSX Transportation is the obligee. Draft is in the system already.', time: 'Apr 17, 2024 2:30 PM' },
-            { from: 'Mike Torres', text: 'Got it. I\'ll have it ready for review by EOD.', time: 'Apr 17, 2024 2:35 PM' }
-        ]
-    },
-    {
-        with: 'Lisa Chen',
-        unread: 1,
-        messages: [
-            { from: 'Lisa Chen', text: 'Doug, I finished the exposure analysis for Q1. Total surety exposure is up 12% YoY.', time: 'Apr 16, 2024 4:00 PM' },
-            { from: 'Jake Miller', text: 'Thanks Lisa. Can you break that down by region? I want to see where the growth is concentrated.', time: 'Apr 16, 2024 4:15 PM' },
-            { from: 'Lisa Chen', text: 'Northeast accounts for 45% of the increase. I\'ll send the full breakdown tomorrow.', time: 'Apr 16, 2024 4:30 PM' }
-        ]
-    },
-    {
-        with: 'James Park',
-        unread: 0,
-        messages: [
-            { from: 'James Park', text: 'FYI — the Granite Construction claim (CL-2024-0087) investigation is progressing. SubCo provided additional documentation.', time: 'Apr 15, 2024 11:00 AM' },
-            { from: 'Jake Miller', text: 'What\'s the updated reserve estimate?', time: 'Apr 15, 2024 11:20 AM' },
-            { from: 'James Park', text: 'Still at $245K. We may be able to negotiate down once we review the subcontract terms.', time: 'Apr 15, 2024 11:35 AM' }
-        ]
-    },
-    {
-        with: 'Amy Rodriguez',
-        unread: 0,
-        messages: [
-            { from: 'Amy Rodriguez', text: 'Doug, the quarterly review meeting is set for next Friday. Please have the ARR summaries ready.', time: 'Apr 12, 2024 3:00 PM' },
-            { from: 'Jake Miller', text: 'Will do. I have Corman and Turner reviews in progress — should be done by Wednesday.', time: 'Apr 12, 2024 3:15 PM' }
-        ]
-    }
-];
+let sampleConversations = [];
 
 let activeConversationIdx = null;
 
-const sampleAccountNotes = {
-    'R.J. Corman Railroad Group': [
-        { author: 'Jake Miller', date: 'Apr 18, 2024 10:30 AM', text: 'LOA renewal discussion needed — current aggregate at $15M. Consider increasing to $20M based on backlog growth.', pinned: true },
-        { author: 'Sarah Mitchell', date: 'Apr 15, 2024 2:00 PM', text: 'WIP schedule is 30 days overdue. Contacted agent for updated schedule.', pinned: false },
-        { author: 'Mike Torres', date: 'Apr 10, 2024 9:00 AM', text: 'Maintenance bond request submitted for CSX Transportation project — $750K.', pinned: false }
-    ],
-    'Turner Construction Company': [
-        { author: 'Sarah Mitchell', date: 'Apr 17, 2024 3:00 PM', text: 'Interim review flagged high WIP concentration — top 3 jobs represent 78% of backlog.', pinned: true },
-        { author: 'Jake Miller', date: 'Apr 14, 2024 11:00 AM', text: 'Bid bond request for NYC DOT project under review. $850K — Sarah Mitchell assigned.', pinned: false }
-    ],
-    'Hensel Phelps Construction Co': [
-        { author: 'Jake Miller', date: 'Apr 16, 2024 1:00 PM', text: 'New bid bond request — $2.4M highway project for CDOT. Financials look strong.', pinned: false },
-        { author: 'Lisa Chen', date: 'Apr 10, 2024 4:30 PM', text: 'Exposure analysis complete. Total bonded exposure: $12.8M against $15M aggregate.', pinned: false }
-    ],
-    'Clark Construction Group': [
-        { author: 'Jake Miller', date: 'Apr 16, 2024 9:00 AM', text: 'P&P bond $5.2M for US Army Corps awaiting approval. Within DOA limits at branch level.', pinned: true },
-        { author: 'James Park', date: 'Apr 5, 2024 2:00 PM', text: 'Metro Plumbing claim (CL-2023-0092) closed. No loss to surety.', pinned: false }
-    ],
-    'Granite Construction Inc': [
-        { author: 'James Park', date: 'Apr 15, 2024 11:45 AM', text: 'Active claim CL-2024-0087 — SubCo Materials LLC. Reserve: $245K. Investigation ongoing.', pinned: true },
-        { author: 'Jake Miller', date: 'Apr 8, 2024 10:00 AM', text: 'Financial statement still pending CPA review since Feb 2024. Following up with agent.', pinned: false }
-    ]
-};
+let sampleAccountNotes = {};
 
 let activeAccountNote = null;
 
@@ -6972,8 +6604,42 @@ function matchAIResponse(text) {
 
 // ==================== INITIALIZATION ====================
 
-document.addEventListener('DOMContentLoaded', () => {
-    const initSteps = [
+// ==================== USER SWITCHING ====================
+
+function switchUser(username) {
+    const profile = USER_PROFILES.find(u => u.username === username);
+    if (!profile) return;
+    currentUser = Object.assign({}, profile, { name: profile.fullName });
+
+    // Rebuild all data arrays for the new user
+    buildUserData();
+
+    // Update sidebar user info
+    const avatarEl = document.getElementById('sidebar-avatar');
+    const nameEl = document.getElementById('sidebar-user-name');
+    const roleEl = document.getElementById('sidebar-user-role');
+    if (avatarEl) avatarEl.textContent = currentUser.avatar;
+    if (nameEl) nameEl.textContent = currentUser.fullName;
+    if (roleEl) roleEl.textContent = currentUser.role + ' \u2014 ' + currentUser.branch;
+
+    // Update dashboard greeting
+    const greeting = document.getElementById('dashboard-greeting');
+    if (greeting) greeting.textContent = 'Welcome, ' + currentUser.fullName.split(' ')[0];
+    const subtitle = document.getElementById('dashboard-subtitle');
+    if (subtitle) subtitle.textContent = currentUser.branch + ' Branch \u2014 Surety Bond Underwriting Dashboard';
+
+    // Re-render all views
+    renderAllViews();
+
+    // Navigate to dashboard
+    navigateTo('underwriting-home');
+
+    // Close modal if open
+    closeAllModals();
+}
+
+function renderAllViews() {
+    const steps = [
         ['Dashboard', renderDashboardLayout],
         ['Bond Requests', () => renderBondRequests('bond-requests-full-list', sampleBondRequests)],
         ['Financials', renderFinancials],
@@ -6985,8 +6651,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ['Account Review', renderAccountReviewSummary],
         ['Bonds', renderBonds],
         ['Claims', renderClaims],
-        ['Exposure Map', renderExposureMap],
-        ['Map Tooltips', initMapTooltips],
         ['Conversations', renderConversationList],
         ['Account Notes', renderAccountNotesList],
         ['My Accounts', renderMyAccounts],
@@ -6998,24 +6662,57 @@ document.addEventListener('DOMContentLoaded', () => {
         ['Bond Request Badge', updateBondRequestBadge],
         ['Premium AR', renderPremiumAR]
     ];
-    initSteps.forEach(([name, fn]) => {
-        try { fn(); } catch (e) { console.error('Init failed: ' + name, e); }
+    steps.forEach(([name, fn]) => {
+        try { fn(); } catch (e) { console.error('Render failed: ' + name, e); }
     });
+}
 
-    // Show demo/live mode banner
-    if (BondBoxClock.isOverridden()) {
-        const banner = document.createElement('div');
-        banner.id = 'demo-mode-banner';
-        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#fef3c7;color:#92400e;text-align:center;padding:6px 16px;font-size:12px;font-weight:600;border-bottom:1px solid #fcd34d;';
-        const refDate = BondBoxClock.getNow();
-        banner.innerHTML = 'Demo Mode &mdash; App date: ' + refDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' &bull; <a href="#" onclick="localStorage.setItem(\'bondbox-live-date\',\'true\'); location.reload(); return false;" style="color:#92400e;text-decoration:underline;">Switch to live date</a>';
-        document.body.prepend(banner);
-    } else {
-        const banner = document.createElement('div');
-        banner.id = 'demo-mode-banner';
-        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#dbeafe;color:#1e40af;text-align:center;padding:6px 16px;font-size:12px;font-weight:600;border-bottom:1px solid #93c5fd;';
-        const liveDate = BondBoxClock.getNow();
-        banner.innerHTML = 'Live Mode &mdash; ' + liveDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' &bull; <a href="#" onclick="localStorage.removeItem(\'bondbox-live-date\'); location.reload(); return false;" style="color:#1e40af;text-decoration:underline;">Switch to demo mode</a>';
-        document.body.prepend(banner);
-    }
+function openUserSwitcher() {
+    const body = USER_PROFILES.map(u => {
+        const isActive = u.username === currentUser.username;
+        return '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid ' + (isActive ? 'var(--accent-brand)' : '#e5e7eb') + ';border-radius:10px;margin-bottom:8px;cursor:' + (isActive ? 'default' : 'pointer') + ';background:' + (isActive ? 'var(--accent-blue-bg)' : '#fff') + ';" ' + (isActive ? '' : 'onclick="switchUser(\'' + u.username + '\')"') + '>' +
+            '<div class="user-avatar" style="width:40px;height:40px;font-size:14px;">' + u.avatar + '</div>' +
+            '<div style="flex:1;">' +
+                '<div style="font-weight:600;font-size:14px;color:#1f2937;">' + u.fullName + (isActive ? ' <span style="font-size:11px;color:var(--accent-brand);font-weight:500;">(current)</span>' : '') + '</div>' +
+                '<div style="font-size:12px;color:#6b7280;">' + u.role + ' &mdash; ' + u.branch + '</div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+    const footer = '<button class="btn btn-outline" onclick="closeAllModals()">Cancel</button>';
+    openModal('Switch User', '<div style="margin-bottom:8px;color:#6b7280;font-size:13px;">Select an underwriter to view their dashboard and data.</div>' + body, footer);
+}
+
+// ==================== INITIALIZATION ====================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Build data for default user
+    buildUserData();
+
+    // Update sidebar with initial user
+    const avatarEl = document.getElementById('sidebar-avatar');
+    const nameEl = document.getElementById('sidebar-user-name');
+    const roleEl = document.getElementById('sidebar-user-role');
+    if (avatarEl) avatarEl.textContent = currentUser.avatar;
+    if (nameEl) nameEl.textContent = currentUser.fullName;
+    if (roleEl) roleEl.textContent = currentUser.role + ' \u2014 ' + currentUser.branch;
+
+    // Update dashboard greeting
+    const greeting = document.getElementById('dashboard-greeting');
+    if (greeting) greeting.textContent = 'Welcome, ' + currentUser.fullName.split(' ')[0];
+    const subtitle = document.getElementById('dashboard-subtitle');
+    if (subtitle) subtitle.textContent = currentUser.branch + ' Branch \u2014 Surety Bond Underwriting Dashboard';
+
+    // Render all views
+    renderAllViews();
+
+    // Also init non-data-dependent views
+    try { renderExposureMap(); } catch(e) { console.error('Init Exposure Map:', e); }
+    try { initMapTooltips(); } catch(e) { console.error('Init Map Tooltips:', e); }
+
+    // Show prototype banner
+    const banner = document.createElement('div');
+    banner.id = 'demo-mode-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#dbeafe;color:#1e40af;text-align:center;padding:6px 16px;font-size:12px;font-weight:600;border-bottom:1px solid #93c5fd;';
+    banner.innerHTML = 'BondBox Prototype &mdash; Real report data &bull; ' + USER_PROFILES.length + ' user profiles available &bull; Click user in sidebar to switch';
+    document.body.prepend(banner);
 });
