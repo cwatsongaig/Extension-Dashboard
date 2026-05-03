@@ -1621,7 +1621,8 @@ function navigateTo(viewId) {
         'loa': 'Letters of Authority', 'my-accounts': 'My Accounts',
         'portfolio-analysis': 'Portfolio Analysis', 'red-flags': 'Red Flag Accounts',
         'premium-ar': 'Premium AR by Agency', 'visitations': 'Agency Visits',
-        'service-activity': 'Service & Activity Report'
+        'service-activity': 'Service & Activity Report',
+        'approved-reviews': 'Approved Account Reviews'
     };
     if (crumb) crumb.innerHTML = `<span>${names[viewId] || viewId}</span>`;
 }
@@ -6612,6 +6613,108 @@ function matchAIResponse(text) {
     };
 }
 
+// ==================== APPROVED REVIEWS REPORT ====================
+
+function renderApprovedReviews() {
+    const branchFilter = document.getElementById('ar-approved-branch');
+    const typeFilter = document.getElementById('ar-approved-type');
+    if (!branchFilter || !typeFilter) return;
+
+    const data = typeof realApprovedReviews !== 'undefined' ? realApprovedReviews : [];
+    if (data.length === 0) return;
+
+    // Populate branch dropdown once
+    if (branchFilter.options.length <= 1) {
+        const branches = [...new Set(data.map(r => r.branch))].sort();
+        branches.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b; opt.textContent = b;
+            branchFilter.appendChild(opt);
+        });
+        if (currentUser.branch && branches.includes(currentUser.branch)) {
+            branchFilter.value = currentUser.branch;
+        }
+    }
+
+    // Filter
+    const selBranch = branchFilter.value;
+    const selType = typeFilter.value;
+    let filtered = data;
+    if (selBranch !== 'all') filtered = filtered.filter(r => r.branch === selBranch);
+    if (selType !== 'all') filtered = filtered.filter(r => r.reviewType === selType);
+
+    // KPIs
+    const total = filtered.length;
+    const withNotes = filtered.filter(r => r.redFlagNotes && r.redFlagNotes.length > 20).length;
+    const annual = filtered.filter(r => r.reviewType === 'Annual').length;
+    const uniqueReviewers = new Set(filtered.map(r => r.reviewer)).size;
+
+    document.getElementById('ar-approved-kpis').innerHTML = `
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span><span class="kpi-title">Total Approved</span></div><div class="kpi-value">${total}</div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></span><span class="kpi-title">With Red Flag Notes</span></div><div class="kpi-value">${withNotes}</div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="kpi-title">Annual Reviews</span></div><div class="kpi-value">${annual}</div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span class="kpi-title">Reviewers</span></div><div class="kpi-value">${uniqueReviewers}</div></div>
+    `;
+
+    // Table header
+    const thStyle = 'background:#f8f9fa;color:#6b7280;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;padding:10px 12px;border-bottom:1px solid #e5e7eb;';
+    document.getElementById('ar-approved-head').innerHTML = `<tr>
+        <th style="${thStyle}">Account</th>
+        <th style="${thStyle}">Branch</th>
+        <th style="${thStyle}">Review Type</th>
+        <th style="${thStyle}">FS Type</th>
+        <th style="${thStyle}">Statement Date</th>
+        <th style="${thStyle}">Reviewer</th>
+        <th style="${thStyle}">Reviewer Role</th>
+        <th style="${thStyle}">Approval Date</th>
+        <th style="${thStyle}">Audit Status</th>
+        <th style="${thStyle}text-align:center;">Notes</th>
+    </tr>`;
+
+    // Table body — sort by approval date descending
+    const sorted = [...filtered].sort((a, b) => {
+        if (!a.approvalDate || !b.approvalDate) return 0;
+        return new Date(b.approvalDate) - new Date(a.approvalDate);
+    });
+
+    const tdL = 'padding:10px 12px;font-size:13px;';
+    document.getElementById('ar-approved-body').innerHTML = sorted.map((r, idx) => {
+        const hasNotes = r.redFlagNotes && r.redFlagNotes.length > 20;
+        const detailId = 'ar-appr-' + idx;
+        const reviewerName = USERNAME_MAP[r.reviewer] || r.reviewer;
+
+        const mainRow = `<tr style="${hasNotes ? 'cursor:pointer;' : ''}" ${hasNotes ? 'onclick="toggleARApprovedNotes(\'' + detailId + '\',\'' + detailId + '-arrow\')"' : ''}>
+            <td style="${tdL}font-weight:600;">${r.account}</td>
+            <td style="${tdL}"><span class="branch-tag-sm">${r.branch}</span></td>
+            <td style="${tdL}">${r.reviewType}</td>
+            <td style="${tdL}">${r.fsType}</td>
+            <td style="${tdL}">${r.statementDate}</td>
+            <td style="${tdL}">${reviewerName}</td>
+            <td style="${tdL}"><span class="status-badge ${r.reviewerType === 'Initial Review' ? 'status-in-progress' : r.reviewerType === 'Supervisor Review' ? 'status-due' : 'status-approved'}" style="font-size:11px;">${r.reviewerType}</span></td>
+            <td style="${tdL}">${r.approvalDate}</td>
+            <td style="${tdL}">${r.auditStatus}</td>
+            <td style="text-align:center;padding:10px 12px;">${hasNotes ? '<span id="' + detailId + '-arrow" style="font-size:9px;color:var(--text-muted);">&#9654;</span> <span style="font-size:11px;color:var(--accent-orange);">View</span>' : '<span style="color:var(--text-muted);font-size:11px;">\u2014</span>'}</td>
+        </tr>`;
+
+        const notesRow = hasNotes ? `<tr data-parent="${detailId}" style="display:none;background:#fffbeb;">
+            <td colspan="10" style="padding:16px 24px 16px 36px;">
+                <div style="font-size:12px;font-weight:600;color:#92400e;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Red Flag Notes</div>
+                <div style="font-size:13px;color:#374151;line-height:1.6;">${r.redFlagNotes}</div>
+            </td>
+        </tr>` : '';
+
+        return mainRow + notesRow;
+    }).join('');
+}
+
+function toggleARApprovedNotes(groupId, arrowId) {
+    const rows = document.querySelectorAll('[data-parent="' + groupId + '"]');
+    const arrow = document.getElementById(arrowId);
+    const isOpen = rows.length > 0 && rows[0].style.display !== 'none';
+    rows.forEach(r => { r.style.display = isOpen ? 'none' : 'table-row'; });
+    if (arrow) arrow.innerHTML = isOpen ? '&#9654;' : '&#9660;';
+}
+
 // ==================== SERVICE & ACTIVITY REPORT ====================
 
 function renderServiceActivity() {
@@ -6775,9 +6878,11 @@ function switchUser(username) {
     const subtitle = document.getElementById('dashboard-subtitle');
     if (subtitle) subtitle.textContent = currentUser.branch + ' Branch \u2014 Surety Bond Underwriting Dashboard';
 
-    // Reset Service Activity branch filter so it repopulates for new user
+    // Reset Service Activity and Approved Reviews branch filters so they repopulate for new user
     const saBranch = document.getElementById('sa-branch-filter');
     if (saBranch) { saBranch.innerHTML = '<option value="all">All Branches</option>'; }
+    const arBranch = document.getElementById('ar-approved-branch');
+    if (arBranch) { arBranch.innerHTML = '<option value="all">All Branches</option>'; }
 
     // Re-render all views
     renderAllViews();
@@ -6809,7 +6914,8 @@ function renderAllViews() {
         ['LOA View', renderLOAView],
         ['Bond Request Badge', updateBondRequestBadge],
         ['Premium AR', renderPremiumAR],
-        ['Service Activity', renderServiceActivity]
+        ['Service Activity', renderServiceActivity],
+        ['Approved Reviews', renderApprovedReviews]
     ];
     steps.forEach(([name, fn]) => {
         try { fn(); } catch (e) { console.error('Render failed: ' + name, e); }
