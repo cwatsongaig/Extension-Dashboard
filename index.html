@@ -861,26 +861,21 @@
             <div class="view-header">
                 <div><h1>Rating Calculators</h1><p class="view-subtitle">Surety bond premium rating tools</p></div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px;">
-                <div style="border:1px solid var(--border-color);border-radius:var(--radius);padding:32px;background:var(--bg-card);text-align:center;">
-                    <div style="width:56px;height:56px;margin:0 auto 16px;background:var(--accent-blue-bg);border-radius:12px;display:flex;align-items:center;justify-content:center;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-brand)" stroke-width="2" width="28" height="28"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                    </div>
-                    <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text-primary);">Contract Surety</h3>
-                    <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.5;">Calculate premium rates for performance, payment, bid, and maintenance bonds based on contract value and bond class.</p>
-                    <a href="https://contract-surety-rating-calculator-ldcbibjhekwelxyo9ubjum.streamlit.app/" target="_blank" rel="noopener" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;padding:10px 24px;">
-                        Open Calculator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                    </a>
-                </div>
-                <div style="border:1px solid var(--border-color);border-radius:var(--radius);padding:32px;background:var(--bg-card);text-align:center;">
-                    <div style="width:56px;height:56px;margin:0 auto 16px;background:#f0fdf4;border-radius:12px;display:flex;align-items:center;justify-content:center;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" width="28" height="28"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                    </div>
-                    <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text-primary);">Commercial Surety</h3>
-                    <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.5;">Calculate premium rates for license &amp; permit, court, fiduciary, public official, and miscellaneous commercial bonds.</p>
-                    <a href="https://commercial-surety-calculator-cbvqzf9ntdc7ntnra5pyih.streamlit.app/" target="_blank" rel="noopener" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;padding:10px 24px;background:#16a34a;border-color:#16a34a;">
-                        Open Calculator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                    </a>
+            <div class="tab-group" id="calc-tabs" style="margin-bottom:16px;">
+                <button class="tab active" onclick="switchCalcTab('contract', this)">Contract Surety</button>
+                <button class="tab" onclick="switchCalcTab('commercial', this)">Commercial Surety</button>
+            </div>
+            <div id="calc-iframe-container" style="border:1px solid var(--border-color);border-radius:var(--radius);overflow:hidden;background:#fff;position:relative;">
+                <iframe id="calc-iframe"
+                    src="about:blank"
+                    style="width:100%;height:calc(100vh - 200px);border:none;"
+                    title="Contract Surety Rating Calculator"
+                    allow="clipboard-read; clipboard-write"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+                    loading="lazy">
+                </iframe>
+                <div id="calc-fallback" style="display:none;position:absolute;bottom:0;left:0;right:0;padding:12px 20px;background:rgba(255,255,255,0.95);border-top:1px solid #e5e7eb;text-align:center;font-size:13px;color:#6b7280;">
+                    If the calculator doesn't load, <a id="calc-fallback-link" href="#" target="_blank" rel="noopener" style="color:var(--accent-brand);font-weight:600;">open it in a new tab</a>
                 </div>
             </div>
         </section>

@@ -1771,6 +1771,9 @@ function navigateTo(viewId) {
     const target = document.getElementById('view-' + viewId);
     if (target) target.classList.add('active');
 
+    // Lazy-load rating calculators when first navigated to
+    if (viewId === 'rating-calculators') { loadCalcIfNeeded(); }
+
     // Update nav
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
     const navItem = document.querySelector(`.nav-item[data-view="${viewId}"]`);
@@ -6892,20 +6895,44 @@ function matchAIResponse(text) {
 // ==================== RATING CALCULATORS ====================
 
 const CALC_URLS = {
+    contract: 'https://contract-surety-rating-calculator-ldcbibjhekwelxyo9ubjum.streamlit.app/?embed=true&embed_options=light_theme',
+    commercial: 'https://commercial-surety-calculator-cbvqzf9ntdc7ntnra5pyih.streamlit.app/?embed=true&embed_options=light_theme'
+};
+const CALC_DIRECT_URLS = {
     contract: 'https://contract-surety-rating-calculator-ldcbibjhekwelxyo9ubjum.streamlit.app/',
     commercial: 'https://commercial-surety-calculator-cbvqzf9ntdc7ntnra5pyih.streamlit.app/'
 };
+let currentCalcType = 'contract';
+let calcLoaded = false;
 
 function switchCalcTab(type, tabEl) {
     // Update active tab
     document.querySelectorAll('#calc-tabs .tab').forEach(t => t.classList.remove('active'));
     if (tabEl) tabEl.classList.add('active');
+    currentCalcType = type;
 
     // Switch iframe src
     const iframe = document.getElementById('calc-iframe');
+    const fallback = document.getElementById('calc-fallback');
+    const fallbackLink = document.getElementById('calc-fallback-link');
     if (iframe) {
         iframe.src = CALC_URLS[type] || CALC_URLS.contract;
         iframe.title = (type === 'commercial' ? 'Commercial' : 'Contract') + ' Surety Rating Calculator';
+    }
+    if (fallbackLink) {
+        fallbackLink.href = CALC_DIRECT_URLS[type] || CALC_DIRECT_URLS.contract;
+    }
+    // Show fallback link after a delay in case embed doesn't work
+    if (fallback) {
+        fallback.style.display = 'none';
+        setTimeout(function() { fallback.style.display = 'block'; }, 3000);
+    }
+}
+
+function loadCalcIfNeeded() {
+    if (!calcLoaded) {
+        calcLoaded = true;
+        switchCalcTab(currentCalcType, document.querySelector('#calc-tabs .tab.active'));
     }
 }
 
