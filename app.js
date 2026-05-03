@@ -473,6 +473,7 @@ const ADMIN_USERS = ['Ken Bearley', 'Chris Watson', 'Geoff Smith'];
 let sampleTerritories = [
     { name: 'KENTUCKY', assignee: 'Doug Hellmann', states: ['KY', 'WV', 'OH'] },
     { name: 'CINCINNATI', assignee: 'Jake Liggett', states: ['OH', 'IN', 'PA', 'WV'] },
+    { name: 'CINCINNATI', assignee: 'Jake Miller', states: ['OH', 'IN', 'PA', 'WV'] },
     { name: 'ORANGE', assignee: 'Wade Wilson', states: ['CA'] },
     { name: 'ORANGE', assignee: 'Kathy Wittler', states: ['CA'] },
     { name: 'TENNESSEE', assignee: 'Jonathon Whipkey', states: ['TN', 'AL', 'MS'] },
@@ -4014,7 +4015,7 @@ function openRedFlagDetail(accountName) {
         </div>
     `;
 
-    openModal(accountName + ' — Red Flag Ratios', body, '<button class="btn btn-outline" onclick="closeModal()">Close</button>');
+    openModal(accountName + ' — Red Flag Ratios', body, '<button class="btn btn-outline" onclick="closeAllModals()">Close</button>');
 }
 
 // ==================== RED FLAGS KPI DRILL-DOWN ====================

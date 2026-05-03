@@ -61,6 +61,13 @@ const USER_PROFILES = [
     "branch": "TWIN CITIES",
     "role": "Underwriter",
     "avatar": "DB"
+  },
+  {
+    "username": "jmiller9",
+    "fullName": "Jake Miller",
+    "branch": "CINCINNATI",
+    "role": "Branch Manager",
+    "avatar": "JM"
   }
 ];
 
@@ -74,6 +81,7 @@ const USERNAME_MAP = {
   "akveton": "Adam Kveton",
   "pholland": "Patrick Holland",
   "dbossen": "Doug Bossen",
+  "jmiller9": "Jake Miller",
   "mschoose": "Jake Liggett",
   "wruth": "Wyatt Ruth",
   "jwilliams": "Suzi Dean-Begley",
