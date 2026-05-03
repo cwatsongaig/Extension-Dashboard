@@ -2492,9 +2492,10 @@ function renderBidCalMonth(titleEl, grid, bidsByDate, remindersByDate) {
         if (bids.length > 0 || reminders.length > 0) cls += ' bid-cal-cell-has-bids';
 
         let bidsHtml = '';
-        bids.forEach(b => {
+        bids.forEach((b, bi) => {
             const sc = statusClass(b.status);
-            bidsHtml += `<div class="bid-cal-entry bid-cal-entry-${sc}" title="${b.projectName} - ${b.status} - ${fmt(b.contractValue)}">${b.projectName.length > 22 ? b.projectName.substring(0,20) + '...' : b.projectName}</div>`;
+            const bidIdx = sampleBidLog.indexOf(b);
+            bidsHtml += `<div class="bid-cal-entry bid-cal-entry-${sc}" title="${b.projectName} - ${b.status} - ${fmt(b.contractValue)}" onclick="openBidDetail(${bidIdx})" style="cursor:pointer;">${b.projectName.length > 22 ? b.projectName.substring(0,20) + '...' : b.projectName}</div>`;
         });
         reminders.forEach(r => {
             bidsHtml += `<div class="bid-cal-entry bid-cal-entry-reminder" title="${r.title} — ${r.time}${r.account ? ' — ' + r.account : ''}" onclick="openAddReminderModal(${r.id})" style="cursor:pointer;">&#128276; ${r.title.length > 18 ? r.title.substring(0,16) + '...' : r.title}</div>`;
@@ -2545,7 +2546,8 @@ function renderBidCalWeek(titleEl, grid, bidsByDate, remindersByDate) {
         let bidsHtml = '';
         bids.forEach(b => {
             const sc = statusClass(b.status);
-            bidsHtml += `<div class="bid-cal-entry bid-cal-entry-${sc}">
+            const bidIdx = sampleBidLog.indexOf(b);
+            bidsHtml += `<div class="bid-cal-entry bid-cal-entry-${sc}" onclick="openBidDetail(${bidIdx})" style="cursor:pointer;">
                 <strong>${b.projectName}</strong><br>
                 <span style="font-size:10px;color:var(--text-muted);">${b.obligee} &bull; ${fmt(b.contractValue)}</span>
             </div>`;
@@ -2672,6 +2674,83 @@ function renderUpcomingReminders() {
 }
 
 // ==================== REMINDERS: ADD / EDIT / DELETE ====================
+
+// ==================== BID DETAIL MODAL ====================
+
+function openBidDetail(idx) {
+    const b = sampleBidLog[idx];
+    if (!b) return;
+
+    const body = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Project Name</label>
+            <input type="text" id="bid-edit-project" value="${(b.projectName || '').replace(/"/g,'&quot;')}" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+        </div>
+        <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Obligee</label>
+            <input type="text" id="bid-edit-obligee" value="${(b.obligee || '').replace(/"/g,'&quot;')}" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+        </div>
+        <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Bid Date</label>
+            <input type="text" id="bid-edit-date" value="${b.bidDate || ''}" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+        </div>
+        <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Contract Value</label>
+            <input type="text" id="bid-edit-value" value="${b.contractValue ? fmt(b.contractValue) : ''}" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+        </div>
+        <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Bid Bond Amount</label>
+            <input type="text" id="bid-edit-bondamt" value="${b.bidBondAmt ? fmt(b.bidBondAmt) : ''}" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+        </div>
+        <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Warranty</label>
+            <input type="text" id="bid-edit-warranty" value="${b.warranty || ''}" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+        </div>
+        <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Status</label>
+            <select id="bid-edit-status" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+                ${['Pending Bid','Approved Bid','Closed Bid','Convert to Bond'].map(s => '<option' + (b.status === s ? ' selected' : '') + '>' + s + '</option>').join('')}
+            </select>
+        </div>
+        <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">DOA Level</label>
+            <select id="bid-edit-doa" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+                ${['Branch','Region','CAO'].map(s => '<option' + (b.doa === s ? ' selected' : '') + '>' + s + '</option>').join('')}
+            </select>
+        </div>
+        <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Bid Result</label>
+            <input type="text" id="bid-edit-result" value="${b.bidResult || ''}" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+        </div>
+        <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Result Amount</label>
+            <input type="text" id="bid-edit-resultamt" value="${b.bidResultAmt ? fmt(b.bidResultAmt) : ''}" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+        </div>
+    </div>`;
+
+    const footer = `
+        <button class="btn btn-outline" onclick="closeAllModals()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveBidDetail(${idx})">Save Changes</button>`;
+
+    openModal('Bid Details — ' + (b.projectName || 'Untitled'), body, footer);
+}
+
+function saveBidDetail(idx) {
+    const b = sampleBidLog[idx];
+    if (!b) return;
+    b.projectName = document.getElementById('bid-edit-project').value || b.projectName;
+    b.obligee = document.getElementById('bid-edit-obligee').value || b.obligee;
+    b.bidDate = document.getElementById('bid-edit-date').value || b.bidDate;
+    b.status = document.getElementById('bid-edit-status').value || b.status;
+    b.doa = document.getElementById('bid-edit-doa').value || b.doa;
+    b.warranty = document.getElementById('bid-edit-warranty').value || b.warranty;
+    b.bidResult = document.getElementById('bid-edit-result').value || b.bidResult;
+    closeAllModals();
+    renderBidCalendar();
+    renderBidLog();
+    showToast('Bid updated');
+}
 
 function openAddReminderModal(editId) {
     const isEdit = typeof editId === 'number';
