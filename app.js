@@ -474,17 +474,30 @@ function getLOAStatus(loa) {
 const ADMIN_USERS = ['Ken Bearley', 'Chris Watson', 'Geoff Smith'];
 
 let sampleTerritories = [
-    { name: 'KENTUCKY', assignee: 'Doug Hellmann', states: ['KY', 'WV', 'OH'] },
-    { name: 'CINCINNATI', assignee: 'Jake Liggett', states: ['OH', 'IN', 'PA', 'WV'] },
-    { name: 'CINCINNATI', assignee: 'Jake Miller', states: ['OH', 'IN', 'PA', 'WV'] },
+    // Based on GAI Contract Surety Territory Map
+    { name: 'KENTUCKY', assignee: 'Doug Hellmann', states: ['KY'] },
+    { name: 'CINCINNATI', assignee: 'Jake Liggett', states: ['OH', 'WV'] },
+    { name: 'CINCINNATI', assignee: 'Jake Miller', states: ['OH', 'WV'] },
     { name: 'ORANGE', assignee: 'Wade Wilson', states: ['CA'] },
     { name: 'ORANGE', assignee: 'Kathy Wittler', states: ['CA'] },
-    { name: 'TENNESSEE', assignee: 'Jonathon Whipkey', states: ['TN', 'AL', 'MS'] },
-    { name: 'CHICAGO CONTRACT', assignee: 'Adam Kveton', states: ['IL', 'WI', 'IN', 'MI'] },
-    { name: 'CAROLINA', assignee: 'Patrick Holland', states: ['NC', 'SC', 'VA'] },
-    { name: 'TWIN CITIES', assignee: 'Doug Bossen', states: ['MN', 'ND', 'SD', 'IA', 'WI'] },
+    { name: 'WALNUT CREEK', assignee: 'Wade Wilson', states: ['CA'] },
+    { name: 'TENNESSEE', assignee: 'Jonathon Whipkey', states: ['TN'] },
+    { name: 'CHICAGO CONTRACT', assignee: 'Adam Kveton', states: ['IL', 'IN'] },
+    { name: 'CAROLINA', assignee: 'Patrick Holland', states: ['NC', 'SC'] },
+    { name: 'TWIN CITIES', assignee: 'Doug Bossen', states: ['MN', 'WI', 'IA'] },
     { name: 'FLORIDA', assignee: 'Wade Wilson', states: ['FL'] },
-    { name: 'WALNUT CREEK', assignee: 'Wade Wilson', states: ['CA'] }
+    // Territories not currently assigned to a switchable user profile
+    { name: 'ATLANTA', assignee: '', states: ['GA', 'AL'] },
+    { name: 'PACIFIC NORTHWEST', assignee: '', states: ['WA', 'OR', 'ID'] },
+    { name: 'ROCKY MOUNTAIN', assignee: '', states: ['CO', 'UT', 'NV', 'AZ', 'NM'] },
+    { name: 'NEW ENGLAND', assignee: '', states: ['ME', 'NH', 'VT', 'MA', 'RI', 'CT'] },
+    { name: 'MID-ATLANTIC', assignee: '', states: ['PA', 'NJ', 'DE', 'MD', 'DC', 'VA'] },
+    { name: 'BIG SKY', assignee: '', states: ['MT', 'WY', 'SD', 'ND'] },
+    { name: 'TULSA', assignee: '', states: ['OK', 'AR'] },
+    { name: 'TEXAS', assignee: '', states: ['TX'] },
+    { name: 'BATON ROUGE', assignee: '', states: ['LA', 'MS'] },
+    { name: 'DETROIT', assignee: '', states: ['MI'] },
+    { name: 'NEW YORK', assignee: '', states: ['NY'] }
 ];
 
 function canSeeAllTerritories() {
