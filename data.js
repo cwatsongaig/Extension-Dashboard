@@ -68,6 +68,20 @@ const USER_PROFILES = [
     "branch": "CINCINNATI",
     "role": "Branch Manager",
     "avatar": "JM"
+  },
+  {
+    "username": "cwatson",
+    "fullName": "Chris Watson",
+    "branch": "ALL",
+    "role": "Admin",
+    "avatar": "CW"
+  },
+  {
+    "username": "gsmith",
+    "fullName": "Geoff Smith",
+    "branch": "ALL",
+    "role": "Admin",
+    "avatar": "GS"
   }
 ];
 

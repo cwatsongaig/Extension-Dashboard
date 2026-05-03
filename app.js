@@ -76,9 +76,11 @@ function buildUserData() {
     const branch = currentUser.branch;
     const fullName = currentUser.fullName;
     const now = BondBoxClock.getNow();
+    const isAdmin = (branch === 'ALL');
 
-    // --- ARRs: from realARRs, filtered by this user's username ---
-    sampleARRs = realARRs.filter(r => r.assignee === uname).map(r => {
+    // --- ARRs: from realARRs, filtered by this user's username (admins see all) ---
+    const arrSource = isAdmin ? realARRs.slice(0, 50) : realARRs.filter(r => r.assignee === uname);
+    sampleARRs = arrSource.map(r => {
         // Map real review states to status values the app uses
         let status = 'Due';
         let risk = 'low';
@@ -114,8 +116,9 @@ function buildUserData() {
         };
     });
 
-    // --- Bonds: from realBonds, filtered by branch ---
-    sampleBonds = realBonds.filter(b => b.branch === branch || b.underwriter === uname).map(b => {
+    // --- Bonds: from realBonds, filtered by branch (admins see sample across all) ---
+    const bondSource = isAdmin ? realBonds.slice(0, 200) : realBonds.filter(b => b.branch === branch || b.underwriter === uname);
+    sampleBonds = bondSource.map(b => {
         // Compute status from expiration date
         let status = 'Active';
         if (b.expirationDate) {
@@ -137,8 +140,8 @@ function buildUserData() {
         };
     });
 
-    // --- LOAs: from realLOAData, filtered by username ---
-    const userLOAs = realLOAData.filter(l => l.user === uname);
+    // --- LOAs: from realLOAData, filtered by username (admins see sample across all) ---
+    const userLOAs = isAdmin ? realLOAData.slice(0, 30) : realLOAData.filter(l => l.user === uname);
     sampleLOAData = userLOAs.map(l => {
         let status = 'Active';
         if (l.expDate) {
@@ -513,6 +516,9 @@ const DASHBOARD_DEFAULTS = {
         { id: 'arr-list', label: 'My Account Review Reports', visible: true, order: 6 },
         { id: 'bond-requests', label: 'My Bond Requests', visible: true, order: 7 }
     ],
+    managerPanels: [
+        { id: 'mgr-service-activity', label: 'Service & Activity Summary', visible: true, order: 0 }
+    ],
     config: {
         actionItemsMaxCount: 10,
         arrListMaxCount: 5,
@@ -532,6 +538,14 @@ function getDashboardPrefs() {
             DASHBOARD_DEFAULTS.panels.forEach(dp => {
                 if (!storedIds.includes(dp.id)) {
                     prefs.panels.push({ ...dp, order: prefs.panels.length });
+                }
+            });
+            // Ensure managerPanels exist
+            if (!prefs.managerPanels) prefs.managerPanels = JSON.parse(JSON.stringify(DASHBOARD_DEFAULTS.managerPanels));
+            const storedMgrIds = prefs.managerPanels.map(p => p.id);
+            DASHBOARD_DEFAULTS.managerPanels.forEach(dp => {
+                if (!storedMgrIds.includes(dp.id)) {
+                    prefs.managerPanels.push({ ...dp, order: prefs.managerPanels.length });
                 }
             });
             // Ensure config keys exist
@@ -561,6 +575,28 @@ function resetDashboardPrefs() {
 const MANAGER_ROLES = ['Branch Manager', 'Regional Manager', 'VP Underwriting', 'CAO'];
 function isManagerRole() {
     return MANAGER_ROLES.includes(currentUser.role) || MANAGER_ROLES.includes(chainTitles[currentUser.name]);
+}
+
+function isAdminUser() {
+    return ADMIN_USERS.includes(currentUser.name) || currentUser.role === 'Admin';
+}
+
+function hasManagerAccess() {
+    if (isManagerRole() || isAdminUser()) return true;
+    try {
+        const granted = JSON.parse(localStorage.getItem('bondbox-manager-access') || '[]');
+        return granted.includes(currentUser.username);
+    } catch(e) { return false; }
+}
+
+function getManagerAccessList() {
+    try { return JSON.parse(localStorage.getItem('bondbox-manager-access') || '[]'); }
+    catch(e) { return []; }
+}
+
+function saveManagerAccessList(list) {
+    try { localStorage.setItem('bondbox-manager-access', JSON.stringify(list)); }
+    catch(e) { /* ignore */ }
 }
 
 // ==================== WIDGET REGISTRY & DASHBOARD LAYOUT ====================
@@ -675,6 +711,52 @@ const WIDGET_REGISTRY = {
         }
     },
     // 'quick-actions' removed — will be replaced with new dashboard content
+    'mgr-service-activity': {
+        label: 'Service & Activity Summary',
+        managerOnly: true,
+        render: function(container) {
+            container.innerHTML = '<div class="uw-panel uw-panel-full"><h2 class="uw-panel-title" style="display:flex;justify-content:space-between;align-items:center;">Service & Activity Summary <a href="#" onclick="event.preventDefault();navigateTo(\'service-activity\');" style="font-size:12px;font-weight:400;color:var(--accent-brand);">View Full Report &rarr;</a></h2><div id="mgr-sa-widget"></div></div>';
+        },
+        postRender: function() {
+            const el = document.getElementById('mgr-sa-widget');
+            if (!el) return;
+            const data = typeof realServiceActivity !== 'undefined' ? realServiceActivity : [];
+            if (data.length === 0) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:12px;">No service activity data available.</div>'; return; }
+            // Filter to current user's branch (or all for admins)
+            const branch = currentUser.branch;
+            const filtered = (branch === 'ALL') ? data : data.filter(r => r.branch === branch);
+            // Aggregate by user
+            const userMap = {};
+            filtered.forEach(r => {
+                if (!userMap[r.user]) userMap[r.user] = { user: r.user, ytd: 0, actions: 0 };
+                userMap[r.user].ytd += r.ytd;
+                userMap[r.user].actions++;
+            });
+            const topUsers = Object.values(userMap).sort((a, b) => b.ytd - a.ytd).slice(0, 8);
+            const totalYTD = filtered.reduce((s, r) => s + r.ytd, 0);
+            const totalUsers = Object.keys(userMap).length;
+            // Compact summary
+            el.innerHTML = `
+                <div style="display:flex;gap:24px;margin-bottom:12px;padding:0 4px;">
+                    <div><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Branch</span><div style="font-weight:600;font-size:14px;">${branch === 'ALL' ? 'All Branches' : branch}</div></div>
+                    <div><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Users</span><div style="font-weight:600;font-size:14px;">${totalUsers}</div></div>
+                    <div><span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">YTD Actions</span><div style="font-weight:600;font-size:14px;">${totalYTD.toLocaleString()}</div></div>
+                </div>
+                <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                    <thead><tr style="border-bottom:1px solid #e5e7eb;">
+                        <th style="text-align:left;padding:6px 8px;color:var(--text-muted);font-size:10px;text-transform:uppercase;">User</th>
+                        <th style="text-align:right;padding:6px 8px;color:var(--text-muted);font-size:10px;text-transform:uppercase;">YTD Total</th>
+                        <th style="text-align:right;padding:6px 8px;color:var(--text-muted);font-size:10px;text-transform:uppercase;">Action Types</th>
+                    </tr></thead>
+                    <tbody>${topUsers.map(u => `<tr style="border-bottom:1px solid #f3f4f6;">
+                        <td style="padding:6px 8px;font-weight:500;">${u.user}</td>
+                        <td style="text-align:right;padding:6px 8px;">${u.ytd.toLocaleString()}</td>
+                        <td style="text-align:right;padding:6px 8px;color:var(--text-muted);">${u.actions}</td>
+                    </tr>`).join('')}</tbody>
+                </table>
+            `;
+        }
+    },
     'exposure-gauge': {
         label: 'Exposure & Capacity',
         render: function(container) {
@@ -808,6 +890,45 @@ function renderDashboardLayout() {
         }
     });
 
+    // Render manager panels if user has access
+    if (hasManagerAccess()) {
+        const mgrPanels = prefs.managerPanels
+            ? prefs.managerPanels.filter(p => p.visible).sort((a, b) => a.order - b.order)
+            : [];
+
+        if (mgrPanels.length > 0) {
+            // Add a section divider
+            const divider = document.createElement('div');
+            divider.style.cssText = 'border-top:2px solid var(--accent-brand);margin:20px 0 12px;padding-top:8px;';
+            divider.innerHTML = '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent-brand);">Manager Reports</div>';
+            container.appendChild(divider);
+
+            mgrPanels.forEach(panel => {
+                try {
+                    const widget = WIDGET_REGISTRY[panel.id];
+                    if (!widget) return;
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'dashboard-widget';
+                    wrapper.setAttribute('data-widget-id', panel.id);
+                    container.appendChild(wrapper);
+                    widget.render(wrapper);
+                } catch (e) {
+                    console.error('renderDashboardLayout: manager widget error for ' + panel.id, e);
+                }
+            });
+
+            // Post-render for manager panels
+            mgrPanels.forEach(panel => {
+                try {
+                    const widget = WIDGET_REGISTRY[panel.id];
+                    if (widget && widget.postRender) widget.postRender();
+                } catch (e) {
+                    console.error('renderDashboardLayout: manager postRender error for ' + panel.id, e);
+                }
+            });
+        }
+    }
+
     // Wire up drag-and-drop reordering
     let draggedWidget = null;
     container.querySelectorAll('.dashboard-widget').forEach(w => {
@@ -904,10 +1025,41 @@ function openDashboardSettings() {
     body += '</select></div>';
     body += '</div></div>';
 
-    // Manager-only placeholder
-    if (isManagerRole()) {
-        body += '<div style="margin-bottom:12px;"><h3 style="font-size:14px;font-weight:600;margin-bottom:10px;color:#374151;">Manager Settings</h3>';
-        body += '<div style="padding:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;color:#0369a1;font-size:13px;">Manager-specific customization options coming soon. These will include team-wide dashboard defaults, shared KPI targets, and escalation thresholds.</div></div>';
+    // Manager Reports section (visible to managers and admins)
+    if (hasManagerAccess()) {
+        body += '<div style="margin-bottom:20px;"><h3 style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--accent-brand);">Manager Report Widgets</h3>';
+        body += '<div style="font-size:12px;color:#6b7280;margin-bottom:10px;">These widgets are available to managers and admin users. They appear below the standard dashboard panels.</div>';
+        var mgrPanels = prefs.managerPanels || [];
+        mgrPanels.sort(function(a, b) { return a.order - b.order; });
+        mgrPanels.forEach(function(p) {
+            var w = WIDGET_REGISTRY[p.id];
+            var label = w ? w.label : p.label || p.id;
+            body += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--accent-brand);border-radius:8px;margin-bottom:6px;background:#fdf2f2;">';
+            body += '<label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;font-size:13px;color:#374151;">';
+            body += '<input type="checkbox" ' + (p.visible ? 'checked' : '') + ' onchange="toggleMgrPanel(\'' + p.id + '\', this.checked)" style="width:16px;height:16px;accent-color:var(--accent-brand);">';
+            body += '<span style="font-weight:500;">' + label + '</span></label>';
+            body += '<span style="font-size:10px;color:var(--accent-brand);text-transform:uppercase;font-weight:600;">Manager</span>';
+            body += '</div>';
+        });
+        body += '</div>';
+    }
+
+    // Admin: Widget Assignment (visible to admins only)
+    if (isAdminUser()) {
+        body += '<div style="margin-bottom:12px;"><h3 style="font-size:14px;font-weight:600;margin-bottom:10px;color:#374151;">Admin: Manager Widget Access</h3>';
+        body += '<div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Grant non-manager users access to manager report widgets on their dashboard.</div>';
+        var accessList = getManagerAccessList();
+        USER_PROFILES.forEach(function(u) {
+            if (u.role === 'Admin' || u.role === 'Branch Manager') return; // Already have access
+            var hasAccess = accessList.includes(u.username);
+            body += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:4px;background:#fff;">';
+            body += '<label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;font-size:13px;color:#374151;">';
+            body += '<input type="checkbox" ' + (hasAccess ? 'checked' : '') + ' onchange="toggleManagerAccess(\'' + u.username + '\', this.checked)" style="width:16px;height:16px;accent-color:var(--accent-brand);">';
+            body += '<span style="font-weight:500;">' + u.fullName + '</span>';
+            body += '<span style="font-size:11px;color:var(--text-muted);margin-left:4px;">' + u.branch + ' &mdash; ' + u.role + '</span>';
+            body += '</label></div>';
+        });
+        body += '</div>';
     }
 
     var footer = '<button class="btn btn-outline" onclick="resetDashboardAndClose()" style="margin-right:auto;">Reset to Defaults</button>';
@@ -928,6 +1080,25 @@ function _getDashSettingsState() {
         _dashSettingsOrder = prefs.panels.slice().sort(function(a, b) { return a.order - b.order; });
     }
     return _dashSettingsOrder;
+}
+
+// Manager panel toggle in settings
+var _mgrSettingsState = null;
+function toggleMgrPanel(panelId, checked) {
+    if (!_mgrSettingsState) {
+        var prefs = getDashboardPrefs();
+        _mgrSettingsState = (prefs.managerPanels || []).slice();
+    }
+    var p = _mgrSettingsState.find(function(x) { return x.id === panelId; });
+    if (p) p.visible = checked;
+}
+
+// Admin toggle for granting manager access to users
+function toggleManagerAccess(username, checked) {
+    var list = getManagerAccessList();
+    if (checked && !list.includes(username)) list.push(username);
+    else if (!checked) list = list.filter(function(u) { return u !== username; });
+    saveManagerAccessList(list);
 }
 
 function toggleDashPanel(panelId, checked) {
@@ -998,11 +1169,19 @@ function applyDashboardSettings() {
         var bondMax = document.getElementById('dash-cfg-bondMax');
         if (bondMax) prefs.config.bondRequestsMaxCount = parseInt(bondMax.value, 10);
 
+        // Apply manager panel state if modified
+        if (_mgrSettingsState) {
+            prefs.managerPanels = _mgrSettingsState.map(function(p, i) {
+                return { id: p.id, label: p.label || (WIDGET_REGISTRY[p.id] ? WIDGET_REGISTRY[p.id].label : p.id), visible: p.visible, order: i };
+            });
+        }
+
         saveDashboardPrefs(prefs);
     } catch (e) {
         console.error('applyDashboardSettings: error saving preferences', e);
     }
     _dashSettingsOrder = null;
+    _mgrSettingsState = null;
     closeAllModals();
     renderDashboardLayout();
 }
