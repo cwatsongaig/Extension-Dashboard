@@ -49,7 +49,7 @@ const sampleARRs = [
     { account: 'Granite Construction Inc', type: 'Annual', level: 'Branch', dueDate: 'May 5, 2024', status: 'Due', risk: 'medium', daysOverdue: 0, assignee: 'Mike Torres', grade: 'B', branch: 'Sacramento', currentQueue: 'Mike Torres', queueEnteredDate: 'Apr 12, 2024', triggeringStatementId: 'FS-09320', fsDateReceived: '04/21/2024' },
     { account: 'Skanska USA Civil', type: 'Annual', level: 'Branch', dueDate: 'Apr 10, 2024', status: 'Overdue', risk: 'high', daysOverdue: 17, assignee: 'Jake Miller', grade: 'C', branch: 'Cincinnati', currentQueue: 'Max Miller', queueEnteredDate: 'Mar 29, 2024', triggeringStatementId: null, fsDateReceived: '03/27/2024' },
     { account: 'Kiewit Corporation', type: 'Annual', level: 'Region', dueDate: 'May 8, 2024', status: 'In Progress', risk: 'low', daysOverdue: 0, assignee: 'Jake Miller', grade: 'A-', branch: 'Cincinnati', currentQueue: 'Jake Miller', queueEnteredDate: 'Apr 15, 2024', triggeringStatementId: null, fsDateReceived: '04/24/2024' },
-    { account: 'Brasfield & Gorrie', type: 'Interim', level: 'Branch', dueDate: 'May 12, 2024', status: 'Due', risk: 'medium', daysOverdue: 0, assignee: 'Jake Miller', grade: 'B-', branch: 'Cincinnati', currentQueue: 'Max Miller', queueEnteredDate: 'Apr 11, 2024', triggeringStatementId: null, fsDateReceived: '04/28/2024' },
+    { account: 'Brasfield & Gorrie LLC', type: 'Interim', level: 'Branch', dueDate: 'May 12, 2024', status: 'Due', risk: 'medium', daysOverdue: 0, assignee: 'Jake Miller', grade: 'B-', branch: 'Cincinnati', currentQueue: 'Max Miller', queueEnteredDate: 'Apr 11, 2024', triggeringStatementId: null, fsDateReceived: '04/28/2024' },
     { account: 'Walsh Construction Co', type: 'Submission', level: 'Branch', dueDate: 'Apr 20, 2024', status: 'Overdue', risk: 'medium', daysOverdue: 7, assignee: 'Jake Miller', grade: 'B+', branch: 'Cincinnati', currentQueue: 'Jake Miller', queueEnteredDate: 'Apr 01, 2024', triggeringStatementId: null, fsDateReceived: '04/06/2024' },
     { account: 'Flatiron Construction', type: 'Annual', level: 'Region', dueDate: 'May 15, 2024', status: 'Due', risk: 'low', daysOverdue: 0, assignee: 'Jake Miller', grade: 'A+', branch: 'Cincinnati', currentQueue: 'John Webster', queueEnteredDate: 'Apr 13, 2024', triggeringStatementId: null, fsDateReceived: '05/01/2024' },
     { account: 'Manhattan Construction Group', type: 'Annual', level: 'Branch', dueDate: 'May 20, 2024', status: 'In Progress', risk: 'low', daysOverdue: 0, assignee: 'Jake Miller', grade: 'A', branch: 'Cincinnati', currentQueue: 'Jake Miller', queueEnteredDate: 'Apr 12, 2024', triggeringStatementId: null, fsDateReceived: '05/06/2024' },
@@ -159,29 +159,35 @@ const sampleLargestJobs = [
 ];
 
 const sampleLOAs = [
-    { type: 'Underwriter', effDate: '01/01/2026', expDate: '12/31/2026', single: 5000000, aggregate: 15000000, toUser: 'Yes', status: 'Active' },
-    { type: 'Agent', effDate: '05/15/2025', expDate: '05/14/2026', single: 2000000, aggregate: 8000000, toUser: 'Yes', status: 'Active' },
-    { type: 'Underwriter', effDate: '01/01/2025', expDate: '12/31/2025', single: 5000000, aggregate: 15000000, toUser: 'No', status: 'Expired' }
+    { type: 'Underwriter', effDate: '01/01/2024', expDate: '12/31/2024', single: 5000000, aggregate: 15000000, toUser: 'Yes', status: 'Active' },
+    { type: 'Agent', effDate: '04/01/2023', expDate: '05/01/2024', single: 2000000, aggregate: 8000000, toUser: 'Yes', status: 'Active' },
+    { type: 'Underwriter', effDate: '01/01/2023', expDate: '12/31/2023', single: 5000000, aggregate: 15000000, toUser: 'No', status: 'Expired' }
 ];
 
 // LOA Data for dedicated LOA View
-// Today's reference: 04/30/2026
+// Today's reference: 04/15/2024 (aligned with BondBoxClock demo date)
 const sampleLOAData = [
     // Active - well into the future
-    { account: 'R.J. Corman Railroad Group', type: 'Underwriter', effDate: '01/01/2026', expDate: '12/31/2026', single: 5000000, aggregate: 15000000, used: 8750000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Hensel Phelps Construction Co', type: 'Underwriter', effDate: '03/01/2026', expDate: '02/28/2027', single: 10000000, aggregate: 30000000, used: 12800000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Clark Construction Group', type: 'Underwriter', effDate: '01/01/2026', expDate: '12/31/2026', single: 8000000, aggregate: 25000000, used: 5950000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Mortenson Construction', type: 'Underwriter', effDate: '07/01/2025', expDate: '06/30/2026', single: 6000000, aggregate: 18000000, used: 7200000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Turner Construction Company', type: 'Underwriter', effDate: '06/01/2025', expDate: '05/31/2026', single: 15000000, aggregate: 50000000, used: 22000000, toUser: 'Yes', status: 'Active', branch: 'New York', assignee: 'Sarah Mitchell' },
-    { account: 'Whiting-Turner Contracting', type: 'Underwriter', effDate: '04/01/2026', expDate: '03/31/2027', single: 12000000, aggregate: 35000000, used: 8500000, toUser: 'Yes', status: 'Active', branch: 'Baltimore', assignee: 'Sarah Mitchell' },
-    // Expiring within 30 days (exp between 04/30/2026 and 05/30/2026)
-    { account: 'R.J. Corman Railroad Group', type: 'Agent', effDate: '05/15/2025', expDate: '05/14/2026', single: 2000000, aggregate: 8000000, used: 3200000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Brasfield & Gorrie LLC', type: 'Underwriter', effDate: '05/22/2025', expDate: '05/21/2026', single: 4000000, aggregate: 12000000, used: 6100000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Austin Industries', type: 'Underwriter', effDate: '05/01/2025', expDate: '05/01/2026', single: 3500000, aggregate: 10000000, used: 4800000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'R.J. Corman Railroad Group', type: 'Underwriter', effDate: '01/01/2024', expDate: '12/31/2024', single: 5000000, aggregate: 15000000, used: 8750000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Hensel Phelps Construction Co', type: 'Underwriter', effDate: '03/01/2024', expDate: '02/28/2025', single: 10000000, aggregate: 30000000, used: 12800000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Clark Construction Group', type: 'Underwriter', effDate: '01/01/2024', expDate: '12/31/2024', single: 8000000, aggregate: 25000000, used: 5950000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Mortenson Construction', type: 'Underwriter', effDate: '07/01/2023', expDate: '06/30/2024', single: 6000000, aggregate: 18000000, used: 7200000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Skanska USA Civil', type: 'Underwriter', effDate: '01/01/2024', expDate: '12/31/2024', single: 7000000, aggregate: 20000000, used: 11200000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Kiewit Corporation', type: 'Underwriter', effDate: '04/01/2023', expDate: '03/31/2025', single: 10000000, aggregate: 30000000, used: 14500000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Walsh Construction Co', type: 'Underwriter', effDate: '07/01/2023', expDate: '06/30/2024', single: 5000000, aggregate: 15000000, used: 6800000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Flatiron Construction', type: 'Underwriter', effDate: '01/01/2024', expDate: '12/31/2024', single: 12000000, aggregate: 35000000, used: 15300000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Manhattan Construction Group', type: 'Underwriter', effDate: '02/01/2024', expDate: '01/31/2025', single: 5000000, aggregate: 15000000, used: 7100000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Sundt Construction', type: 'Underwriter', effDate: '09/01/2023', expDate: '08/31/2024', single: 4000000, aggregate: 12000000, used: 5800000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Turner Construction Company', type: 'Underwriter', effDate: '06/01/2023', expDate: '05/31/2024', single: 15000000, aggregate: 50000000, used: 22000000, toUser: 'Yes', status: 'Active', branch: 'New York', assignee: 'Sarah Mitchell' },
+    { account: 'Whiting-Turner Contracting', type: 'Underwriter', effDate: '04/01/2024', expDate: '03/31/2025', single: 12000000, aggregate: 35000000, used: 8500000, toUser: 'Yes', status: 'Active', branch: 'Baltimore', assignee: 'Sarah Mitchell' },
+    // Expiring within 30 days (exp between 04/15/2024 and 05/15/2024)
+    { account: 'R.J. Corman Railroad Group', type: 'Agent', effDate: '05/01/2023', expDate: '05/01/2024', single: 2000000, aggregate: 8000000, used: 3200000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Brasfield & Gorrie LLC', type: 'Underwriter', effDate: '05/08/2023', expDate: '05/08/2024', single: 4000000, aggregate: 12000000, used: 6100000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Austin Industries', type: 'Underwriter', effDate: '04/20/2023', expDate: '04/20/2024', single: 3500000, aggregate: 10000000, used: 4800000, toUser: 'Yes', status: 'Active', branch: 'Cincinnati', assignee: 'Jake Miller' },
     // Expired
-    { account: 'R.J. Corman Railroad Group', type: 'Underwriter', effDate: '01/01/2025', expDate: '12/31/2025', single: 5000000, aggregate: 15000000, used: 15000000, toUser: 'No', status: 'Expired', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Granite Construction Inc', type: 'Underwriter', effDate: '07/01/2024', expDate: '06/30/2025', single: 7000000, aggregate: 20000000, used: 9000000, toUser: 'No', status: 'Expired', branch: 'Cincinnati', assignee: 'Jake Miller' },
-    { account: 'Cadell Construction Co', type: 'Underwriter', effDate: '01/01/2024', expDate: '12/31/2024', single: 3000000, aggregate: 9000000, used: 9000000, toUser: 'No', status: 'Expired', branch: 'Cincinnati', assignee: 'Jake Miller' }
+    { account: 'R.J. Corman Railroad Group', type: 'Underwriter', effDate: '01/01/2023', expDate: '12/31/2023', single: 5000000, aggregate: 15000000, used: 15000000, toUser: 'No', status: 'Expired', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Granite Construction Inc', type: 'Underwriter', effDate: '07/01/2022', expDate: '06/30/2023', single: 7000000, aggregate: 20000000, used: 9000000, toUser: 'No', status: 'Expired', branch: 'Cincinnati', assignee: 'Jake Miller' },
+    { account: 'Cadell Construction Co', type: 'Underwriter', effDate: '01/01/2023', expDate: '12/31/2023', single: 3000000, aggregate: 9000000, used: 9000000, toUser: 'No', status: 'Expired', branch: 'Cincinnati', assignee: 'Jake Miller' }
 ];
 
 // Master Accounts List (Active + Suspended)
@@ -189,11 +195,17 @@ const sampleMyAccounts = [
     { name: 'R.J. Corman Railroad Group', branch: 'Cincinnati', status: 'Active', customerNumber: '0008397740', accountId: '1016829', accountGrade: 'B+', assignee: 'Jake Miller' },
     { name: 'Hensel Phelps Construction Co', branch: 'Cincinnati', status: 'Active', customerNumber: '0008451220', accountId: '1018445', accountGrade: 'A', assignee: 'Jake Miller' },
     { name: 'Clark Construction Group', branch: 'Cincinnati', status: 'Active', customerNumber: '0008503100', accountId: '1019102', accountGrade: 'A+', assignee: 'Jake Miller' },
-    { name: 'Granite Construction Inc', branch: 'Cincinnati', status: 'Active', customerNumber: '0008390112', accountId: '1016550', accountGrade: 'C+', assignee: 'Jake Miller' },
+    { name: 'Granite Construction Inc', branch: 'Cincinnati', status: 'Active', customerNumber: '0008390112', accountId: '1016550', accountGrade: 'B', assignee: 'Jake Miller' },
     { name: 'McCarthy Building Companies', branch: 'Cincinnati', status: 'Active', customerNumber: '0008522080', accountId: '1019877', accountGrade: 'A-', assignee: 'Jake Miller' },
     { name: 'Brasfield & Gorrie LLC', branch: 'Cincinnati', status: 'Active', customerNumber: '0008534410', accountId: '1020134', accountGrade: 'B', assignee: 'Jake Miller' },
     { name: 'Austin Industries', branch: 'Cincinnati', status: 'Active', customerNumber: '0008540990', accountId: '1020388', accountGrade: 'B-', assignee: 'Jake Miller' },
     { name: 'Mortenson Construction', branch: 'Cincinnati', status: 'Active', customerNumber: '0008551770', accountId: '1020645', accountGrade: 'A', assignee: 'Jake Miller' },
+    { name: 'Skanska USA Civil', branch: 'Cincinnati', status: 'Active', customerNumber: '0008560330', accountId: '1020901', accountGrade: 'C', assignee: 'Jake Miller' },
+    { name: 'Kiewit Corporation', branch: 'Cincinnati', status: 'Active', customerNumber: '0008571440', accountId: '1021155', accountGrade: 'A-', assignee: 'Jake Miller' },
+    { name: 'Walsh Construction Co', branch: 'Cincinnati', status: 'Active', customerNumber: '0008582550', accountId: '1021410', accountGrade: 'B+', assignee: 'Jake Miller' },
+    { name: 'Flatiron Construction', branch: 'Cincinnati', status: 'Active', customerNumber: '0008593660', accountId: '1021664', accountGrade: 'A+', assignee: 'Jake Miller' },
+    { name: 'Manhattan Construction Group', branch: 'Cincinnati', status: 'Active', customerNumber: '0008604770', accountId: '1021918', accountGrade: 'A', assignee: 'Jake Miller' },
+    { name: 'Sundt Construction', branch: 'Cincinnati', status: 'Active', customerNumber: '0008615880', accountId: '1022172', accountGrade: 'C-', assignee: 'Jake Miller' },
     { name: 'Cadell Construction Co', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008410550', accountId: '1017201', accountGrade: 'C-', assignee: 'Jake Miller', suspendedReason: 'Financial deterioration — negative working capital and Z-Score below threshold for 3 consecutive quarters' },
     { name: 'Traylor Bros Inc', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008425880', accountId: '1017590', accountGrade: 'C-', assignee: 'Jake Miller', suspendedReason: 'LOA expired 12/31/2023 — pending annual review completion and updated financials' },
     { name: 'Primoris Services Corp', branch: 'Cincinnati', status: 'Suspended', customerNumber: '0008438220', accountId: '1017845', accountGrade: 'C', assignee: 'Jake Miller', suspendedReason: 'Outstanding claim (CL-2024-0102) exceeds 10% of bonding program — account under claims review hold' }
@@ -395,7 +407,12 @@ const sampleBonds = [
     { bondNumber: '5014829', principal: 'McCarthy Building Companies', bondType: 'Performance', amount: '$4,600,000', effectiveDate: '04/08/2024', expirationDate: '04/08/2026', status: 'Active' },
     { bondNumber: '7780342', principal: 'Austin Industries', bondType: 'Performance & Payment', amount: '$2,950,000', effectiveDate: '07/15/2023', expirationDate: '07/15/2025', status: 'Active' },
     { bondNumber: '6901538', principal: 'Hensel Phelps Construction Co', bondType: 'Payment Bond', amount: '$2,400,000', effectiveDate: '05/01/2022', expirationDate: '05/01/2024', status: 'Expiring Soon' },
-    { bondNumber: '5209463', principal: 'Mortenson Construction', bondType: 'Bid Bond', amount: '$310,000', effectiveDate: '04/12/2024', expirationDate: '07/12/2024', status: 'Active' }
+    { bondNumber: '5209463', principal: 'Mortenson Construction', bondType: 'Bid Bond', amount: '$310,000', effectiveDate: '04/12/2024', expirationDate: '07/12/2024', status: 'Active' },
+    { bondNumber: '3318207', principal: 'Skanska USA Civil', bondType: 'Performance & Payment', amount: '$6,100,000', effectiveDate: '08/15/2023', expirationDate: '08/15/2025', status: 'Active' },
+    { bondNumber: '4490126', principal: 'Walsh Construction Co', bondType: 'Performance', amount: '$3,800,000', effectiveDate: '11/01/2023', expirationDate: '11/01/2025', status: 'Active' },
+    { bondNumber: '5621847', principal: 'Flatiron Construction', bondType: 'Performance & Payment', amount: '$9,200,000', effectiveDate: '01/15/2024', expirationDate: '01/15/2026', status: 'Active' },
+    { bondNumber: '6730291', principal: 'Manhattan Construction Group', bondType: 'Performance', amount: '$4,100,000', effectiveDate: '02/01/2024', expirationDate: '02/01/2026', status: 'Active' },
+    { bondNumber: '7841053', principal: 'Sundt Construction', bondType: 'Performance & Payment', amount: '$2,600,000', effectiveDate: '09/01/2023', expirationDate: '09/01/2025', status: 'Active' }
 ];
 
 const sampleClaims = [
@@ -844,7 +861,7 @@ const WIDGET_REGISTRY = {
         render: function(container) {
             container.innerHTML = `<div class="kpi-grid kpi-grid-4">
                 <div class="kpi-card clickable" onclick="navigateTo('account-review')"><div class="kpi-header"><span class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="kpi-title">ARRs Due / Overdue</span></div><div class="kpi-value">0</div></div>
-                <div class="kpi-card clickable" onclick="navigateTo('bond-requests'); filterBondRequests('all', document.querySelector('#bond-requests-tabs .tab[data-filter=&quot;all&quot;]'));"><div class="kpi-header"><span class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span><span class="kpi-title">Bond Requests Pending</span></div><div class="kpi-value">0</div></div>
+                <div class="kpi-card clickable" onclick="navigateTo('bond-requests'); filterBondRequests('pending', document.querySelector('#bond-requests-tabs .tab[data-filter=&quot;pending&quot;]'));"><div class="kpi-header"><span class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span><span class="kpi-title">Bond Requests Pending</span></div><div class="kpi-value">0</div></div>
                 <div class="kpi-card clickable" onclick="navigateTo('account-review')"><div class="kpi-header"><span class="kpi-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span class="kpi-title">Watchlist Accounts</span></div><div class="kpi-value">0</div></div>
                 <div class="kpi-card clickable" onclick="navigateTo('loa'); filterLOAView('Expiring', document.querySelector('#loa-tabs .tab:nth-child(3)'));"><div class="kpi-header"><span class="kpi-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><span class="kpi-title">Expiring LOAs (30 Days)</span></div><div class="kpi-value">0</div></div>
                 <div class="kpi-card clickable" onclick="openFSComplianceModal()"><div class="kpi-header"><span class="kpi-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></span><span class="kpi-title">FS Compliance Issues</span></div><div class="kpi-value" id="kpi-fs-compliance">0</div></div>
@@ -1592,7 +1609,7 @@ function updateKPIValues() {
 // ==================== BOND REQUEST BADGE ====================
 
 function updateBondRequestBadge() {
-    const count = sampleBondRequests.filter(b => b.status === 'Awaiting Approval').length;
+    const count = sampleBondRequests.filter(b => b.assignee === currentUser.name && (b.status === 'Awaiting Approval' || b.status === 'UW Review')).length;
     const badge = document.getElementById('bond-requests-badge');
     if (badge) {
         badge.textContent = count;
@@ -1772,10 +1789,10 @@ function renderActionItems() {
             view: 'bonds' });
     });
 
-    // Bond Requests Awaiting Approval
-    sampleBondRequests.filter(b => b.assignee === currentUser.name && b.status === 'Awaiting Approval').forEach(b => {
+    // Bond Requests Pending (Awaiting Approval + UW Review)
+    sampleBondRequests.filter(b => b.assignee === currentUser.name && (b.status === 'Awaiting Approval' || b.status === 'UW Review')).forEach(b => {
         items.push({ priority: 4, level: 'warning', category: 'Bond Req', account: b.account,
-            text: `${b.type} \u2014 ${b.amount} for ${b.obligee} \u2014 awaiting your approval`,
+            text: `${b.type} \u2014 ${b.amount} for ${b.obligee} \u2014 ${b.status.toLowerCase()}`,
             view: 'bond-requests' });
     });
 
@@ -2169,7 +2186,9 @@ function filterBondRequests(filter, tabEl) {
 
     // Filter data
     let filtered = sampleBondRequests;
-    if (filter !== 'all') {
+    if (filter === 'pending') {
+        filtered = sampleBondRequests.filter(br => br.assignee === currentUser.name && (br.status === 'Awaiting Approval' || br.status === 'UW Review'));
+    } else if (filter !== 'all') {
         filtered = sampleBondRequests.filter(br => br.status === filter);
     }
     renderBondRequests('bond-requests-full-list', filtered);
@@ -2995,53 +3014,58 @@ function renderAccountReviewSummary() {
     const thead = document.getElementById('account-review-head');
     const tbody = document.getElementById('account-review-table-body');
 
+    // Render from sampleARRs (current user) so the table matches the dashboard KPI count
+    const myARRs = sampleARRs.filter(a => a.assignee === currentUser.name);
+
     const cols = [
-        { key: 'reviewDate', label: 'Review Date' },
-        { key: 'reviewLevel', label: 'Review Level' },
-        { key: 'reviewType', label: 'Review Type' },
-        { key: 'fsDate', label: 'FS Date' },
-        { key: 'reviewState', label: 'Review State' },
+        { key: 'account', label: 'Account' },
+        { key: 'dueDate', label: 'Due Date' },
+        { key: 'type', label: 'Review Type' },
+        { key: 'level', label: 'Level' },
+        { key: 'status', label: 'Status' },
+        { key: 'risk', label: 'Risk' },
         { key: 'currentQueue', label: 'Current Queue' },
-        { key: 'reviewedBy', label: 'Reviewed By' },
-        { key: 'reviewRating', label: 'Review Rating' },
-        { key: 'viewEdit', label: 'View/Edit', sortable: false },
-        { key: 'notes', label: 'Notes', sortable: false },
-        { key: 'report', label: 'Generate Report', sortable: false },
-        { key: 'delete', label: 'Delete', sortable: false }
+        { key: 'grade', label: 'Grade' }
     ];
 
     const comparators = {
-        reviewDate: (a, b) => parseDate(a.reviewDate) - parseDate(b.reviewDate),
-        reviewLevel: (a, b) => a.reviewLevel.localeCompare(b.reviewLevel),
-        reviewType: (a, b) => a.reviewType.localeCompare(b.reviewType),
-        fsDate: (a, b) => parseDate(a.fsDate) - parseDate(b.fsDate),
-        reviewState: (a, b) => a.reviewState.localeCompare(b.reviewState),
+        account: (a, b) => a.account.localeCompare(b.account),
+        dueDate: (a, b) => { if (!a.dueDate || !b.dueDate) return 0; return new Date(a.dueDate) - new Date(b.dueDate); },
+        type: (a, b) => a.type.localeCompare(b.type),
+        level: (a, b) => a.level.localeCompare(b.level),
+        status: (a, b) => a.status.localeCompare(b.status),
+        risk: (a, b) => a.risk.localeCompare(b.risk),
         currentQueue: (a, b) => (a.currentQueue || '').localeCompare(b.currentQueue || ''),
-        reviewedBy: (a, b) => a.reviewedBy.localeCompare(b.reviewedBy),
-        reviewRating: (a, b) => a.reviewRating.localeCompare(b.reviewRating)
+        grade: (a, b) => (a.grade || '').localeCompare(b.grade || '')
     };
 
-    const st = getTableSort('accountReview', 'reviewDate');
-    const sorted = genericSort(sampleAccountReviews, st.col, st.asc, comparators);
+    const st = getTableSort('accountReview', 'dueDate');
+    const sorted = genericSort(myARRs, st.col, st.asc, comparators);
 
     if (thead) thead.innerHTML = buildSortableHeader('accountReview', cols, 'renderAccountReviewSummary');
 
-    tbody.innerHTML = sorted.map((r) => {
-        const i = sampleAccountReviews.indexOf(r);
+    tbody.innerHTML = sorted.map((a) => {
+        const riskCls = a.risk === 'high' ? 'risk-high' : a.risk === 'medium' ? 'risk-med' : 'risk-low';
+        const queueHTML = a.currentQueue
+            ? (a.currentQueue === currentUser.name
+                ? '<span class="queue-badge queue-you">In Your Queue</span>'
+                : '<span class="queue-badge queue-other">' + a.currentQueue + ' (' + (chainTitles[a.currentQueue] || '') + ')</span>') + queueAgeHTML(a.queueEnteredDate)
+            : '<span class="queue-badge" style="opacity:.5">—</span>';
+        // Link to detail view if account has detail data in sampleAccountReviews
+        const hasDetail = sampleAccountReviews.length > 0;
+        const viewBtn = hasDetail
+            ? `<button class="action-btn" onclick="openARDetail(0)">View</button>`
+            : '';
         return `
         <tr>
-            <td>${r.reviewDate}</td>
-            <td><span class="branch-tag-sm">${r.reviewLevel}</span></td>
-            <td>${r.reviewType}</td>
-            <td>${r.fsDate}</td>
-            <td><span class="status-badge ${statusClass(r.reviewState)}">${r.reviewState}</span></td>
-            <td>${r.currentQueue ? (r.currentQueue === currentUser.name ? '<span class="queue-badge queue-you">In Your Queue</span>' : '<span class="queue-badge queue-other">' + r.currentQueue + ' (' + (chainTitles[r.currentQueue] || '') + ')</span>') + queueAgeHTML(r.queueEnteredDate) : '<span class="queue-badge" style="opacity:.5">Completed</span>'}</td>
-            <td>${r.reviewedBy}</td>
-            <td>${r.reviewRating}</td>
-            <td><button class="action-btn" onclick="openARDetail(${i})">View</button></td>
-            <td><button class="action-btn" onclick="openARNotes(${i})">Notes</button></td>
-            <td><button class="action-btn" onclick="simulateReportGenerate('Account Review — ${r.reviewDate}')">Report</button></td>
-            <td><button class="action-btn delete-btn" onclick="openDeleteConfirm('account review', '${r.reviewDate}', 'deleteAccountReview(${i})')">Del</button></td>
+            <td>${accountLink(a.account)}</td>
+            <td>${a.dueDate}${a.daysOverdue > 0 ? ' <span style="color:#c62828; font-weight:600;">(' + a.daysOverdue + 'd overdue)</span>' : ''}</td>
+            <td>${a.type}</td>
+            <td><span class="branch-tag-sm">${a.level}</span></td>
+            <td><span class="status-badge ${statusClass(a.status)}">${a.status}</span></td>
+            <td><span class="arr-risk-dot ${riskCls}" style="display:inline-block;"></span> ${a.risk.charAt(0).toUpperCase() + a.risk.slice(1)}</td>
+            <td>${queueHTML}</td>
+            <td>${a.grade || '—'}</td>
         </tr>`;
     }).join('');
 }

@@ -561,9 +561,11 @@
                 <div class="header-actions">
                     <div class="tab-group" id="bond-requests-tabs">
                         <button class="tab active" data-filter="all" onclick="filterBondRequests('all', this)">All Requests</button>
+                        <button class="tab" data-filter="pending" onclick="filterBondRequests('pending', this)">My Pending</button>
                         <button class="tab" data-filter="Awaiting Approval" onclick="filterBondRequests('Awaiting Approval', this)">Awaiting Approval</button>
                         <button class="tab" data-filter="UW Review" onclick="filterBondRequests('UW Review', this)">In UW Review</button>
                         <button class="tab" data-filter="Approved" onclick="filterBondRequests('Approved', this)">Approved</button>
+                        <button class="tab" data-filter="Draft" onclick="filterBondRequests('Draft', this)">Draft</button>
                     </div>
                     <button class="btn btn-primary" onclick="openNewRequestModal()">+ New Request</button>
                 </div>
