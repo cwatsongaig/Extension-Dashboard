@@ -6617,6 +6617,10 @@ function matchAIResponse(text) {
 function switchUser(username) {
     const profile = USER_PROFILES.find(u => u.username === username);
     if (!profile) return;
+
+    // Close modal FIRST before re-rendering
+    closeAllModals();
+
     currentUser = Object.assign({}, profile, { name: profile.fullName });
 
     // Rebuild all data arrays for the new user
@@ -6641,9 +6645,6 @@ function switchUser(username) {
 
     // Navigate to dashboard
     navigateTo('underwriting-home');
-
-    // Close modal if open
-    closeAllModals();
 }
 
 function renderAllViews() {
