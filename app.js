@@ -254,8 +254,54 @@ function buildUserData() {
         d90plus: Math.round(Math.random() * 50000),
         invoices: Math.round(10 + Math.random() * 40),
     }));
+
+    // Build Premium AR detail and bond sub-rows from user's accounts and bonds
     samplePremiumARDetail = {};
     samplePremiumARBonds = {};
+    const userAccounts = sampleMyAccounts.slice(0, 20);
+    samplePremiumAR.forEach(ag => {
+        // Assign 2-4 accounts per agency
+        const acctCount = 2 + Math.floor(Math.random() * 3);
+        const shuffled = [...userAccounts].sort(() => Math.random() - 0.5).slice(0, acctCount);
+        const agDetail = shuffled.map(acct => {
+            const cur = Math.round(Math.random() * 5000);
+            const d1 = Math.round(Math.random() * 4000);
+            const d31 = Math.round(Math.random() * 3000);
+            const d61 = Math.round(Math.random() * 2000);
+            const d90 = Math.round(Math.random() * 12000);
+            return {
+                account: acct.name,
+                current: cur, d1_30: d1, d31_60: d31, d61_90: d61, d90plus: d90,
+                invoices: 2 + Math.floor(Math.random() * 8)
+            };
+        });
+        samplePremiumARDetail[ag.agency] = agDetail;
+
+        // Assign 1-3 bonds per account
+        agDetail.forEach(acctDetail => {
+            const acctBonds = sampleBonds
+                .filter(b => b.principal === acctDetail.account || Math.random() < 0.15)
+                .slice(0, 1 + Math.floor(Math.random() * 3))
+                .map(b => ({
+                    bondNumber: b.bondNumber,
+                    bondType: b.bondType,
+                    premium: Math.round(500 + Math.random() * 10000),
+                    effectiveDate: b.effectiveDate,
+                    status: b.status
+                }));
+            if (acctBonds.length === 0) {
+                // Generate a synthetic bond if none matched
+                acctBonds.push({
+                    bondNumber: 'SB-' + Math.round(Math.random() * 999999),
+                    bondType: 'Performance',
+                    premium: Math.round(1000 + Math.random() * 8000),
+                    effectiveDate: '',
+                    status: 'Active'
+                });
+            }
+            samplePremiumARBonds[ag.agency + '|' + acctDetail.account] = acctBonds;
+        });
+    });
 
     // --- Synthetic data for views without report sources ---
     // Bond Requests (synthetic based on user's accounts)
