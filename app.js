@@ -505,7 +505,7 @@ function getUserTerritoryStates() {
 const DASHBOARD_DEFAULTS = {
     panels: [
         { id: 'daily-briefing', label: 'Daily Briefing', visible: true, order: 0 },
-        { id: 'quick-actions', label: 'Quick Actions', visible: true, order: 1 },
+        { id: 'quick-actions', label: 'Quick Actions', visible: false, order: 1 },
         { id: 'kpi-cards', label: 'KPI Summary Cards', visible: true, order: 2 },
         { id: 'exposure-gauge', label: 'Exposure & Capacity', visible: true, order: 3 },
         { id: 'week-glance', label: 'This Week\'s Bids & Reminders', visible: true, order: 4 },
@@ -674,33 +674,7 @@ const WIDGET_REGISTRY = {
             `;
         }
     },
-    'quick-actions': {
-        label: 'Quick Actions',
-        render: function(container) {
-            container.innerHTML = `<div class="quick-actions-bar">
-                <button class="quick-action-btn" onclick="navigateTo('account-review')">
-                    <span class="qa-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
-                    <span class="qa-label">Start ARR</span>
-                </button>
-                <button class="quick-action-btn" onclick="navigateTo('bond-requests')">
-                    <span class="qa-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
-                    <span class="qa-label">Bond Request</span>
-                </button>
-                <button class="quick-action-btn" onclick="openLogVisitModal()">
-                    <span class="qa-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg></span>
-                    <span class="qa-label">Log Visit</span>
-                </button>
-                <button class="quick-action-btn" onclick="navigateTo('account-notes')">
-                    <span class="qa-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>
-                    <span class="qa-label">Account Note</span>
-                </button>
-                <button class="quick-action-btn" onclick="navigateTo('exposure')">
-                    <span class="qa-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-                    <span class="qa-label">Exposure Map</span>
-                </button>
-            </div>`;
-        }
-    },
+    // 'quick-actions' removed — will be replaced with new dashboard content
     'exposure-gauge': {
         label: 'Exposure & Capacity',
         render: function(container) {
