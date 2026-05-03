@@ -405,7 +405,15 @@ const chainTitles = {
     'Max Miller': 'Regional Manager',
     'Amy Rodriguez': 'Regional Manager',
     'John Webster': 'VP Underwriting',
-    'Ken Bearley': 'President'
+    'Ken Bearley': 'President',
+    'Doug Hellmann': 'Underwriter',
+    'Jake Liggett': 'Underwriter',
+    'Wade Wilson': 'Sr. Underwriter',
+    'Kathy Wittler': 'Underwriter',
+    'Jonathon Whipkey': 'Underwriter',
+    'Adam Kveton': 'Underwriter',
+    'Patrick Holland': 'Underwriter',
+    'Doug Bossen': 'Underwriter'
 };
 
 // ==================== CHAT & NOTES DATA ====================
@@ -462,17 +470,17 @@ function getLOAStatus(loa) {
 
 const ADMIN_USERS = ['Ken Bearley', 'Chris Watson', 'Geoff Smith'];
 
-const sampleTerritories = [
-    { name: 'Cincinnati', assignee: 'Jake Miller', states: ['OH', 'IN', 'WV', 'PA'] },
-    { name: 'Great Lakes', assignee: 'Sarah Mitchell', states: ['MI', 'WI', 'IL', 'MN'] },
-    { name: 'Plains', assignee: 'Mike Torres', states: ['ND', 'SD', 'NE', 'KS', 'IA', 'MO'] },
-    { name: 'Southeast', assignee: 'Amy Rodriguez', states: ['NC', 'SC', 'GA', 'FL', 'TN', 'VA', 'KY'] },
-    { name: 'Gulf Coast', assignee: 'Max Miller', states: ['TX', 'OK', 'LA', 'MS', 'AL', 'AR'] },
-    { name: 'Mountain', assignee: 'Lisa Chen', states: ['NV', 'UT', 'CO', 'AZ', 'NM'] },
-    { name: 'Northwest', assignee: 'James Park', states: ['MT', 'ID', 'WY'] },
-    { name: 'Pacific', assignee: 'John Webster', states: ['WA', 'OR', 'CA', 'HI', 'AK'] },
-    { name: 'Mid-Atlantic', assignee: 'Tom Bradley', states: ['NJ', 'DE', 'MD', 'DC'] },
-    { name: 'Northeast', assignee: 'Rachel Adams', states: ['NY', 'CT', 'RI', 'MA', 'VT', 'NH', 'ME'] }
+let sampleTerritories = [
+    { name: 'KENTUCKY', assignee: 'Doug Hellmann', states: ['KY', 'WV', 'OH'] },
+    { name: 'CINCINNATI', assignee: 'Jake Liggett', states: ['OH', 'IN', 'PA', 'WV'] },
+    { name: 'ORANGE', assignee: 'Wade Wilson', states: ['CA'] },
+    { name: 'ORANGE', assignee: 'Kathy Wittler', states: ['CA'] },
+    { name: 'TENNESSEE', assignee: 'Jonathon Whipkey', states: ['TN', 'AL', 'MS'] },
+    { name: 'CHICAGO CONTRACT', assignee: 'Adam Kveton', states: ['IL', 'WI', 'IN', 'MI'] },
+    { name: 'CAROLINA', assignee: 'Patrick Holland', states: ['NC', 'SC', 'VA'] },
+    { name: 'TWIN CITIES', assignee: 'Doug Bossen', states: ['MN', 'ND', 'SD', 'IA', 'WI'] },
+    { name: 'FLORIDA', assignee: 'Wade Wilson', states: ['FL'] },
+    { name: 'WALNUT CREEK', assignee: 'Wade Wilson', states: ['CA'] }
 ];
 
 function canSeeAllTerritories() {
