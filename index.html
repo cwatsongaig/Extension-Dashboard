@@ -99,6 +99,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 <span>Reports</span>
             </li>
+            <li class="nav-item" data-view="service-activity">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>
+                <span>Service &amp; Activity</span>
+            </li>
             <li class="nav-item" data-view="portfolio-analysis">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>
                 <span>Portfolio Analysis</span>
@@ -794,6 +798,28 @@
                         <tbody id="premium-ar-agency-body"></tbody>
                     </table>
                 </div>
+            </div>
+        </section>
+
+        <!-- ==================== SERVICE & ACTIVITY REPORT ==================== -->
+        <section id="view-service-activity" class="view">
+            <div class="view-header">
+                <div><h1>Service &amp; Activity Report</h1><p class="view-subtitle">Manager Report &mdash; User activity summary YTD 2026</p></div>
+                <div class="header-actions">
+                    <select class="form-select" id="sa-branch-filter" onchange="renderServiceActivity()" style="font-size:13px;min-width:180px;">
+                        <option value="all">All Branches</option>
+                    </select>
+                    <select class="form-select" id="sa-user-filter" onchange="renderServiceActivity()" style="font-size:13px;min-width:180px;">
+                        <option value="all">All Users</option>
+                    </select>
+                </div>
+            </div>
+            <div id="sa-kpi-cards" class="kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;"></div>
+            <div class="table-container">
+                <table class="data-table" id="sa-table">
+                    <thead id="sa-table-head"></thead>
+                    <tbody id="sa-table-body"></tbody>
+                </table>
             </div>
         </section>
     </main>

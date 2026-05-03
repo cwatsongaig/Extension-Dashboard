@@ -1620,7 +1620,8 @@ function navigateTo(viewId) {
         'messages': 'Messages', 'account-notes': 'Account Notes',
         'loa': 'Letters of Authority', 'my-accounts': 'My Accounts',
         'portfolio-analysis': 'Portfolio Analysis', 'red-flags': 'Red Flag Accounts',
-        'premium-ar': 'Premium AR by Agency', 'visitations': 'Agency Visits'
+        'premium-ar': 'Premium AR by Agency', 'visitations': 'Agency Visits',
+        'service-activity': 'Service & Activity Report'
     };
     if (crumb) crumb.innerHTML = `<span>${names[viewId] || viewId}</span>`;
 }
@@ -6611,6 +6612,139 @@ function matchAIResponse(text) {
     };
 }
 
+// ==================== SERVICE & ACTIVITY REPORT ====================
+
+function renderServiceActivity() {
+    const branchFilter = document.getElementById('sa-branch-filter');
+    const userFilter = document.getElementById('sa-user-filter');
+    if (!branchFilter || !userFilter) return;
+
+    const data = typeof realServiceActivity !== 'undefined' ? realServiceActivity : [];
+    if (data.length === 0) return;
+
+    // Populate branch dropdown (once — check if already populated)
+    if (branchFilter.options.length <= 1) {
+        const branches = [...new Set(data.map(r => r.branch))].sort();
+        branches.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b;
+            opt.textContent = b;
+            branchFilter.appendChild(opt);
+        });
+        // Default to current user's branch if it exists in the data
+        if (currentUser.branch && branches.includes(currentUser.branch)) {
+            branchFilter.value = currentUser.branch;
+        }
+    }
+
+    // Filter by branch
+    const selBranch = branchFilter.value;
+    let filtered = selBranch === 'all' ? data : data.filter(r => r.branch === selBranch);
+
+    // Populate user dropdown based on filtered branch
+    const users = [...new Set(filtered.map(r => r.user))].sort();
+    const prevUser = userFilter.value;
+    userFilter.innerHTML = '<option value="all">All Users</option>';
+    users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u;
+        opt.textContent = u;
+        userFilter.appendChild(opt);
+    });
+    if (users.includes(prevUser)) userFilter.value = prevUser;
+
+    // Filter by user
+    const selUser = userFilter.value;
+    if (selUser !== 'all') filtered = filtered.filter(r => r.user === selUser);
+
+    // KPI cards
+    const totalYTD = filtered.reduce((s, r) => s + r.ytd, 0);
+    const uniqueUsers = new Set(filtered.map(r => r.user)).size;
+    const uniqueActions = new Set(filtered.map(r => r.action)).size;
+    const avgPerUser = uniqueUsers > 0 ? Math.round(totalYTD / uniqueUsers) : 0;
+
+    document.getElementById('sa-kpi-cards').innerHTML = `
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span class="kpi-title">Active Users</span></div><div class="kpi-value">${uniqueUsers}</div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span><span class="kpi-title">YTD Total Actions</span></div><div class="kpi-value">${totalYTD.toLocaleString()}</div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span class="kpi-title">Action Types</span></div><div class="kpi-value">${uniqueActions}</div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg></span><span class="kpi-title">Avg per User</span></div><div class="kpi-value">${avgPerUser.toLocaleString()}</div></div>
+    `;
+
+    // Aggregate by user
+    const userMap = {};
+    filtered.forEach(r => {
+        if (!userMap[r.user]) userMap[r.user] = { user: r.user, branch: r.branch, jan: 0, feb: 0, mar: 0, apr: 0, may: 0, ytd: 0, actions: {} };
+        const u = userMap[r.user];
+        u.jan += r.jan; u.feb += r.feb; u.mar += r.mar; u.apr += r.apr; u.may += r.may; u.ytd += r.ytd;
+        if (!u.actions[r.action]) u.actions[r.action] = 0;
+        u.actions[r.action] += r.ytd;
+    });
+    const userRows = Object.values(userMap).sort((a, b) => b.ytd - a.ytd);
+
+    // Table header
+    const thStyle = 'background:#f8f9fa;color:#6b7280;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;padding:10px 12px;border-bottom:1px solid #e5e7eb;';
+    document.getElementById('sa-table-head').innerHTML = `<tr>
+        <th style="${thStyle}">User</th>
+        <th style="${thStyle}">Branch</th>
+        <th style="${thStyle}text-align:right;">Jan</th>
+        <th style="${thStyle}text-align:right;">Feb</th>
+        <th style="${thStyle}text-align:right;">Mar</th>
+        <th style="${thStyle}text-align:right;">Apr</th>
+        <th style="${thStyle}text-align:right;">May</th>
+        <th style="${thStyle}text-align:right;font-weight:700;">YTD Total</th>
+        <th style="${thStyle}text-align:center;">Details</th>
+    </tr>`;
+
+    // Table body
+    const tdR = 'text-align:right;padding:10px 12px;font-size:13px;';
+    const tdL = 'padding:10px 12px;font-size:13px;';
+    document.getElementById('sa-table-body').innerHTML = userRows.map((u, idx) => {
+        const detailId = 'sa-detail-' + idx;
+        const actionRows = Object.entries(u.actions).sort((a, b) => b[1] - a[1]).map(([action, ytd]) => {
+            const row = filtered.filter(r => r.user === u.user && r.action === action);
+            const j = row.reduce((s,r) => s+r.jan, 0), f = row.reduce((s,r) => s+r.feb, 0);
+            const m = row.reduce((s,r) => s+r.mar, 0), a2 = row.reduce((s,r) => s+r.apr, 0);
+            const my = row.reduce((s,r) => s+r.may, 0);
+            return `<tr data-parent="${detailId}" style="display:none;background:#f9fafb;">
+                <td style="${tdL}padding-left:36px;color:#6b7280;font-size:12px;">${action}</td>
+                <td style="${tdL}"></td>
+                <td style="${tdR}font-size:12px;color:#6b7280;">${j || '\u2014'}</td>
+                <td style="${tdR}font-size:12px;color:#6b7280;">${f || '\u2014'}</td>
+                <td style="${tdR}font-size:12px;color:#6b7280;">${m || '\u2014'}</td>
+                <td style="${tdR}font-size:12px;color:#6b7280;">${a2 || '\u2014'}</td>
+                <td style="${tdR}font-size:12px;color:#6b7280;">${my || '\u2014'}</td>
+                <td style="${tdR}font-size:12px;font-weight:600;">${ytd.toLocaleString()}</td>
+                <td></td>
+            </tr>`;
+        }).join('');
+
+        return `<tr style="cursor:pointer;" onclick="toggleSADetail('${detailId}','${detailId}-arrow')">
+            <td style="${tdL}">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span id="${detailId}-arrow" style="font-size:9px;color:var(--text-muted);width:12px;">&#9654;</span>
+                    <strong>${u.user}</strong>
+                </div>
+            </td>
+            <td style="${tdL}"><span class="branch-tag-sm">${u.branch}</span></td>
+            <td style="${tdR}">${u.jan.toLocaleString()}</td>
+            <td style="${tdR}">${u.feb.toLocaleString()}</td>
+            <td style="${tdR}">${u.mar.toLocaleString()}</td>
+            <td style="${tdR}">${u.apr.toLocaleString()}</td>
+            <td style="${tdR}">${u.may.toLocaleString()}</td>
+            <td style="${tdR}font-weight:700;">${u.ytd.toLocaleString()}</td>
+            <td style="text-align:center;padding:10px 12px;"><span style="font-size:11px;color:var(--text-muted);">${Object.keys(u.actions).length} actions</span></td>
+        </tr>` + actionRows;
+    }).join('');
+}
+
+function toggleSADetail(groupId, arrowId) {
+    const rows = document.querySelectorAll('[data-parent="' + groupId + '"]');
+    const arrow = document.getElementById(arrowId);
+    const isOpen = rows.length > 0 && rows[0].style.display !== 'none';
+    rows.forEach(r => { r.style.display = isOpen ? 'none' : 'table-row'; });
+    if (arrow) arrow.innerHTML = isOpen ? '&#9654;' : '&#9660;';
+}
+
 // ==================== INITIALIZATION ====================
 
 // ==================== USER SWITCHING ====================
@@ -6641,6 +6775,10 @@ function switchUser(username) {
     const subtitle = document.getElementById('dashboard-subtitle');
     if (subtitle) subtitle.textContent = currentUser.branch + ' Branch \u2014 Surety Bond Underwriting Dashboard';
 
+    // Reset Service Activity branch filter so it repopulates for new user
+    const saBranch = document.getElementById('sa-branch-filter');
+    if (saBranch) { saBranch.innerHTML = '<option value="all">All Branches</option>'; }
+
     // Re-render all views
     renderAllViews();
 
@@ -6670,7 +6808,8 @@ function renderAllViews() {
         ['Portfolio Analysis', renderPortfolioAnalysis],
         ['LOA View', renderLOAView],
         ['Bond Request Badge', updateBondRequestBadge],
-        ['Premium AR', renderPremiumAR]
+        ['Premium AR', renderPremiumAR],
+        ['Service Activity', renderServiceActivity]
     ];
     steps.forEach(([name, fn]) => {
         try { fn(); } catch (e) { console.error('Render failed: ' + name, e); }
