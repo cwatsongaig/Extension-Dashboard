@@ -2827,18 +2827,19 @@ function submitNewReminder(editId) {
     const titleVal = document.getElementById('rem-title').value.trim();
     const dateVal = document.getElementById('rem-date').value;
     const timeVal = document.getElementById('rem-time').value;
-    const accountVal = document.getElementById('rem-account').value;
-    const notesVal = document.getElementById('rem-notes').value.trim();
-    const alertVal = document.getElementById('rem-alert').checked;
+    const accountVal = document.getElementById('rem-account') ? document.getElementById('rem-account').value : '';
+    const notesVal = document.getElementById('rem-notes') ? document.getElementById('rem-notes').value.trim() : '';
+    const alertEl = document.getElementById('rem-alert');
+    const alertVal = alertEl ? alertEl.checked : true;
 
     if (!titleVal || !dateVal || !timeVal) {
-        showToast('Please fill in Title, Date, and Time', 'error');
+        showToast('Please fill in Title, Date, and Time');
         return;
     }
 
     // Convert date from YYYY-MM-DD to MM/DD/YYYY
-    const [y, mo, d] = dateVal.split('-');
-    const formattedDate = mo + '/' + d + '/' + y;
+    const parts = dateVal.split('-');
+    const formattedDate = parts[1] + '/' + parts[2] + '/' + parts[0];
     const formattedTime = convertTo12(timeVal);
 
     if (editId !== null) {
@@ -2851,7 +2852,7 @@ function submitNewReminder(editId) {
             rem.notes = notesVal;
             rem.alertOnDashboard = alertVal;
         }
-        showToast('Reminder updated successfully');
+        showToast('Reminder updated');
     } else {
         sampleReminders.push({
             id: nextReminderId++,
@@ -2863,16 +2864,15 @@ function submitNewReminder(editId) {
             alertOnDashboard: alertVal,
             status: 'Active'
         });
-        showToast('Reminder added successfully');
+        showToast('Reminder added');
     }
 
+    // Close modal first, then re-render (wrapped in try/catch so errors don't block close)
     closeAllModals();
-    renderBidCalendar();
-    renderUpcomingReminders();
-    if (document.getElementById('view-underwriting-home').style.display !== 'none') {
-        renderActionItems();
-        renderWeekAtGlance();
-    }
+    try { renderBidCalendar(); } catch(e) { console.error('renderBidCalendar error:', e); }
+    try { renderUpcomingReminders(); } catch(e) { console.error('renderUpcomingReminders error:', e); }
+    try { renderActionItems(); } catch(e) { /* ignore if not on dashboard */ }
+    try { renderWeekAtGlance(); } catch(e) { /* ignore if not on dashboard */ }
 }
 
 function deleteReminder(remId) {
