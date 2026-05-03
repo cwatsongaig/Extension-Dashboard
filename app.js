@@ -7139,6 +7139,16 @@ function switchUser(username) {
     // Rebuild all data arrays for the new user
     buildUserData();
 
+    // Reset all cached data variables so render functions use fresh data
+    lastMyAccountsData = null;
+    lastBondsData = null;
+    lastClaimsData = null;
+    lastBidLogData = null;
+    activeConversationIdx = null;
+    activeAccountNote = null;
+    currentARIndex = 0;
+    pendingMessageAccountTag = null;
+
     // Update sidebar user info
     const avatarEl = document.getElementById('sidebar-avatar');
     const nameEl = document.getElementById('sidebar-user-name');
