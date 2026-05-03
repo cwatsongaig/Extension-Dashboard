@@ -1184,7 +1184,7 @@ function checkFSCompliance(accountName) {
 // ==================== ACCOUNT LINK HELPER ====================
 
 function accountLink(name) {
-    return `<span class="account-link" onclick="openAccountNotesDetail('${name.replace(/'/g, "\\'")}'); navigateTo('account-notes');">${name}</span>`;
+    return `<span class="account-link" onclick="navigateToMyAccount('${name.replace(/'/g, "\\'")}')">${name}</span>`;
 }
 
 function myAccountLink(name) {
