@@ -34,8 +34,10 @@ const BondBoxClock = (() => {
 })();
 
 // Demo mode: use reference date that aligns with sample data.
-// Remove or comment out this line to use real current date in production.
-BondBoxClock.setOverride(new Date(2024, 3, 15, 9, 0, 0));
+// Users can switch to live date via the banner; choice is saved in localStorage.
+if (localStorage.getItem('bondbox-live-date') !== 'true') {
+    BondBoxClock.setOverride(new Date(2024, 3, 15, 9, 0, 0));
+}
 
 // ==================== SAMPLE DATA ====================
 
@@ -6976,13 +6978,20 @@ document.addEventListener('DOMContentLoaded', () => {
         try { fn(); } catch (e) { console.error('Init failed: ' + name, e); }
     });
 
-    // Show demo mode banner if clock is overridden
+    // Show demo/live mode banner
     if (BondBoxClock.isOverridden()) {
         const banner = document.createElement('div');
         banner.id = 'demo-mode-banner';
         banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#fef3c7;color:#92400e;text-align:center;padding:6px 16px;font-size:12px;font-weight:600;border-bottom:1px solid #fcd34d;';
         const refDate = BondBoxClock.getNow();
-        banner.innerHTML = 'Demo Mode &mdash; App date: ' + refDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' &bull; <a href="#" onclick="BondBoxClock.clearOverride(); this.parentElement.remove(); location.reload(); return false;" style="color:#92400e;text-decoration:underline;">Switch to live date</a>';
+        banner.innerHTML = 'Demo Mode &mdash; App date: ' + refDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' &bull; <a href="#" onclick="localStorage.setItem(\'bondbox-live-date\',\'true\'); location.reload(); return false;" style="color:#92400e;text-decoration:underline;">Switch to live date</a>';
+        document.body.prepend(banner);
+    } else {
+        const banner = document.createElement('div');
+        banner.id = 'demo-mode-banner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#dbeafe;color:#1e40af;text-align:center;padding:6px 16px;font-size:12px;font-weight:600;border-bottom:1px solid #93c5fd;';
+        const liveDate = BondBoxClock.getNow();
+        banner.innerHTML = 'Live Mode &mdash; ' + liveDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' &bull; <a href="#" onclick="localStorage.removeItem(\'bondbox-live-date\'); location.reload(); return false;" style="color:#1e40af;text-decoration:underline;">Switch to demo mode</a>';
         document.body.prepend(banner);
     }
 });
