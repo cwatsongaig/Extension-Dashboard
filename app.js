@@ -282,21 +282,35 @@ function buildUserData() {
             const acctBonds = sampleBonds
                 .filter(b => b.principal === acctDetail.account || Math.random() < 0.15)
                 .slice(0, 1 + Math.floor(Math.random() * 3))
-                .map(b => ({
-                    bondNumber: b.bondNumber,
-                    bondType: b.bondType,
-                    premium: Math.round(500 + Math.random() * 10000),
-                    effectiveDate: b.effectiveDate,
-                    status: b.status
-                }));
+                .map(b => {
+                    const bCur = Math.round(Math.random() * 2000);
+                    const bD1 = Math.round(Math.random() * 1500);
+                    const bD31 = Math.round(Math.random() * 1000);
+                    const bD61 = Math.round(Math.random() * 800);
+                    const bD90 = Math.round(Math.random() * 5000);
+                    return {
+                        bondNumber: b.bondNumber,
+                        bondType: b.bondType,
+                        project: b.principal || acctDetail.account,
+                        premium: Math.round(500 + Math.random() * 10000),
+                        effectiveDate: b.effectiveDate,
+                        status: b.status,
+                        current: bCur, d1_30: bD1, d31_60: bD31, d61_90: bD61, d90plus: bD90
+                    };
+                });
             if (acctBonds.length === 0) {
-                // Generate a synthetic bond if none matched
                 acctBonds.push({
                     bondNumber: 'SB-' + Math.round(Math.random() * 999999),
                     bondType: 'Performance',
+                    project: acctDetail.account,
                     premium: Math.round(1000 + Math.random() * 8000),
                     effectiveDate: '',
-                    status: 'Active'
+                    status: 'Active',
+                    current: Math.round(Math.random() * 1000),
+                    d1_30: Math.round(Math.random() * 800),
+                    d31_60: Math.round(Math.random() * 600),
+                    d61_90: Math.round(Math.random() * 400),
+                    d90plus: Math.round(Math.random() * 3000)
                 });
             }
             samplePremiumARBonds[ag.agency + '|' + acctDetail.account] = acctBonds;
