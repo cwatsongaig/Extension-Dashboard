@@ -591,7 +591,8 @@ const DASHBOARD_DEFAULTS = {
         { id: 'daily-briefing', label: 'Daily Briefing', visible: true, order: 0 },
         { id: 'quick-actions', label: 'Quick Actions', visible: false, order: 1 },
         { id: 'kpi-cards', label: 'KPI Summary Cards', visible: true, order: 2 },
-        { id: 'exposure-gauge', label: 'Exposure & Capacity', visible: true, order: 3 },
+        { id: 'account-snapshot', label: 'Account Snapshot', visible: true, order: 3 },
+        { id: 'exposure-gauge', label: 'Exposure & Capacity', visible: true, order: 4 },
         { id: 'week-glance', label: 'This Week\'s Bids & Reminders', visible: true, order: 4 },
         { id: 'action-items', label: 'Action Items', visible: true, order: 5 },
         { id: 'arr-list', label: 'My Account Review Reports', visible: true, order: 6 },
@@ -792,6 +793,20 @@ const WIDGET_REGISTRY = {
         }
     },
     // 'quick-actions' removed — will be replaced with new dashboard content
+    'account-snapshot': {
+        label: 'Account Snapshot',
+        render: function(container) {
+            container.innerHTML = `<div class="uw-panel uw-panel-full">
+                <h2 class="uw-panel-title">Account Snapshot</h2>
+                <div style="position:relative;margin-bottom:12px;">
+                    <input type="text" id="snapshot-search" placeholder="Search for an account..." oninput="searchAccountSnapshot(this.value)" autocomplete="off"
+                        style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s;">
+                    <div id="snapshot-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d1d5db;border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+                </div>
+                <div id="snapshot-card"></div>
+            </div>`;
+        }
+    },
     'mgr-service-activity': {
         label: 'Service & Activity Summary',
         managerOnly: true,
@@ -6959,6 +6974,163 @@ function matchAIResponse(text) {
         suggestions: ['How do I submit an ARR?', 'What accounts need attention?', 'Explain bond request workflow']
     };
 }
+
+// ==================== ACCOUNT SNAPSHOT ====================
+
+function searchAccountSnapshot(query) {
+    const resultsEl = document.getElementById('snapshot-results');
+    if (!resultsEl) return;
+    if (!query || query.length < 2) {
+        resultsEl.style.display = 'none';
+        return;
+    }
+    const q = query.toLowerCase();
+    const matches = sampleMyAccounts.filter(a => a.name.toLowerCase().includes(q)).slice(0, 8);
+    if (matches.length === 0) {
+        resultsEl.innerHTML = '<div style="padding:10px 14px;color:var(--text-muted);font-size:13px;">No accounts found</div>';
+        resultsEl.style.display = 'block';
+        return;
+    }
+    resultsEl.innerHTML = matches.map(a =>
+        '<div style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f3f4f6;transition:background 0.15s;" ' +
+        'onmouseenter="this.style.background=\'#f0f4ff\'" onmouseleave="this.style.background=\'#fff\'" ' +
+        'onclick="showAccountSnapshot(\'' + a.name.replace(/'/g, "\\'") + '\')">' +
+        '<strong>' + a.name + '</strong>' +
+        '<span style="font-size:11px;color:var(--text-muted);margin-left:8px;">' + a.branch + ' &bull; Grade ' + (a.accountGrade || '—') + '</span>' +
+        '</div>'
+    ).join('');
+    resultsEl.style.display = 'block';
+}
+
+function showAccountSnapshot(accountName) {
+    // Close search dropdown
+    const resultsEl = document.getElementById('snapshot-results');
+    if (resultsEl) resultsEl.style.display = 'none';
+    const searchEl = document.getElementById('snapshot-search');
+    if (searchEl) searchEl.value = accountName;
+
+    const cardEl = document.getElementById('snapshot-card');
+    if (!cardEl) return;
+
+    // 1. Account info
+    const acct = sampleMyAccounts.find(a => a.name === accountName);
+    const grade = acct ? acct.accountGrade : '—';
+    const acctBranch = acct ? acct.branch : currentUser.branch;
+
+    // 2. Financial metrics from Red Flag data (most recent FS)
+    const rfData = realRedFlagData[acctBranch] || Object.values(realRedFlagData).flat();
+    const rfMatch = rfData.find(rf => rf.account === accountName);
+    const netQuick = rfMatch ? rfMatch.netQuick : null;
+    const netWorth = rfMatch ? rfMatch.netWorth : null;
+    const netCash = rfMatch ? rfMatch.netCash : null;
+    const debtEquity = rfMatch ? rfMatch.debtEquity : null;
+    const fsDate = rfMatch ? rfMatch.financialStatement : null;
+
+    // 3. WOH from most recent WIP schedule
+    const wohEntry = sampleWIPSchedules.length > 0 ? sampleWIPSchedules[0] : null;
+    const wohValue = wohEntry ? wohEntry.contractPrice : 0;
+    const wohDate = wohEntry ? wohEntry.date : '';
+
+    // 4. Bonds written since last WOH (by effective date)
+    const bondsSinceWOH = sampleBonds.filter(b => {
+        if (b.principal !== accountName && b.branch !== acctBranch) return false;
+        if (!wohDate || !b.effectiveDate) return false;
+        return new Date(b.effectiveDate) > new Date(wohDate);
+    });
+
+    // 5. Open bids (Approved Bid, Pending Bid, or Low bidResult)
+    const openBids = sampleBidLog.filter(b =>
+        b.status === 'Approved Bid' || b.status === 'Pending Bid' || b.bidResult === 'Low'
+    );
+
+    // Format helpers
+    const fmtDollar = v => v === null || v === undefined ? '—' : '$' + Math.round(v).toLocaleString();
+    const fmtRatio = v => v === null || v === undefined ? '—' : v.toFixed(2);
+    const gradeColor = getGradeColor(grade);
+
+    cardEl.innerHTML = `
+        <div style="border:1px solid var(--border-color);border-radius:var(--radius);overflow:hidden;">
+            <!-- Account Header -->
+            <div style="padding:16px 20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);color:#fff;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="font-size:16px;font-weight:700;">${accountName}</div>
+                    <div style="font-size:12px;opacity:0.7;margin-top:2px;">${acctBranch} Branch</div>
+                </div>
+                <div style="background:${gradeColor};color:#fff;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;">${grade}</div>
+            </div>
+
+            <!-- Metrics Grid -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#e5e7eb;">
+                <div style="padding:14px 16px;background:#fff;text-align:center;">
+                    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;">Net Quick (ANQ)</div>
+                    <div style="font-size:15px;font-weight:700;color:var(--text-primary);">${fmtDollar(netQuick)}</div>
+                </div>
+                <div style="padding:14px 16px;background:#fff;text-align:center;">
+                    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;">Net Worth (ANW)</div>
+                    <div style="font-size:15px;font-weight:700;color:var(--text-primary);">${fmtDollar(netWorth)}</div>
+                </div>
+                <div style="padding:14px 16px;background:#fff;text-align:center;">
+                    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;">Net Cash</div>
+                    <div style="font-size:15px;font-weight:700;color:${netCash !== null && netCash < 0 ? 'var(--accent-red)' : 'var(--text-primary)'};">${fmtDollar(netCash)}</div>
+                </div>
+                <div style="padding:14px 16px;background:#fff;text-align:center;">
+                    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;">Debt : Equity</div>
+                    <div style="font-size:15px;font-weight:700;color:${debtEquity !== null && debtEquity > 3 ? 'var(--accent-red)' : 'var(--text-primary)'};">${fmtRatio(debtEquity)}</div>
+                </div>
+            </div>
+
+            <!-- WOH + FS Date -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#e5e7eb;">
+                <div style="padding:12px 16px;background:#f8f9fa;">
+                    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;">Work on Hand (WOH)</div>
+                    <div style="font-size:15px;font-weight:700;color:var(--text-primary);">${fmtDollar(wohValue)}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">As of ${wohDate || '—'}</div>
+                </div>
+                <div style="padding:12px 16px;background:#f8f9fa;">
+                    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;">Most Recent Financial Statement</div>
+                    <div style="font-size:15px;font-weight:700;color:var(--text-primary);">${fsDate || '—'}</div>
+                </div>
+            </div>
+
+            <!-- Bonds Since WOH -->
+            <div style="padding:14px 16px;border-top:1px solid #e5e7eb;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);font-weight:600;">Bonds Written Since Last WOH</span>
+                    <span style="font-size:13px;font-weight:700;color:var(--accent-brand);">${bondsSinceWOH.length}</span>
+                </div>
+                ${bondsSinceWOH.length > 0 ? '<div style="display:flex;flex-direction:column;gap:4px;">' + bondsSinceWOH.slice(0, 5).map(b =>
+                    '<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f3f4f6;">' +
+                    '<span>' + b.bondNumber + ' <span style="color:var(--text-muted);">' + b.bondType + '</span></span>' +
+                    '<span style="font-weight:600;">' + b.amount + '</span>' +
+                    '</div>'
+                ).join('') + (bondsSinceWOH.length > 5 ? '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:4px;">+ ' + (bondsSinceWOH.length - 5) + ' more</div>' : '') + '</div>' : '<div style="font-size:12px;color:var(--text-muted);">No bonds written since last WOH</div>'}
+            </div>
+
+            <!-- Open Bids -->
+            <div style="padding:14px 16px;border-top:1px solid #e5e7eb;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);font-weight:600;">Open Bids</span>
+                    <span style="font-size:13px;font-weight:700;color:var(--accent-brand);">${openBids.length}</span>
+                </div>
+                ${openBids.length > 0 ? '<div style="display:flex;flex-direction:column;gap:4px;">' + openBids.slice(0, 5).map(b =>
+                    '<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f3f4f6;">' +
+                    '<span>' + b.projectName + ' <span style="color:var(--text-muted);">' + b.obligee + '</span></span>' +
+                    '<span><span class="status-badge ' + statusClass(b.status) + '" style="font-size:10px;">' + b.status + '</span> ' + fmt(b.contractValue) + '</span>' +
+                    '</div>'
+                ).join('') + (openBids.length > 5 ? '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:4px;">+ ' + (openBids.length - 5) + ' more</div>' : '') + '</div>' : '<div style="font-size:12px;color:var(--text-muted);">No open bids</div>'}
+            </div>
+        </div>
+    `;
+}
+
+// Close snapshot dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const resultsEl = document.getElementById('snapshot-results');
+    const searchEl = document.getElementById('snapshot-search');
+    if (resultsEl && searchEl && !searchEl.contains(e.target) && !resultsEl.contains(e.target)) {
+        resultsEl.style.display = 'none';
+    }
+});
 
 // ==================== RATING CALCULATORS ====================
 
