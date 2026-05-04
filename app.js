@@ -7050,16 +7050,17 @@ function showAccountSnapshot(accountName) {
     const wohValue = wohEntry ? wohEntry.contractPrice : 0;
     const wohDate = wohEntry ? wohEntry.date : '';
 
-    // 4. Bonds written since last WOH (by effective date)
+    // 4. Bonds written since last WOH (by effective date) — for this account
     const bondsSinceWOH = sampleBonds.filter(b => {
-        if (b.principal !== accountName && b.branch !== acctBranch) return false;
+        if (b.principal !== accountName) return false;
         if (!wohDate || !b.effectiveDate) return false;
         return new Date(b.effectiveDate) > new Date(wohDate);
     });
 
-    // 5. Open bids (Approved Bid, Pending Bid, or Low bidResult)
+    // 5. Open bids for this account (Approved Bid, Pending Bid, or Low bidResult)
     const openBids = sampleBidLog.filter(b =>
-        b.status === 'Approved Bid' || b.status === 'Pending Bid' || b.bidResult === 'Low'
+        b.projectName.includes(accountName) &&
+        (b.status === 'Approved Bid' || b.status === 'Pending Bid' || b.bidResult === 'Low')
     );
 
     // Format helpers
