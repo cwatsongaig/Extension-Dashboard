@@ -591,12 +591,12 @@ const DASHBOARD_DEFAULTS = {
         { id: 'daily-briefing', label: 'Daily Briefing', visible: true, order: 0 },
         { id: 'quick-actions', label: 'Quick Actions', visible: false, order: 1 },
         { id: 'kpi-cards', label: 'KPI Summary Cards', visible: true, order: 2 },
-        { id: 'account-snapshot', label: 'Account Snapshot', visible: true, order: 3 },
-        { id: 'exposure-gauge', label: 'Exposure & Capacity', visible: true, order: 4 },
-        { id: 'week-glance', label: 'This Week\'s Bids & Reminders', visible: true, order: 4 },
-        { id: 'action-items', label: 'Action Items', visible: true, order: 5 },
-        { id: 'arr-list', label: 'My Account Review Reports', visible: true, order: 6 },
-        { id: 'bond-requests', label: 'My Bond Requests', visible: true, order: 7 }
+        { id: 'exposure-gauge', label: 'Exposure & Capacity', visible: true, order: 3 },
+        { id: 'account-snapshot', label: 'Account Snapshot', visible: true, order: 4 },
+        { id: 'week-glance', label: 'This Week\'s Bids & Reminders', visible: true, order: 5 },
+        { id: 'action-items', label: 'Action Items', visible: true, order: 6 },
+        { id: 'arr-list', label: 'My Account Review Reports', visible: true, order: 7 },
+        { id: 'bond-requests', label: 'My Bond Requests', visible: true, order: 8 }
     ],
     managerPanels: [
         { id: 'mgr-service-activity', label: 'Service & Activity Summary', visible: true, order: 0 }
