@@ -6992,8 +6992,11 @@ function clearAccountSnapshot() {
 function searchAccountSnapshot(query) {
     const resultsEl = document.getElementById('snapshot-results');
     const clearBtn = document.getElementById('snapshot-clear');
+    const cardEl = document.getElementById('snapshot-card');
     if (!resultsEl) return;
     if (clearBtn) clearBtn.style.display = query && query.length > 0 ? 'block' : 'none';
+    // Clear the existing snapshot when user modifies the search
+    if (cardEl) cardEl.innerHTML = '';
     if (!query || query.length < 2) {
         resultsEl.style.display = 'none';
         return;
