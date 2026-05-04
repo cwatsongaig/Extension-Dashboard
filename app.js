@@ -800,7 +800,8 @@ const WIDGET_REGISTRY = {
                 <h2 class="uw-panel-title">Account Snapshot</h2>
                 <div style="position:relative;margin-bottom:12px;">
                     <input type="text" id="snapshot-search" placeholder="Search for an account..." oninput="searchAccountSnapshot(this.value)" autocomplete="off"
-                        style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s;">
+                        style="width:100%;padding:10px 14px 10px 14px;padding-right:36px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s;">
+                    <button id="snapshot-clear" onclick="clearAccountSnapshot()" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:18px;padding:2px 6px;border-radius:4px;line-height:1;" title="Clear">&times;</button>
                     <div id="snapshot-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d1d5db;border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
                 </div>
                 <div id="snapshot-card"></div>
@@ -6977,9 +6978,22 @@ function matchAIResponse(text) {
 
 // ==================== ACCOUNT SNAPSHOT ====================
 
+function clearAccountSnapshot() {
+    const searchEl = document.getElementById('snapshot-search');
+    const cardEl = document.getElementById('snapshot-card');
+    const clearBtn = document.getElementById('snapshot-clear');
+    const resultsEl = document.getElementById('snapshot-results');
+    if (searchEl) { searchEl.value = ''; searchEl.focus(); }
+    if (cardEl) cardEl.innerHTML = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (resultsEl) resultsEl.style.display = 'none';
+}
+
 function searchAccountSnapshot(query) {
     const resultsEl = document.getElementById('snapshot-results');
+    const clearBtn = document.getElementById('snapshot-clear');
     if (!resultsEl) return;
+    if (clearBtn) clearBtn.style.display = query && query.length > 0 ? 'block' : 'none';
     if (!query || query.length < 2) {
         resultsEl.style.display = 'none';
         return;
@@ -7008,6 +7022,8 @@ function showAccountSnapshot(accountName) {
     if (resultsEl) resultsEl.style.display = 'none';
     const searchEl = document.getElementById('snapshot-search');
     if (searchEl) searchEl.value = accountName;
+    const clearBtn = document.getElementById('snapshot-clear');
+    if (clearBtn) clearBtn.style.display = 'block';
 
     const cardEl = document.getElementById('snapshot-card');
     if (!cardEl) return;
