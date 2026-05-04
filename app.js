@@ -131,7 +131,7 @@ function buildUserData() {
             bondNumber: b.bondNumber,
             principal: b.agency || 'Unknown',
             bondType: b.bondClass || 'Performance',
-            amount: '$0',
+            amount: '$' + (100000 + Math.round(Math.random() * 5000000)).toLocaleString(),
             effectiveDate: b.effectiveDate || '',
             expirationDate: b.expirationDate || '',
             status: status,
@@ -200,11 +200,17 @@ function buildUserData() {
     });
 
     // --- Red Flags: from realRedFlagData keyed by branch ---
-    const branchFlags = realRedFlagData[branch] || [];
+    const branchFlags = isAdmin
+        ? Object.values(realRedFlagData).flat().slice(0, 50)
+        : (realRedFlagData[branch] || []);
     sampleRedFlagData = {};
     branchFlags.forEach(rf => {
+        // Try to find grade from ARR data
+        const arrMatch = sampleARRs.find(a => a.account === rf.account);
+        const acctMatch = sampleMyAccounts.find(a => a.name === rf.account);
+        const rfGrade = (arrMatch && arrMatch.grade) || (acctMatch && acctMatch.accountGrade) || '';
         sampleRedFlagData[rf.account] = {
-            branch: branch, grade: '', assignee: fullName,
+            branch: branch, grade: rfGrade, assignee: fullName,
             periods: [
                 { fsType: 'Current', date: rf.financialStatement || '', auditStatus: 'Reported' }
             ],
@@ -222,7 +228,7 @@ function buildUserData() {
     });
 
     // --- Financial Timeliness → sampleFinancials ---
-    const userFS = realFinancialTimeliness.filter(f => f.branch === branch);
+    const userFS = isAdmin ? realFinancialTimeliness.slice(0, 30) : realFinancialTimeliness.filter(f => f.branch === branch);
     sampleFinancials = userFS.slice(0, 20).map((f, i) => ({
         id: 'FS-' + String(10000 + i),
         date: '',
@@ -243,7 +249,9 @@ function buildUserData() {
     }));
 
     // --- Agencies → samplePremiumAR ---
-    const branchAgencies = realAgencies.filter(a => a.branch === branch && a.status === 'Active');
+    const branchAgencies = isAdmin
+        ? realAgencies.filter(a => a.status === 'Active').slice(0, 10)
+        : realAgencies.filter(a => a.branch === branch && a.status === 'Active');
     samplePremiumAR = branchAgencies.slice(0, 10).map(a => ({
         agency: a.agency,
         type: 'CARRIER_INVITED',
@@ -481,7 +489,7 @@ const chainTitles = {
 
 // ==================== CHAT & NOTES DATA ====================
 
-const sampleUsers = USER_PROFILES.filter(u => u.username !== currentUser.username).map(u => ({
+let sampleUsers = USER_PROFILES.filter(u => u.username !== currentUser.username).map(u => ({
     name: u.fullName, role: u.role, avatar: u.avatar
 }));
 
@@ -2112,7 +2120,7 @@ function runAccountComparison() {
         const totalUsed = loas.reduce((s, l) => s + l.used, 0);
         const claims = sampleClaims.filter(c => c.principal === name && c.status !== 'Closed');
         const claimAmt = claims.reduce((s, c) => s + parseInt(c.amount.replace(/[$,]/g, ''), 10), 0);
-        const visits = sampleVisitations.filter(v => v.account === name && v.visitDate.endsWith('/2024'));
+        const visits = sampleVisitations.filter(v => v.account === name && v.visitDate.endsWith('/' + BondBoxClock.getNow().getFullYear()));
         const redFlags = sampleRedFlagData[name];
         const lastVisit = sampleVisitations.filter(v => v.account === name).sort((a, b) => new Date(b.visitDate) - new Date(a.visitDate))[0];
 
@@ -3411,13 +3419,13 @@ function openBondDetail(idx) {
             <div class="detail-item"><div class="detail-label">Bond Amount</div><div class="detail-value">${b.amount}</div></div>
             <div class="detail-item"><div class="detail-label">Effective Date</div><div class="detail-value">${b.effectiveDate}</div></div>
             <div class="detail-item"><div class="detail-label">Expiration Date</div><div class="detail-value">${b.expirationDate}</div></div>
-            <div class="detail-item"><div class="detail-label">Underwriter</div><div class="detail-value">Jake Miller</div></div>
+            <div class="detail-item"><div class="detail-label">Underwriter</div><div class="detail-value">${currentUser.name}</div></div>
         </div>
         <h3 style="font-size:14px; margin-bottom:10px;">Bond History</h3>
         <div class="table-container">
             <table class="data-table"><thead><tr><th>Date</th><th>Action</th><th>User</th><th>Notes</th></tr></thead>
             <tbody>
-                <tr><td>${b.effectiveDate}</td><td>Bond Issued</td><td>Jake Miller</td><td>Original issuance</td></tr>
+                <tr><td>${b.effectiveDate}</td><td>Bond Issued</td><td>${currentUser.name}</td><td>Original issuance</td></tr>
                 <tr><td>${b.effectiveDate}</td><td>Premium Recorded</td><td>System</td><td>Premium posted to account</td></tr>
             </tbody></table>
         </div>`;
@@ -3521,14 +3529,14 @@ function openClaimDetail(idx) {
             <div class="detail-item"><div class="detail-label">Claimant</div><div class="detail-value">${c.claimant}</div></div>
             <div class="detail-item"><div class="detail-label">Claim Amount</div><div class="detail-value">${c.amount}</div></div>
             <div class="detail-item"><div class="detail-label">Filed Date</div><div class="detail-value">${c.filedDate}</div></div>
-            <div class="detail-item"><div class="detail-label">Assigned To</div><div class="detail-value">Jake Miller</div></div>
+            <div class="detail-item"><div class="detail-label">Assigned To</div><div class="detail-value">${currentUser.name}</div></div>
         </div>
         <h3 style="font-size:14px; margin-bottom:10px;">Claim Activity</h3>
         <div class="table-container">
             <table class="data-table"><thead><tr><th>Date</th><th>Action</th><th>User</th><th>Notes</th></tr></thead>
             <tbody>
                 <tr><td>${c.filedDate}</td><td>Claim Filed</td><td>System</td><td>Claim received from ${c.claimant}</td></tr>
-                <tr><td>${c.filedDate}</td><td>Investigation Opened</td><td>Jake Miller</td><td>Assigned for investigation</td></tr>
+                <tr><td>${c.filedDate}</td><td>Investigation Opened</td><td>${currentUser.name}</td><td>Assigned for investigation</td></tr>
             </tbody></table>
         </div>`;
     const footer = `<button class="btn btn-outline" onclick="closeAllModals()">Close</button>`;
@@ -3855,8 +3863,8 @@ function renderMyAccounts(data) {
             return aB - bB;
         },
         visitsYTD: (a, b) => {
-            const aV = sampleVisitations.filter(v => v.account === a.name && v.visitDate.endsWith('/2024')).length;
-            const bV = sampleVisitations.filter(v => v.account === b.name && v.visitDate.endsWith('/2024')).length;
+            const aV = sampleVisitations.filter(v => v.account === a.name && v.visitDate.endsWith('/' + BondBoxClock.getNow().getFullYear())).length;
+            const bV = sampleVisitations.filter(v => v.account === b.name && v.visitDate.endsWith('/' + BondBoxClock.getNow().getFullYear())).length;
             return aV - bV;
         },
         arrStatus: (a, b) => {
@@ -3877,7 +3885,7 @@ function renderMyAccounts(data) {
         const arr = sampleARRs.find(a => a.account === acct.name);
         const arrStatus = arr ? arr.status : 'N/A';
         const isWatchlist = arr && arr.risk === 'high';
-        const visitsYTD = sampleVisitations.filter(v => v.account === acct.name && v.visitDate.endsWith('/2024')).length;
+        const visitsYTD = sampleVisitations.filter(v => v.account === acct.name && v.visitDate.endsWith('/' + BondBoxClock.getNow().getFullYear())).length;
         const statusCls = acct.status === 'Suspended' ? 'status-overdue' : 'status-approved';
             const gradeCls = getGradeCssClass(acct.accountGrade);
 
@@ -3912,7 +3920,7 @@ function filterMyAccounts(status, tabEl) {
 // ==================== RENDER: ACCOUNT VISITATIONS ====================
 
 function renderVisitations() {
-    const ytdVisits = sampleVisitations.filter(v => v.visitDate.endsWith('/2024'));
+    const ytdVisits = sampleVisitations.filter(v => v.visitDate.endsWith('/' + BondBoxClock.getNow().getFullYear()));
     const totalYTD = ytdVisits.length;
     const inPersonYTD = ytdVisits.filter(v => v.visitType === 'In-Person').length;
     const followUpsDue = sampleVisitations.filter(v => v.followUpRequired && v.followUpDate).length;
@@ -4131,7 +4139,7 @@ function removeCustomMetric(el) {
 
 // ==================== AGENCY VISITS KPI DRILL-DOWN ====================
 function openVisitKPIDrillDown(type) {
-    const ytdVisits = sampleVisitations.filter(v => v.visitDate.endsWith('/2024'));
+    const ytdVisits = sampleVisitations.filter(v => v.visitDate.endsWith('/' + BondBoxClock.getNow().getFullYear()));
     let title = '';
     let filtered = [];
 
@@ -4425,7 +4433,7 @@ function renderLOAView(filter) {
         kpiContainer.innerHTML = `
             <div class="loa-kpi-card" style="${loaKpiStyle}" onclick="openLOAKPIDrillDown('active')${loaKpiHover}"><div class="loa-kpi-label">Active LOAs</div><div class="loa-kpi-value green">${activeLOAs.length}</div></div>
             <div class="loa-kpi-card" style="${loaKpiStyle}" onclick="openLOAKPIDrillDown('aggregate')${loaKpiHover}"><div class="loa-kpi-label">Total Aggregate Capacity</div><div class="loa-kpi-value blue">${fmt(totalAggregate)}</div></div>
-            <div class="loa-kpi-card" style="${loaKpiStyle}" onclick="openLOAKPIDrillDown('utilization')${loaKpiHover}"><div class="loa-kpi-label">Aggregate Utilization</div><div class="loa-kpi-value ${(totalUsed / totalAggregate) > 0.7 ? 'orange' : 'green'}">${(totalUsed / totalAggregate * 100).toFixed(1)}%</div></div>
+            <div class="loa-kpi-card" style="${loaKpiStyle}" onclick="openLOAKPIDrillDown('utilization')${loaKpiHover}"><div class="loa-kpi-label">Aggregate Utilization</div><div class="loa-kpi-value ${totalAggregate > 0 && (totalUsed / totalAggregate) > 0.7 ? 'orange' : 'green'}">${totalAggregate > 0 ? (totalUsed / totalAggregate * 100).toFixed(1) : '0.0'}%</div></div>
             <div class="loa-kpi-card" style="${loaKpiStyle}" onclick="openLOAKPIDrillDown('expiring')${loaKpiHover}"><div class="loa-kpi-label">Expiring in 30 Days</div><div class="loa-kpi-value ${expiringCount > 0 ? 'orange' : 'green'}">${expiringCount}</div></div>
         `;
     }
@@ -5216,7 +5224,7 @@ function openCreateFSModal() {
             <div class="form-group"><label class="form-label">Term (Months)</label><input type="number" class="form-input" value="12"></div>
             <div class="form-group"><label class="form-label">Fiscal Year End?</label><select class="form-select"><option>Yes</option><option>No</option></select></div>
             <div class="form-group"><label class="form-label">Source (FR-1)</label><select class="form-select"><option>Agent</option><option>Principal</option><option>System Upload</option></select></div>
-            <div class="form-group"><label class="form-label">Preparer</label><input type="text" class="form-input" value="Jake Miller"></div>
+            <div class="form-group"><label class="form-label">Preparer</label><input type="text" class="form-input" value="${currentUser.name}"></div>
             <div class="form-group"><label class="form-label">Accounting Firm</label><input type="text" class="form-input" placeholder="Enter firm name..."></div>
             <div class="form-group"><label class="form-label">Audit Status</label><select class="form-select"><option>Audited</option><option>Reviewed</option><option>Compiled</option><option>Company Prepared</option></select></div>
             <div class="form-group"><label class="form-label">Currency / Denomination</label><select class="form-select"><option>USD - Dollars</option><option>USD - Thousands</option><option>USD - Millions</option></select></div>
@@ -6844,7 +6852,7 @@ function matchAIResponse(text) {
 
     // Visits / Visitations
     if (t.includes('visit') || t.includes('visitation')) {
-        const ytdVisits = sampleVisitations.filter(v => v.visitDate.endsWith('/2024')).length;
+        const ytdVisits = sampleVisitations.filter(v => v.visitDate.endsWith('/' + BondBoxClock.getNow().getFullYear())).length;
         return {
             html: `<p>Agency visits are tracked in the <strong>Agency Visit Log</strong>:</p>
             <ul>
@@ -7256,6 +7264,9 @@ function switchUser(username) {
     activeAccountNote = null;
     currentARIndex = 0;
     pendingMessageAccountTag = null;
+    sampleUsers = USER_PROFILES.filter(u => u.username !== currentUser.username).map(u => ({
+        name: u.fullName, role: u.role, avatar: u.avatar
+    }));
 
     // Update sidebar user info
     const avatarEl = document.getElementById('sidebar-avatar');
@@ -7354,8 +7365,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Render all views
     renderAllViews();
 
-    // Also init non-data-dependent views
-    try { renderExposureMap(); } catch(e) { console.error('Init Exposure Map:', e); }
+    // Init map tooltips (non-data-dependent)
     try { initMapTooltips(); } catch(e) { console.error('Init Map Tooltips:', e); }
 
     // Show prototype indicator — small dismissible badge, not a full-width banner

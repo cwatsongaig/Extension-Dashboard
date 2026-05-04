@@ -108,7 +108,6 @@ const USERNAME_MAP = {
   "bwjohnson": "Brad Johnson",
   "jltaylor": "John  Taylor",
   "kbearley": "Jake Liggett",
-  "jmiller9": "Marc Carney",
   "mjmiller2": "Doug Hellmann",
   "lnevarez": "Adam Kveton",
   "sdante": "Stephen Dante",
