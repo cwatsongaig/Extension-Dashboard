@@ -7057,10 +7057,9 @@ function showAccountSnapshot(accountName) {
         return new Date(b.effectiveDate) > new Date(wohDate);
     });
 
-    // 5. Open bids for this account (Approved Bid, Pending Bid, or Low bidResult)
+    // 5. Open bids — all open bids in the user's branch
     const openBids = sampleBidLog.filter(b =>
-        b.projectName.includes(accountName) &&
-        (b.status === 'Approved Bid' || b.status === 'Pending Bid' || b.bidResult === 'Low')
+        b.status === 'Approved Bid' || b.status === 'Pending Bid' || b.bidResult === 'Low'
     );
 
     // Format helpers
@@ -7129,7 +7128,7 @@ function showAccountSnapshot(accountName) {
             <!-- Open Bids -->
             <div style="padding:14px 16px;border-top:1px solid #e5e7eb;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);font-weight:600;">Open Bids</span>
+                    <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);font-weight:600;">Open Bids (Branch)</span>
                     <span style="font-size:13px;font-weight:700;color:var(--accent-brand);">${openBids.length}</span>
                 </div>
                 ${openBids.length > 0 ? '<div style="max-height:160px;overflow-y:auto;border:1px solid #f3f4f6;border-radius:6px;">' +
