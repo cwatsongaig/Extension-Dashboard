@@ -7098,12 +7098,12 @@ function showAccountSnapshot(accountName) {
                     <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);font-weight:600;">Bonds Written Since Last WOH</span>
                     <span style="font-size:13px;font-weight:700;color:var(--accent-brand);">${bondsSinceWOH.length}</span>
                 </div>
-                ${bondsSinceWOH.length > 0 ? '<div style="display:flex;flex-direction:column;gap:4px;">' + bondsSinceWOH.slice(0, 5).map(b =>
-                    '<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f3f4f6;">' +
-                    '<span>' + b.bondNumber + ' <span style="color:var(--text-muted);">' + b.bondType + '</span></span>' +
-                    '<span style="font-weight:600;">' + b.amount + '</span>' +
-                    '</div>'
-                ).join('') + (bondsSinceWOH.length > 5 ? '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:4px;">+ ' + (bondsSinceWOH.length - 5) + ' more</div>' : '') + '</div>' : '<div style="font-size:12px;color:var(--text-muted);">No bonds written since last WOH</div>'}
+                ${bondsSinceWOH.length > 0 ? '<div style="max-height:160px;overflow-y:auto;border:1px solid #f3f4f6;border-radius:6px;">' +
+                    '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
+                    '<thead><tr style="background:#f8f9fa;position:sticky;top:0;"><th style="text-align:left;padding:5px 8px;color:var(--text-muted);font-weight:600;">Bond #</th><th style="text-align:left;padding:5px 8px;color:var(--text-muted);font-weight:600;">Type</th><th style="text-align:right;padding:5px 8px;color:var(--text-muted);font-weight:600;">Amount</th><th style="text-align:right;padding:5px 8px;color:var(--text-muted);font-weight:600;">Effective</th></tr></thead>' +
+                    '<tbody>' + bondsSinceWOH.map(b =>
+                        '<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:4px 8px;">' + b.bondNumber + '</td><td style="padding:4px 8px;color:var(--text-muted);">' + b.bondType + '</td><td style="padding:4px 8px;text-align:right;font-weight:600;">' + b.amount + '</td><td style="padding:4px 8px;text-align:right;color:var(--text-muted);">' + (b.effectiveDate || '') + '</td></tr>'
+                    ).join('') + '</tbody></table></div>' : '<div style="font-size:12px;color:var(--text-muted);">No bonds written since last WOH</div>'}
             </div>
 
             <!-- Open Bids -->
@@ -7112,12 +7112,12 @@ function showAccountSnapshot(accountName) {
                     <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);font-weight:600;">Open Bids</span>
                     <span style="font-size:13px;font-weight:700;color:var(--accent-brand);">${openBids.length}</span>
                 </div>
-                ${openBids.length > 0 ? '<div style="display:flex;flex-direction:column;gap:4px;">' + openBids.slice(0, 5).map(b =>
-                    '<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f3f4f6;">' +
-                    '<span>' + b.projectName + ' <span style="color:var(--text-muted);">' + b.obligee + '</span></span>' +
-                    '<span><span class="status-badge ' + statusClass(b.status) + '" style="font-size:10px;">' + b.status + '</span> ' + fmt(b.contractValue) + '</span>' +
-                    '</div>'
-                ).join('') + (openBids.length > 5 ? '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:4px;">+ ' + (openBids.length - 5) + ' more</div>' : '') + '</div>' : '<div style="font-size:12px;color:var(--text-muted);">No open bids</div>'}
+                ${openBids.length > 0 ? '<div style="max-height:160px;overflow-y:auto;border:1px solid #f3f4f6;border-radius:6px;">' +
+                    '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
+                    '<thead><tr style="background:#f8f9fa;position:sticky;top:0;"><th style="text-align:left;padding:5px 8px;color:var(--text-muted);font-weight:600;">Project</th><th style="text-align:left;padding:5px 8px;color:var(--text-muted);font-weight:600;">Obligee</th><th style="text-align:center;padding:5px 8px;color:var(--text-muted);font-weight:600;">Status</th><th style="text-align:right;padding:5px 8px;color:var(--text-muted);font-weight:600;">Value</th></tr></thead>' +
+                    '<tbody>' + openBids.map(b =>
+                        '<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:4px 8px;">' + b.projectName + '</td><td style="padding:4px 8px;color:var(--text-muted);">' + b.obligee + '</td><td style="padding:4px 8px;text-align:center;"><span class="status-badge ' + statusClass(b.status) + '" style="font-size:10px;">' + b.status + '</span></td><td style="padding:4px 8px;text-align:right;font-weight:600;">' + fmt(b.contractValue) + '</td></tr>'
+                    ).join('') + '</tbody></table></div>' : '<div style="font-size:12px;color:var(--text-muted);">No open bids</div>'}
             </div>
         </div>
     `;
