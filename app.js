@@ -39,7 +39,8 @@ const BondBoxClock = (() => {
 // ==================== CURRENT USER (switchable) ====================
 
 // Existing code uses currentUser.name — set it as alias for fullName
-let currentUser = Object.assign({}, USER_PROFILES[0], { name: USER_PROFILES[0].fullName, division: USER_PROFILES[0].division || 'Contract' });
+const _defaultProfile = USER_PROFILES.find(u => u.username === 'cwatson') || USER_PROFILES[0];
+let currentUser = Object.assign({}, _defaultProfile, { name: _defaultProfile.fullName, division: _defaultProfile.division || 'Contract' });
 
 // ==================== DATA BRIDGE ====================
 // These variables are populated by buildUserData() from real report data in data.js.
