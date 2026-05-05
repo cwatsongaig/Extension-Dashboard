@@ -7593,7 +7593,7 @@ function openUserSwitcher() {
             '<div class="user-avatar" style="width:40px;height:40px;font-size:14px;">' + u.avatar + '</div>' +
             '<div style="flex:1;">' +
                 '<div style="font-weight:600;font-size:14px;color:#1f2937;">' + u.fullName + (isActive ? ' <span style="font-size:11px;color:var(--accent-brand);font-weight:500;">(current)</span>' : '') + '</div>' +
-                '<div style="font-size:12px;color:#6b7280;">' + u.role + ' &mdash; ' + u.branch + (u.division === 'Commercial' ? ' <span style="background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px;">Commercial</span>' : '') + '</div>' +
+                '<div style="font-size:12px;color:#6b7280;">' + u.role + ' &mdash; ' + u.branch + (u.division === 'Commercial' ? ' <span style="background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px;">Commercial</span>' : (!u.division || u.division === 'Contract') ? ' <span style="background:#f0fdf4;color:#166534;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px;">Contract</span>' : '') + '</div>' +
             '</div>' +
         '</div>';
     }).join('');
