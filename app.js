@@ -1132,17 +1132,25 @@ function openDashboardSettings() {
     body += '</select></div>';
     body += '</div></div>';
 
-    // Manager Menu Options (visible to managers and admins)
+    // Manager Widgets/Reports (visible to managers and admins)
     if (hasManagerAccess()) {
         var saEnabled = isServiceActivityEnabled();
-        body += '<div style="margin-bottom:20px;"><h3 style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--accent-brand);">Manager Menu Items</h3>';
-        body += '<div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Add or remove manager-only pages from your sidebar navigation. Your choices are saved and will persist between sessions.</div>';
+        body += '<div style="margin-bottom:20px;"><h3 style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--accent-brand);">Manager Widgets / Reports</h3>';
+
+        // Manager Reports (sidebar nav items)
+        body += '<div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Manager Reports</div>';
+        body += '<div style="font-size:11px;color:#6b7280;margin-bottom:8px;">Toggle manager-only reports in your sidebar. Changes are saved automatically.</div>';
         body += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--accent-brand);border-radius:8px;margin-bottom:6px;background:#fdf2f2;">';
         body += '<label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;font-size:13px;color:#374151;">';
-        body += '<input type="checkbox" ' + (saEnabled ? 'checked' : '') + ' onchange="setServiceActivityEnabled(this.checked)" style="width:16px;height:16px;accent-color:var(--accent-brand);">';
+        body += '<input type="checkbox" id="mgr-sa-toggle" ' + (saEnabled ? 'checked' : '') + ' onchange="toggleServiceActivityNav(this.checked)" style="width:16px;height:16px;accent-color:var(--accent-brand);">';
         body += '<span style="font-weight:500;">Service & Activity Report</span></label>';
-        body += '<span style="font-size:10px;color:var(--accent-brand);text-transform:uppercase;font-weight:600;">Manager</span>';
+        body += '<span style="font-size:10px;color:var(--accent-brand);text-transform:uppercase;font-weight:600;">Report</span>';
         body += '</div>';
+
+        // Manager Widgets placeholder
+        body += '<div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;margin-top:16px;">Manager Dashboard Widgets</div>';
+        body += '<div style="padding:12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;color:#6b7280;font-size:12px;">No manager-specific dashboard widgets are currently available. New widgets will appear here as they are added.</div>';
+
         body += '</div>';
     }
 
@@ -1292,9 +1300,11 @@ function applyDashboardSettings() {
 function resetDashboardAndClose() {
     resetDashboardPrefs();
     _dashSettingsOrder = null;
+    // Re-open the settings modal with fresh defaults instead of closing
     closeAllModals();
     renderDashboardLayout();
     updateNavForDivision();
+    openDashboardSettings();
 }
 
 let sampleConversations = [];
@@ -7481,6 +7491,11 @@ function setServiceActivityEnabled(enabled) {
         else localStorage.removeItem(key);
     } catch(e) { /* ignore */ }
     updateNavForDivision();
+}
+
+function toggleServiceActivityNav(checked) {
+    // Save immediately and update the nav — don't close or rebuild modal
+    setServiceActivityEnabled(checked);
 }
 
 function switchUser(username) {
