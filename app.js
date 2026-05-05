@@ -601,9 +601,7 @@ const DASHBOARD_DEFAULTS = {
         { id: 'arr-list', label: 'My Account Review Reports', visible: true, order: 7 },
         { id: 'bond-requests', label: 'My Bond Requests', visible: true, order: 8 }
     ],
-    managerPanels: [
-        { id: 'mgr-service-activity', label: 'Service & Activity Summary', visible: true, order: 0 }
-    ],
+    managerPanels: [],
     config: {
         actionItemsMaxCount: 10,
         arrListMaxCount: 5,
@@ -1134,22 +1132,17 @@ function openDashboardSettings() {
     body += '</select></div>';
     body += '</div></div>';
 
-    // Manager Reports section (visible to managers and admins)
+    // Manager Menu Options (visible to managers and admins)
     if (hasManagerAccess()) {
-        body += '<div style="margin-bottom:20px;"><h3 style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--accent-brand);">Manager Report Widgets</h3>';
-        body += '<div style="font-size:12px;color:#6b7280;margin-bottom:10px;">These widgets are available to managers and admin users. They appear below the standard dashboard panels.</div>';
-        var mgrPanels = prefs.managerPanels || [];
-        mgrPanels.sort(function(a, b) { return a.order - b.order; });
-        mgrPanels.forEach(function(p) {
-            var w = WIDGET_REGISTRY[p.id];
-            var label = w ? w.label : p.label || p.id;
-            body += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--accent-brand);border-radius:8px;margin-bottom:6px;background:#fdf2f2;">';
-            body += '<label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;font-size:13px;color:#374151;">';
-            body += '<input type="checkbox" ' + (p.visible ? 'checked' : '') + ' onchange="toggleMgrPanel(\'' + p.id + '\', this.checked)" style="width:16px;height:16px;accent-color:var(--accent-brand);">';
-            body += '<span style="font-weight:500;">' + label + '</span></label>';
-            body += '<span style="font-size:10px;color:var(--accent-brand);text-transform:uppercase;font-weight:600;">Manager</span>';
-            body += '</div>';
-        });
+        var saEnabled = isServiceActivityEnabled();
+        body += '<div style="margin-bottom:20px;"><h3 style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--accent-brand);">Manager Menu Items</h3>';
+        body += '<div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Add or remove manager-only pages from your sidebar navigation. Your choices are saved and will persist between sessions.</div>';
+        body += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--accent-brand);border-radius:8px;margin-bottom:6px;background:#fdf2f2;">';
+        body += '<label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;font-size:13px;color:#374151;">';
+        body += '<input type="checkbox" ' + (saEnabled ? 'checked' : '') + ' onchange="setServiceActivityEnabled(this.checked)" style="width:16px;height:16px;accent-color:var(--accent-brand);">';
+        body += '<span style="font-weight:500;">Service & Activity Report</span></label>';
+        body += '<span style="font-size:10px;color:var(--accent-brand);text-transform:uppercase;font-weight:600;">Manager</span>';
+        body += '</div>';
         body += '</div>';
     }
 
@@ -7453,6 +7446,7 @@ function updateNavForDivision() {
     const wipNav = document.querySelector('.nav-item[data-view="wip"]');
     const bidCalNav = document.querySelector('.nav-item[data-view="bid-calendar"]');
     const outstandingBidsPanel = document.getElementById('outstanding-bids-panel');
+    const serviceActivityNav = document.querySelector('.nav-item[data-view="service-activity"]');
 
     if (bidLogNav) bidLogNav.style.display = commercial ? 'none' : '';
     if (wipNav) wipNav.style.display = commercial ? 'none' : '';
@@ -7463,6 +7457,28 @@ function updateNavForDivision() {
         const label = bidCalNav.querySelector('span');
         if (label) label.textContent = commercial ? 'Reminder Calendar' : 'Bid/Reminder Calendar';
     }
+
+    // Service & Activity: only visible for managers who have enabled it
+    if (serviceActivityNav) {
+        const showSA = hasManagerAccess() && isServiceActivityEnabled();
+        serviceActivityNav.style.display = showSA ? '' : 'none';
+    }
+}
+
+function isServiceActivityEnabled() {
+    try {
+        const key = 'bondbox-sa-nav-' + currentUser.username;
+        return localStorage.getItem(key) === 'true';
+    } catch(e) { return false; }
+}
+
+function setServiceActivityEnabled(enabled) {
+    try {
+        const key = 'bondbox-sa-nav-' + currentUser.username;
+        if (enabled) localStorage.setItem(key, 'true');
+        else localStorage.removeItem(key);
+    } catch(e) { /* ignore */ }
+    updateNavForDivision();
 }
 
 function switchUser(username) {
