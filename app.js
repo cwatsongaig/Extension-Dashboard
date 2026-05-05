@@ -7470,9 +7470,9 @@ function updateNavForDivision() {
         if (label) label.textContent = commercial ? 'Reminder Calendar' : 'Bid/Reminder Calendar';
     }
 
-    // Service & Activity: only visible for managers who have enabled it
+    // Service & Activity: only visible for contract division managers who have enabled it
     if (serviceActivityNav) {
-        const showSA = hasManagerAccess() && isServiceActivityEnabled();
+        const showSA = !commercial && hasManagerAccess() && isServiceActivityEnabled();
         serviceActivityNav.style.display = showSA ? '' : 'none';
     }
 }
