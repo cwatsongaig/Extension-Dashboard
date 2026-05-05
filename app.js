@@ -39,7 +39,7 @@ const BondBoxClock = (() => {
 // ==================== CURRENT USER (switchable) ====================
 
 // Existing code uses currentUser.name — set it as alias for fullName
-let currentUser = Object.assign({}, USER_PROFILES[0], { name: USER_PROFILES[0].fullName });
+let currentUser = Object.assign({}, USER_PROFILES[0], { name: USER_PROFILES[0].fullName, division: USER_PROFILES[0].division || 'Contract' });
 
 // ==================== DATA BRIDGE ====================
 // These variables are populated by buildUserData() from real report data in data.js.
@@ -679,6 +679,10 @@ function getManagerAccessList() {
 function saveManagerAccessList(list) {
     try { localStorage.setItem('bondbox-manager-access', JSON.stringify(list)); }
     catch(e) { /* ignore */ }
+}
+
+function isCommercialUser() {
+    return currentUser.division === 'Commercial';
 }
 
 // ==================== WIDGET REGISTRY & DASHBOARD LAYOUT ====================
@@ -7441,7 +7445,7 @@ function switchUser(username) {
     // Close modal FIRST before re-rendering
     closeAllModals();
 
-    currentUser = Object.assign({}, profile, { name: profile.fullName });
+    currentUser = Object.assign({}, profile, { name: profile.fullName, division: profile.division || 'Contract' });
 
     // Rebuild all data arrays for the new user
     buildUserData();
@@ -7471,7 +7475,7 @@ function switchUser(username) {
     const greeting = document.getElementById('dashboard-greeting');
     if (greeting) greeting.textContent = 'Welcome, ' + currentUser.fullName.split(' ')[0];
     const subtitle = document.getElementById('dashboard-subtitle');
-    if (subtitle) subtitle.textContent = currentUser.branch + ' Branch \u2014 Surety Bond Underwriting Dashboard';
+    if (subtitle) subtitle.textContent = currentUser.branch + ' Branch \u2014 ' + (isCommercialUser() ? 'Commercial Surety Dashboard' : 'Contract Surety Underwriting Dashboard');
 
     // Reset Service Activity and Approved Reviews branch filters so they repopulate for new user
     const saBranch = document.getElementById('sa-branch-filter');
@@ -7525,7 +7529,7 @@ function openUserSwitcher() {
             '<div class="user-avatar" style="width:40px;height:40px;font-size:14px;">' + u.avatar + '</div>' +
             '<div style="flex:1;">' +
                 '<div style="font-weight:600;font-size:14px;color:#1f2937;">' + u.fullName + (isActive ? ' <span style="font-size:11px;color:var(--accent-brand);font-weight:500;">(current)</span>' : '') + '</div>' +
-                '<div style="font-size:12px;color:#6b7280;">' + u.role + ' &mdash; ' + u.branch + '</div>' +
+                '<div style="font-size:12px;color:#6b7280;">' + u.role + ' &mdash; ' + u.branch + (u.division === 'Commercial' ? ' <span style="background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px;">Commercial</span>' : '') + '</div>' +
             '</div>' +
         '</div>';
     }).join('');
@@ -7551,7 +7555,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const greeting = document.getElementById('dashboard-greeting');
     if (greeting) greeting.textContent = 'Welcome, ' + currentUser.fullName.split(' ')[0];
     const subtitle = document.getElementById('dashboard-subtitle');
-    if (subtitle) subtitle.textContent = currentUser.branch + ' Branch \u2014 Surety Bond Underwriting Dashboard';
+    if (subtitle) subtitle.textContent = currentUser.branch + ' Branch \u2014 ' + (isCommercialUser() ? 'Commercial Surety Dashboard' : 'Contract Surety Underwriting Dashboard');
 
     // Render all views
     renderAllViews();

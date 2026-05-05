@@ -82,6 +82,30 @@ const USER_PROFILES = [
     "branch": "ALL",
     "role": "Admin",
     "avatar": "GS"
+  },
+  {
+    "username": "dlewis",
+    "fullName": "Dan Lewis",
+    "branch": "COMMERCIAL SE",
+    "role": "Branch Manager",
+    "division": "Commercial",
+    "avatar": "DL"
+  },
+  {
+    "username": "jlreed",
+    "fullName": "Janelle Reed",
+    "branch": "SERVICE TRANSACTIONAL GROUP",
+    "role": "Underwriter",
+    "division": "Commercial",
+    "avatar": "JR"
+  },
+  {
+    "username": "akbeck",
+    "fullName": "Anna Beck",
+    "branch": "COMMERCIAL NE",
+    "role": "Underwriter",
+    "division": "Commercial",
+    "avatar": "AB"
   }
 ];
 
