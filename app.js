@@ -468,23 +468,26 @@ const reviewChains = {
 };
 
 const chainTitles = {
-    'Chris Watson': 'Admin',
-    'Geoff Smith': 'Admin',
+    'Chris Watson': 'Business Analysis Manager',
+    'Geoff Smith': 'Financial Analysis Director',
     'Sarah Mitchell': 'Sr. Underwriter',
     'Mike Torres': 'Underwriter',
-    'Jake Miller': 'Branch Manager',
-    'Max Miller': 'Regional Manager',
+    'Jake Miller': 'Sr. FP Underwriting Manager',
+    'Max Miller': 'Asst. Vice President - Underwriting',
     'Amy Rodriguez': 'Regional Manager',
-    'John Webster': 'VP Underwriting',
+    'John Webster': 'Sr. Vice President - Underwriting',
     'Ken Bearley': 'President',
-    'Doug Hellmann': 'Underwriter',
-    'Jake Liggett': 'Underwriter',
-    'Wade Wilson': 'Sr. Underwriter',
-    'Kathy Wittler': 'Underwriter',
-    'Jonathon Whipkey': 'Underwriter',
-    'Adam Kveton': 'Underwriter',
-    'Patrick Holland': 'Underwriter',
-    'Doug Bossen': 'Underwriter'
+    'Doug Hellmann': 'FP Underwriting Manager',
+    'Jake Liggett': 'FP Underwriting Specialist',
+    'Wade Wilson': 'Asst. Vice President - Underwriting',
+    'Kathy Wittler': 'Sr. FP Underwriter II',
+    'Jonathon Whipkey': 'Sr. FP Underwriting Manager',
+    'Adam Kveton': 'FP Underwriting Manager',
+    'Patrick Holland': 'Sr. FP Underwriting Manager',
+    'Doug Bossen': 'Sr. FP Underwriting Manager',
+    'Dan Lewis': 'Asst. Vice President - Underwriting',
+    'Janelle Reed': 'Sr. Underwriting Product Manager',
+    'Anna Beck': 'FP Underwriter II'
 };
 
 // ==================== CHAT & NOTES DATA ====================
@@ -656,11 +659,16 @@ function resetDashboardPrefs() {
 
 const MANAGER_ROLES = ['Branch Manager', 'Regional Manager', 'VP Underwriting', 'CAO'];
 function isManagerRole() {
-    return MANAGER_ROLES.includes(currentUser.role) || MANAGER_ROLES.includes(chainTitles[currentUser.name]);
+    // Check title keywords that indicate management level
+    const role = (currentUser.role || '').toLowerCase();
+    const title = (chainTitles[currentUser.name] || '').toLowerCase();
+    const mgrKeywords = ['manager', 'vice president', 'director', 'president'];
+    return MANAGER_ROLES.includes(currentUser.role) || MANAGER_ROLES.includes(chainTitles[currentUser.name]) ||
+        mgrKeywords.some(k => role.includes(k)) || mgrKeywords.some(k => title.includes(k));
 }
 
 function isAdminUser() {
-    return ADMIN_USERS.includes(currentUser.name) || currentUser.role === 'Admin';
+    return ADMIN_USERS.includes(currentUser.name);
 }
 
 function hasManagerAccess() {

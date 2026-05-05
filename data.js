@@ -10,84 +10,84 @@ const USER_PROFILES = [
     "username": "dhellmann",
     "fullName": "Doug Hellmann",
     "branch": "KENTUCKY",
-    "role": "Underwriter",
+    "role": "Financial Products Underwriting Manager",
     "avatar": "DH"
   },
   {
     "username": "jliggett",
     "fullName": "Jake Liggett",
     "branch": "CINCINNATI",
-    "role": "Underwriter",
+    "role": "Financial Products Underwriting Specialist",
     "avatar": "JL"
   },
   {
     "username": "wwilson",
     "fullName": "Wade Wilson",
     "branch": "ORANGE",
-    "role": "Sr. Underwriter",
+    "role": "Asst. Vice President - Underwriting",
     "avatar": "WW"
   },
   {
     "username": "kwittler",
     "fullName": "Kathy Wittler",
     "branch": "ORANGE",
-    "role": "Underwriter",
+    "role": "Senior Financial Products Underwriter II",
     "avatar": "KW"
   },
   {
     "username": "jwhipkey",
     "fullName": "Jonathon Whipkey",
     "branch": "TENNESSEE",
-    "role": "Underwriter",
+    "role": "Senior Financial Products Underwriting Manager",
     "avatar": "JW"
   },
   {
     "username": "akveton",
     "fullName": "Adam Kveton",
     "branch": "CHICAGO CONTRACT",
-    "role": "Underwriter",
+    "role": "Financial Products Underwriting Manager",
     "avatar": "AK"
   },
   {
     "username": "pholland",
     "fullName": "Patrick Holland",
     "branch": "CAROLINA",
-    "role": "Underwriter",
+    "role": "Senior Financial Products Underwriting Manager",
     "avatar": "PH"
   },
   {
     "username": "dbossen",
     "fullName": "Doug Bossen",
     "branch": "TWIN CITIES",
-    "role": "Underwriter",
+    "role": "Senior Financial Products Underwriting Manager",
     "avatar": "DB"
   },
   {
     "username": "jmiller9",
     "fullName": "Jake Miller",
     "branch": "CINCINNATI",
-    "role": "Branch Manager",
+    "role": "Senior Financial Products Underwriting Manager",
     "avatar": "JM"
   },
   {
     "username": "cwatson",
     "fullName": "Chris Watson",
     "branch": "ALL",
-    "role": "Admin",
+    "role": "Business Analysis Manager",
     "avatar": "CW"
   },
   {
     "username": "gsmith",
     "fullName": "Geoff Smith",
     "branch": "ALL",
-    "role": "Admin",
+    "role": "Financial Analysis Director",
     "avatar": "GS"
   },
   {
     "username": "dlewis",
     "fullName": "Dan Lewis",
     "branch": "COMMERCIAL SE",
-    "role": "Branch Manager",
+    "role": "Asst. Vice President - Underwriting",
     "division": "Commercial",
     "avatar": "DL"
   },
@@ -95,7 +95,7 @@ const USER_PROFILES = [
     "username": "jlreed",
     "fullName": "Janelle Reed",
     "branch": "SERVICE TRANSACTIONAL GROUP",
-    "role": "Underwriter",
+    "role": "Senior Underwriting Product Manager",
     "division": "Commercial",
     "avatar": "JR"
   },
@@ -103,7 +103,7 @@ const USER_PROFILES = [
     "username": "akbeck",
     "fullName": "Anna Beck",
     "branch": "COMMERCIAL NE",
-    "role": "Underwriter",
+    "role": "Financial Products Underwriter II",
     "division": "Commercial",
     "avatar": "AB"
   }
