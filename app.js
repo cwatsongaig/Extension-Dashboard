@@ -1286,6 +1286,7 @@ function applyDashboardSettings() {
     _mgrSettingsState = null;
     closeAllModals();
     renderDashboardLayout();
+    updateNavForDivision();
 }
 
 function resetDashboardAndClose() {
@@ -1293,6 +1294,7 @@ function resetDashboardAndClose() {
     _dashSettingsOrder = null;
     closeAllModals();
     renderDashboardLayout();
+    updateNavForDivision();
 }
 
 let sampleConversations = [];
