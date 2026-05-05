@@ -7452,9 +7452,11 @@ function updateNavForDivision() {
     const bidLogNav = document.querySelector('.nav-item[data-view="bid-log"]');
     const wipNav = document.querySelector('.nav-item[data-view="wip"]');
     const bidCalNav = document.querySelector('.nav-item[data-view="bid-calendar"]');
+    const outstandingBidsPanel = document.getElementById('outstanding-bids-panel');
 
     if (bidLogNav) bidLogNav.style.display = commercial ? 'none' : '';
     if (wipNav) wipNav.style.display = commercial ? 'none' : '';
+    if (outstandingBidsPanel) outstandingBidsPanel.style.display = commercial ? 'none' : '';
 
     // Rename calendar for commercial users
     if (bidCalNav) {
