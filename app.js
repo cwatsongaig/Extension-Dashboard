@@ -7446,6 +7446,23 @@ function toggleSADetail(groupId, arrowId) {
 
 // ==================== USER SWITCHING ====================
 
+function updateNavForDivision() {
+    const commercial = isCommercialUser();
+    // Hide/show nav items based on division
+    const bidLogNav = document.querySelector('.nav-item[data-view="bid-log"]');
+    const wipNav = document.querySelector('.nav-item[data-view="wip"]');
+    const bidCalNav = document.querySelector('.nav-item[data-view="bid-calendar"]');
+
+    if (bidLogNav) bidLogNav.style.display = commercial ? 'none' : '';
+    if (wipNav) wipNav.style.display = commercial ? 'none' : '';
+
+    // Rename calendar for commercial users
+    if (bidCalNav) {
+        const label = bidCalNav.querySelector('span');
+        if (label) label.textContent = commercial ? 'Reminder Calendar' : 'Bid/Reminder Calendar';
+    }
+}
+
 function switchUser(username) {
     const profile = USER_PROFILES.find(u => u.username === username);
     if (!profile) return;
@@ -7490,6 +7507,9 @@ function switchUser(username) {
     if (saBranch) { saBranch.innerHTML = '<option value="all">All Branches</option>'; }
     const arBranch = document.getElementById('ar-approved-branch');
     if (arBranch) { arBranch.innerHTML = '<option value="all">All Branches</option>'; }
+
+    // Update nav visibility based on division
+    updateNavForDivision();
 
     // Re-render all views
     renderAllViews();
@@ -7570,6 +7590,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Init map tooltips (non-data-dependent)
     try { initMapTooltips(); } catch(e) { console.error('Init Map Tooltips:', e); }
+
+    // Apply division-specific nav visibility
+    updateNavForDivision();
 
     // Show prototype indicator — small dismissible badge, not a full-width banner
     const badge = document.createElement('div');
