@@ -141,6 +141,16 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
             <div class="breadcrumb" id="breadcrumb"><span>My Dashboard</span></div>
+            <div id="data-source-indicator" style="display:inline-flex;align-items:center;gap:6px;margin-left:12px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:0.5px;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;">
+                <span id="data-source-dot" style="width:8px;height:8px;border-radius:50%;background:#9ca3af;"></span>
+                <span id="data-source-label">STATIC DATA</span>
+            </div>
+            <div id="env-toggle-wrapper" style="display:none;margin-left:8px;">
+                <select id="env-toggle" onchange="handleEnvToggle(this.value)" style="font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb;background:#fff;color:#374151;cursor:pointer;">
+                    <option value="cert">CERT</option>
+                    <option value="prod">PROD</option>
+                </select>
+            </div>
             <div class="search-bar" style="position:relative;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input type="text" placeholder="Search accounts, bonds, requests..." id="global-search" oninput="handleGlobalSearch(this.value)" onfocus="handleGlobalSearch(this.value)" onblur="setTimeout(()=>document.getElementById('search-results').style.display='none',200)">
@@ -197,7 +207,7 @@
         <!-- ==================== ACCOUNT VISITATIONS ==================== -->
         <section id="view-visitations" class="view">
             <div class="view-header">
-                <div><h1>Agency Visits</h1><p class="view-subtitle">Agency visit tracking & metrics for contract surety accounts</p></div>
+                <div><h1>Agency Visits <span class="sample-data-badge">Sample Data</span></h1><p class="view-subtitle">Agency visit tracking & metrics for contract surety accounts</p></div>
                 <div class="header-actions">
                     <button class="btn btn-primary" onclick="openLogVisitModal()">+ Log Visit</button>
                 </div>
@@ -342,18 +352,40 @@
 
         <!-- ==================== FINANCIAL STATEMENTS ==================== -->
         <section id="view-financial-statements" class="view">
-            <div class="view-header">
-                <div><h1>Financial Statements</h1><p class="view-subtitle" id="fs-account-label">Select an account to view details</p></div>
-                <div class="header-actions">
-                    <button class="btn btn-primary" onclick="openCreateFSModal()">+ Create Statement</button>
-                    <button class="btn btn-outline" onclick="openCreateFSModal()">+ Create Consolidated</button>
+            <div id="fs-summary-page">
+                <div class="view-header">
+                    <div><h1>Financial Statements</h1><p class="view-subtitle" id="fs-account-label">Select an account to view details</p></div>
+                    <div class="header-actions">
+                        <select id="fs-account-filter" class="form-select" style="font-size:12px; min-width:180px;" onchange="filterFinancialsByAccount(this.value)">
+                            <option value="all">All Accounts</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="openCreateFSModal()">+ Create Statement</button>
+                        <button class="btn btn-outline" onclick="openCreateFSModal()">+ Create Consolidated</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table compact-table" id="financials-table">
+                        <thead id="financials-head"></thead>
+                        <tbody id="financials-table-body"></tbody>
+                    </table>
                 </div>
             </div>
-            <div class="table-container">
-                <table class="data-table compact-table" id="financials-table">
-                    <thead id="financials-head"></thead>
-                    <tbody id="financials-table-body"></tbody>
-                </table>
+            <!-- FS Detail Page (full financial statement view) -->
+            <div id="fs-detail-page" style="display:none;">
+                <div style="margin-bottom:16px;">
+                    <a href="#" onclick="closeFSDetail(); return false;" style="color:var(--accent-blue); font-size:13px;">&larr; Back to Financial Statements</a>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                        <h2 id="fs-detail-title">Financial Statement Detail</h2>
+                        <div id="fs-detail-meta">
+                            <span class="status-badge balanced" id="fs-detail-status">Balanced</span>
+                        </div>
+                    </div>
+                    <div id="fs-detail-header" style="display:flex; gap:24px; margin-top:12px; padding:12px 16px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; color:#374151;"></div>
+                </div>
+                <div id="fs-detail-content"></div>
+                <div style="display:flex; gap:8px; margin-top:24px; padding-top:16px; border-top:1px solid var(--border-color);">
+                    <button class="btn btn-outline" onclick="closeFSDetail()">Back to Financial Statements</button>
+                </div>
             </div>
         </section>
 
@@ -595,7 +627,7 @@
         <!-- ==================== BOND REQUESTS ==================== -->
         <section id="view-bond-requests" class="view">
             <div class="view-header">
-                <h1>Bond Requests</h1>
+                <h1>Bond Requests <span class="sample-data-badge">Sample Data</span></h1>
                 <div class="header-actions">
                     <div class="tab-group" id="bond-requests-tabs">
                         <button class="tab active" data-filter="all" onclick="filterBondRequests('all', this)">All Requests</button>
@@ -647,7 +679,7 @@
         <!-- ==================== MESSAGES ==================== -->
         <section id="view-messages" class="view">
             <div class="view-header">
-                <h1>Messages</h1>
+                <h1>Messages <span class="sample-data-badge">Sample Data</span></h1>
                 <div class="header-actions">
                     <button class="btn btn-primary" onclick="openNewMessageModal()">+ New Message</button>
                 </div>
@@ -684,7 +716,7 @@
         <!-- ==================== ACCOUNT NOTES ==================== -->
         <section id="view-account-notes" class="view">
             <div class="view-header">
-                <h1>Account Notes</h1>
+                <h1>Account Notes <span class="sample-data-badge">Sample Data</span></h1>
                 <div class="header-actions">
                     <button class="btn btn-primary" onclick="openAddAccountNoteModal()">+ Add Note</button>
                 </div>
@@ -730,10 +762,11 @@
             </div>
             <div class="loa-kpi-grid" id="loa-kpi-cards"></div>
             <div class="table-container">
-                <table class="data-table">
+                <table class="data-table compact-table">
                     <thead>
                         <tr>
-                            <th>Account</th>
+                            <th style="min-width:140px;">Account</th>
+                            <th>Assigned To</th>
                             <th>Type</th>
                             <th>Branch</th>
                             <th>Eff. Date</th>
@@ -741,7 +774,7 @@
                             <th>Single Limit</th>
                             <th>Aggregate</th>
                             <th>Used</th>
-                            <th>Utilization</th>
+                            <th style="min-width:100px;">Utilization</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -816,7 +849,7 @@
         <section id="view-premium-ar" class="view">
             <div class="view-header">
                 <div>
-                    <h1>Premium AR by Agency</h1>
+                    <h1>Premium AR by Agency <span class="sample-data-badge">Sample Data</span></h1>
                 </div>
             </div>
             <div class="uw-panel-full" style="margin-bottom:24px;padding:20px 24px;">

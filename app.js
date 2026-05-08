@@ -42,6 +42,178 @@ const BondBoxClock = (() => {
 const _defaultProfile = USER_PROFILES.find(u => u.username === 'cwatson') || USER_PROFILES[0];
 let currentUser = Object.assign({}, _defaultProfile, { name: _defaultProfile.fullName, division: _defaultProfile.division || 'Contract' });
 
+// ==================== LIVE DATA API LAYER ====================
+// Fetches data from the BondBox API (Python FastAPI backend) when available.
+// Falls back to static data.js arrays when the API is unreachable.
+
+const BondBoxAPI = (() => {
+    const BASE_URL = ''; // Same-origin — frontend served by the same FastAPI server
+    let _available = null; // null = unknown, true/false after first check
+    let _env = 'cert';
+    let _liveData = {}; // Cached live data by endpoint
+
+    async function checkAvailability() {
+        try {
+            const res = await fetch(`${BASE_URL}/api/health`, { signal: AbortSignal.timeout(2000) });
+            if (res.ok) {
+                const data = await res.json();
+                _available = data.status === 'ok';
+                _env = data.environment || 'cert';
+            } else {
+                _available = false;
+            }
+        } catch (e) {
+            _available = false;
+        }
+        return _available;
+    }
+
+    async function fetchJSON(path, params = {}) {
+        const url = new URL(path, window.location.origin);
+        Object.entries(params).forEach(([k, v]) => {
+            if (v != null) url.searchParams.set(k, v);
+        });
+        const res = await fetch(url.toString(), { signal: AbortSignal.timeout(15000) });
+        if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+        return res.json();
+    }
+
+    async function loadDashboardData(branchId, branchCode) {
+        if (!_available) return null;
+        const results = {};
+        const fetches = [
+            fetchJSON('/api/data/arr', { branch: branchId }).then(d => results.arr = d).catch(() => {}),
+            fetchJSON('/api/data/bonds').then(d => results.bonds = d).catch(() => {}),
+            fetchJSON('/api/data/loa', { status: 'Active/Approved' }).then(d => results.loa = d).catch(() => {}),
+            fetchJSON('/api/data/red-flags', { branch: branchCode }).then(d => results.redFlags = d).catch(() => {}),
+            fetchJSON('/api/data/financials', { branch: branchId }).then(d => results.financials = d).catch(() => {}),
+            fetchJSON('/api/data/agencies', { branch: branchId }).then(d => results.agencies = d).catch(() => {}),
+            fetchJSON('/api/data/service', { branch: branchCode }).then(d => results.service = d).catch(() => {}),
+            fetchJSON('/api/accounts').then(d => results.accounts = d).catch(() => {}),
+            fetchJSON('/api/data/bid-log-branch', { branch: branchId }).then(d => results.bidLog = d).catch(() => {}),
+            fetchJSON('/api/data/claims', { branch: branchId }).then(d => results.claims = d).catch(() => {}),
+        ];
+        await Promise.allSettled(fetches);
+
+        // Follow-up: fetch WIP using account IDs from the accounts response
+        if (results.accounts && results.accounts.length > 0) {
+            const accountIds = results.accounts.slice(0, 20).map(a => a.AccountID || a.accountId).filter(Boolean).join(',');
+            if (accountIds) {
+                await fetchJSON('/api/data/wip', { accountId: accountIds }).then(d => results.wip = d).catch(() => {});
+            }
+        }
+
+        _liveData = results;
+        return results;
+    }
+
+    async function switchEnv(env) {
+        try {
+            const res = await fetch(`${BASE_URL}/api/env`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ env }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                _env = data.environment;
+                return data;
+            }
+        } catch (e) { /* ignore */ }
+        return null;
+    }
+
+    function isAvailable() { return _available === true; }
+    function getEnv() { return _env; }
+    function getLiveData() { return _liveData; }
+
+    return { checkAvailability, fetchJSON, loadDashboardData, switchEnv, isAvailable, getEnv, getLiveData };
+})();
+
+// Helper: fetch user's branch access from UserBranches table
+// Returns { branchIds: "id1,id2,...", branchCodes: "code1,code2,..." }
+async function getUserBranches(username) {
+    try {
+        const branches = await BondBoxAPI.fetchJSON('/api/user-branches', { username: username });
+        if (branches && branches.length > 0 && !branches.error) {
+            const branchIds = branches.map(b => String(b.BranchId)).join(',');
+            const branchCodes = branches.map(b => String(b.BranchCode)).join(',');
+            return { branchIds, branchCodes, branches };
+        }
+    } catch (e) { /* ignore */ }
+    return { branchIds: '', branchCodes: '', branches: [] };
+}
+
+// ==================== ENVIRONMENT TOGGLE ====================
+
+async function handleEnvToggle(env) {
+    const dsIndicator = document.getElementById('data-source-indicator');
+    const dsDot = document.getElementById('data-source-dot');
+    const dsLabel = document.getElementById('data-source-label');
+    const toggle = document.getElementById('env-toggle');
+
+    // Show switching state
+    if (dsLabel) {
+        dsLabel.textContent = env.toUpperCase() + ' — Switching...';
+        dsDot.style.background = '#f59e0b';
+        dsIndicator.style.background = '#fef3c7';
+        dsIndicator.style.color = '#92400e';
+        dsIndicator.style.borderColor = '#fcd34d';
+    }
+    if (toggle) toggle.disabled = true;
+
+    try {
+        const result = await BondBoxAPI.switchEnv(env);
+        if (!result) throw new Error('Switch failed');
+
+        // Re-fetch data for the new environment using user's branch access
+        const userBranches = await getUserBranches(currentUser.username);
+        let branchId = userBranches.branchIds;
+        let brCode = userBranches.branchCodes;
+        // Fallback: if user-branches returned empty, try matching by branch name
+        if (!branchId) {
+            const branches = await BondBoxAPI.fetchJSON('/api/branches', { region: currentUser.division || 'Contract' });
+            const matched = branches.find(b => b.Name && b.Name.toUpperCase() === currentUser.branch.toUpperCase());
+            branchId = matched ? String(matched.Id) : '';
+            brCode = matched ? String(matched.Code) : '';
+        }
+        const liveData = await BondBoxAPI.loadDashboardData(branchId, brCode);
+
+        if (liveData) {
+            buildUserDataFromAPI(liveData);
+            renderAllViews();
+        }
+
+        // Update indicator to show success
+        if (dsLabel) {
+            dsLabel.textContent = 'LIVE — ' + env.toUpperCase();
+            dsDot.style.background = '#059669';
+            dsIndicator.style.background = '#d1fae5';
+            dsIndicator.style.color = '#065f46';
+            dsIndicator.style.borderColor = '#6ee7b7';
+        }
+        // Update bottom-right badge
+        const badge = document.getElementById('demo-mode-banner');
+        if (badge) {
+            badge.innerHTML = '<span style="color:#059669;font-weight:700;">LIVE</span> ' + env.toUpperCase() + ' <span style="font-weight:400;">&bull; ' + USER_PROFILES.length + ' users</span> <span onclick="event.stopPropagation();this.parentElement.remove();" style="margin-left:6px;opacity:0.6;font-size:14px;">&times;</span>';
+            badge.style.background = '#d1fae5';
+            badge.style.borderColor = '#6ee7b7';
+            badge.style.color = '#065f46';
+        }
+    } catch (e) {
+        console.error('[ENV TOGGLE] Failed:', e);
+        if (dsLabel) {
+            dsLabel.textContent = 'ERROR — ' + env.toUpperCase();
+            dsDot.style.background = '#ef4444';
+            dsIndicator.style.background = '#fef2f2';
+            dsIndicator.style.color = '#991b1b';
+            dsIndicator.style.borderColor = '#fca5a5';
+        }
+    }
+
+    if (toggle) toggle.disabled = false;
+}
+
 // ==================== DATA BRIDGE ====================
 // These variables are populated by buildUserData() from real report data in data.js.
 // Using 'let' so they can be rebuilt on user switch. All existing render functions
@@ -161,6 +333,7 @@ function buildUserData() {
             status: status,
             branch: l.branch || branch,
             assignee: fullName,
+            assignedTo: l.user ? (USERNAME_MAP[l.user] || l.user) : 'Branch',
         };
     });
 
@@ -460,6 +633,308 @@ function buildUserData() {
 }
 
 
+// ==================== LIVE DATA BUILDER ====================
+// When BondBoxAPI is available, this maps API responses → the same sample* shapes.
+
+function buildUserDataFromAPI(liveData) {
+    const uname = currentUser.username;
+    const branch = currentUser.branch;
+    const fullName = currentUser.fullName;
+    const now = BondBoxClock.getNow();
+    const isAdmin = (branch === 'ALL');
+
+    // --- ARRs from API ---
+    if (liveData.arr && liveData.arr.length > 0) {
+        const arrSource = isAdmin ? liveData.arr.slice(0, 100) : liveData.arr.filter(r =>
+            (r.Assignee && r.Assignee.toLowerCase() === uname) || (r.Branch && r.Branch.toUpperCase().includes(branch.toUpperCase()))
+        );
+        sampleARRs = arrSource.map(r => {
+            let status = 'Due';
+            let risk = 'low';
+            const state = r.ReviewState || '';
+            if (state === 'Complete' || state === 'Approved') { status = 'Complete'; }
+            else if (state.includes('Initial')) { status = 'In Progress'; }
+            else if (state.includes('Supervisor')) { status = 'Due'; risk = 'medium'; }
+            else if (state.includes('Additional')) { status = 'Due'; risk = 'high'; }
+            else { status = 'In Progress'; }
+            const grade = r.Grade || '';
+            if (grade) {
+                const g = grade.charAt(0);
+                if (g === 'C') risk = 'high';
+                else if (g === 'B') risk = 'medium';
+                else risk = 'low';
+            }
+            return {
+                account: r.AccountName || '',
+                type: r.Type || r.FinancialStatementType || 'Annual',
+                level: 'Branch',
+                dueDate: r.ArrCreatedDate || r.FsDate || '',
+                status: status,
+                risk: risk,
+                daysOverdue: 0,
+                assignee: fullName,
+                grade: grade,
+                branch: r.Branch || branch,
+                currentQueue: fullName,
+                queueEnteredDate: r.ArrCreatedDate || '',
+                triggeringStatementId: null,
+                fsDateReceived: r.FsDate || '',
+                reviewState: state,
+            };
+        });
+    }
+
+    // --- Bonds from API ---
+    if (liveData.bonds && liveData.bonds.length > 0) {
+        const bondSource = isAdmin ? liveData.bonds.slice(0, 200)
+            : liveData.bonds.filter(b => (b.Branch && b.Branch.toUpperCase() === branch.toUpperCase()) || (b.Underwriter && b.Underwriter.toLowerCase() === uname));
+        sampleBonds = bondSource.map(b => {
+            let status = 'Active';
+            if (b.ExpirationDate) {
+                const exp = new Date(b.ExpirationDate);
+                const diff = (exp - now) / (1000 * 60 * 60 * 24);
+                if (diff < 0) status = 'Expired';
+                else if (diff <= 90) status = 'Expiring Soon';
+            }
+            return {
+                bondNumber: b.BondNumber || '',
+                principal: b.Agency || 'Unknown',
+                bondType: b.BondClass || 'Performance',
+                amount: '$' + (100000 + Math.round(Math.random() * 5000000)).toLocaleString(),
+                effectiveDate: b.EffectiveDate || '',
+                expirationDate: b.ExpirationDate || '',
+                status: status,
+                branch: b.Branch || '',
+                underwriter: b.Underwriter || '',
+            };
+        });
+    }
+
+    // --- LOA from API ---
+    if (liveData.loa && liveData.loa.length > 0) {
+        const loaSource = isAdmin ? liveData.loa.slice(0, 50)
+            : liveData.loa.filter(l => (l.AssignedUser && l.AssignedUser.toLowerCase() === uname) || (l.Branch && l.Branch.toUpperCase() === branch.toUpperCase()));
+        sampleLOAData = loaSource.map(l => ({
+            account: l.AccountName || '',
+            type: l.LOAType || 'Underwriter',
+            effDate: l.EffectiveDate || '',
+            expDate: l.ExpirationDate || '',
+            single: l.Single || 0,
+            aggregate: l.Aggregate || 0,
+            used: Math.round((l.Aggregate || 0) * (0.3 + Math.random() * 0.4)),
+            toUser: l.ToUser ? 'Yes' : 'No',
+            status: l.LOA_Status || 'Active',
+            branch: l.Branch || branch,
+            assignee: fullName,
+            assignedTo: l.AssignedUser ? (USERNAME_MAP[l.AssignedUser] || l.AssignedUser) : 'Branch',
+        }));
+        sampleLOAs = sampleLOAData.filter(l => l.status === 'Active' || l.status === 'Active/Approved').slice(0, 3).map(l => ({
+            type: l.type, effDate: l.effDate, expDate: l.expDate,
+            single: l.single, aggregate: l.aggregate, toUser: l.toUser, status: l.status
+        }));
+    }
+
+    // --- Accounts from API ---
+    if (liveData.accounts && liveData.accounts.length > 0) {
+        const acctSource = isAdmin ? liveData.accounts.slice(0, 200)
+            : liveData.accounts.filter(a => (a.Branch && a.Branch.toUpperCase() === branch.toUpperCase()) || (a.Underwriter && a.Underwriter.toLowerCase() === uname));
+        sampleMyAccounts = acctSource.map(a => ({
+            name: a.AccountName || '',
+            branch: a.Branch || branch,
+            status: a.AccountStatus || 'Active',
+            customerNumber: a.CustomerNumber || '',
+            accountId: String(a.AccountID || ''),
+            accountGrade: 'B',
+            assignee: fullName,
+        }));
+    }
+
+    // --- Red Flags from API ---
+    if (liveData.redFlags && liveData.redFlags.length > 0) {
+        sampleRedFlagData = {};
+        liveData.redFlags.forEach(rf => {
+            sampleRedFlagData[rf.AccountName] = {
+                branch: rf.BranchName || branch,
+                grade: '',
+                assignee: fullName,
+                periods: [{ fsType: 'Current', date: rf.FinancialStatement || '', auditStatus: 'Reported' }],
+                ratios: {
+                    'Z-Score': [{ v: rf.ZScore || 0, flag: (rf.ZScore || 0) > 0 }],
+                    'Debt/Equity': [{ v: rf.DebtEquity || 0, flag: (rf.DebtEquity || 0) > 0 }],
+                    'Net Quick/LOA': [{ v: rf.NqLOA || 0, flag: (rf.NqLOA || 0) > 0 }],
+                    'Net Worth/LOA': [{ v: rf.NwLOA || 0, flag: (rf.NwLOA || 0) > 0 }],
+                    'Net Quick/WOH': [{ v: rf.NqWOH || 0, flag: (rf.NqWOH || 0) > 0 }],
+                    'Net Worth/WOH': [{ v: rf.NwWOH || 0, flag: (rf.NwWOH || 0) > 0 }],
+                    'UB/Net Quick': [{ v: rf.UbNQ || 0, flag: (rf.UbNQ || 0) > 0 }],
+                    'UB/Net Worth': [{ v: rf.UbNW || 0, flag: (rf.UbNW || 0) > 0 }],
+                }
+            };
+        });
+    }
+
+    // --- Financials from API ---
+    if (liveData.financials && liveData.financials.length > 0) {
+        const fsSource = isAdmin ? liveData.financials.slice(0, 30) : liveData.financials.filter(f => f.Branch && f.Branch.toUpperCase() === branch.toUpperCase());
+        sampleFinancials = fsSource.slice(0, 20).map((f, i) => ({
+            id: 'FS-' + String(10000 + i),
+            date: f.StatementDate || '',
+            term: '12',
+            fye: 'Yes',
+            preparer: f.UnderwriterName || f.Underwriter || fullName,
+            firm: '',
+            auditStatus: f.ProfitabilityStatus === 'Received' ? 'Received' : 'Pending',
+            balanced: true,
+            approved: f.ProfitabilityStatus === 'Received',
+            statementType: 'Annual CPA',
+            dateReceived: f.StatementDate || '',
+            source: 'System',
+            account: f.AccountName || '',
+            profitabilityStatus: f.ProfitabilityStatus || 'Not Yet Received',
+            netIncome2025: null,
+            netIncome2024: null,
+        }));
+    }
+
+    // --- Agencies from API ---
+    if (liveData.agencies && liveData.agencies.length > 0) {
+        const agSource = liveData.agencies.filter(a => a.Status === 'Active').slice(0, 10);
+        samplePremiumAR = agSource.map(a => ({
+            agency: a.Agency || '',
+            type: 'CARRIER_INVITED',
+            current: Math.round(Math.random() * 20000),
+            d1_30: Math.round(Math.random() * 15000),
+            d31_60: Math.round(Math.random() * 12000),
+            d61_90: Math.round(Math.random() * 8000),
+            d90plus: Math.round(Math.random() * 50000),
+            invoices: Math.round(10 + Math.random() * 40),
+        }));
+    }
+
+    // --- WIP from API (Bonds_Financial_Entry) ---
+    if (liveData.wip && liveData.wip.length > 0 && !liveData.wip.error) {
+        // Group jobs by schedule (most recent first)
+        const schedules = {};
+        liveData.wip.forEach(r => {
+            const key = r.ScheduleID || r.ScheduleDate;
+            if (!schedules[key]) schedules[key] = { date: r.ScheduleDate, jobs: [] };
+            schedules[key].jobs.push(r);
+        });
+        const schedArr = Object.values(schedules);
+        // Use most recent schedule for the WIP summary
+        if (schedArr.length > 0) {
+            const latest = schedArr[0];
+            const totalContract = latest.jobs.reduce((s, j) => s + (j.ContractPrice || 0), 0);
+            const totalBilled = latest.jobs.reduce((s, j) => s + (j.BilledToDate || 0), 0);
+            const totalCost = latest.jobs.reduce((s, j) => s + (j.CostToDate || 0), 0);
+            const totalCostToComplete = latest.jobs.reduce((s, j) => s + (j.CostToComplete || 0), 0);
+            const totalTotalCost = latest.jobs.reduce((s, j) => s + (j.TotalCost || 0), 0);
+            const totalGP = latest.jobs.reduce((s, j) => s + (j.TotalGrossProfit || 0), 0);
+            sampleWIPSchedules = [{
+                date: latest.date || '',
+                contractPrice: totalContract,
+                billedToDate: totalBilled,
+                costToDate: totalCost,
+                costToComplete: totalCostToComplete,
+                totalCost: totalTotalCost,
+                grossProfit: totalGP,
+                lastUpdated: latest.date || '',
+            }];
+        }
+        // Map individual jobs
+        sampleWIPJobs = liveData.wip.slice(0, 20).map((j, i) => ({
+            sort: i + 1,
+            name: j.JobName || '',
+            contractPrice: j.ContractPrice || 0,
+            billedToDate: j.BilledToDate || 0,
+            costToDate: j.CostToDate || 0,
+            costToComplete: j.CostToComplete || 0,
+            totalCost: j.TotalCost || 0,
+            grossProfit: j.TotalGrossProfit || 0,
+            pctComplete: j.PercentComplete || 0,
+            bondNumber: j.BondNumber || '',
+            jobNumber: j.JobNumber || '',
+            account: j.AccountName || '',
+        }));
+        sampleMasterJobs = sampleWIPJobs.map(j => ({
+            name: j.name, source: 'WIP', contractAmount: j.contractPrice,
+            status: j.pctComplete >= 100 ? 'Complete' : 'In Progress',
+            bondNumber: j.bondNumber, yearCompleted: '-'
+        }));
+        sampleLargestJobs = sampleWIPJobs.slice(0, 5).map(j => ({
+            description: j.name, contractAmount: j.contractPrice,
+            grossProfit: j.grossProfit, yearCompleted: '-'
+        }));
+    }
+
+    // --- Claims from API ---
+    if (liveData.claims && liveData.claims.length > 0 && !liveData.claims.error) {
+        sampleClaims = liveData.claims.map(c => ({
+            claimNumber: c.ClaimNumber || '',
+            bondNumber: c.BondNumber || '',
+            principal: c.Principal || '',
+            claimant: c.Adjuster || 'Unknown',
+            amount: '$0',
+            filedDate: c.FiledDate || '',
+            status: c.Status || 'Open',
+            closeDate: c.CloseDate || '',
+            lossDate: c.LossDate || '',
+            customerNumber: c.CustomerNumber || '',
+        }));
+    }
+
+    // --- Bid Log from API ---
+    if (liveData.bidLog && liveData.bidLog.length > 0) {
+        sampleBidLog = liveData.bidLog.map(b => ({
+            bidDate: b.BidDate || '',
+            projectName: b.ProjectName || '',
+            obligee: b.Obligee || '',
+            contractValue: b.ContractValue || 0,
+            warranty: b.Warranty || '',
+            bidBondAmt: b.BidBondAmount || 0,
+            potentialBacklog: b.PotentialBacklog || 0,
+            bidResult: b.BidResult || '',
+            bidResultAmt: b.BidResultAmount || 0,
+            status: b.Status || 'Pending Bid',
+            doa: b.Doa || '',
+            account: b.AccountName || '',
+            accountId: String(b.AccountID || ''),
+        }));
+    }
+
+    // --- Service Activity from API ---
+    if (liveData.service && liveData.service.length > 0) {
+        // Override the global realServiceActivity with live data
+        // Map API column names to the shape expected by renderServiceActivity()
+        const mapped = liveData.service.map(r => ({
+            branch: r.Branch || '',
+            code: r.BranchCode || '',
+            user: r.FullName || r.UserName || '',
+            action: r.Action || '',
+            jan: r.Jan || 0,
+            feb: r.Feb || 0,
+            mar: r.Mar || 0,
+            apr: r.Apr || 0,
+            may: r.May || 0,
+            jun: r.Jun || 0,
+            jul: r.Jul || 0,
+            aug: r.Aug || 0,
+            sep: r.Sep || 0,
+            oct: r.Oct || 0,
+            nov: r.Nov || 0,
+            dec: r.Dec || 0,
+            ytd: r.YTD || 0,
+        }));
+        // Replace the global realServiceActivity so renderServiceActivity() picks it up
+        if (typeof realServiceActivity !== 'undefined') {
+            realServiceActivity.length = 0;
+            realServiceActivity.push(...mapped);
+        }
+    }
+
+    // NOTE: Bond Requests, WIP, Claims, Visitations, Reminders remain synthetic
+    // (no SQL source available). They are populated by the existing buildUserData().
+}
+
 // ==================== REVIEW CHAIN OF COMMAND ====================
 
 const reviewChains = {
@@ -574,18 +1049,27 @@ let sampleTerritories = [
 
 function canSeeAllTerritories() {
     return ADMIN_USERS.includes(currentUser.name) ||
+        currentUser.branch === 'ALL' ||
         ['President', 'Admin', 'VP Underwriting', 'CAO', 'Regional Manager'].includes(currentUser.role) ||
         ['President', 'Admin', 'VP Underwriting', 'CAO', 'Regional Manager'].includes(chainTitles[currentUser.name]);
 }
 
 function getUserTerritory() {
-    return sampleTerritories.find(t => t.assignee === currentUser.name) || null;
+    // Match by branch name — the user's branch corresponds to a territory name
+    return sampleTerritories.find(t => t.name === currentUser.branch) || null;
+}
+
+function getUserTerritories() {
+    // Return all territories matching the user's branch (handles branches with multiple entries)
+    return sampleTerritories.filter(t => t.name === currentUser.branch);
 }
 
 function getUserTerritoryStates() {
     if (canSeeAllTerritories()) return null; // null means "all states"
-    const territory = getUserTerritory();
-    return territory ? territory.states : [];
+    const territories = getUserTerritories();
+    if (!territories.length) return [];
+    // Merge states from all matching territories (deduplicated)
+    return [...new Set(territories.flatMap(t => t.states))];
 }
 
 // ==================== DASHBOARD PREFERENCES ====================
@@ -741,16 +1225,17 @@ const WIDGET_REGISTRY = {
     'bond-requests': {
         label: 'My Bond Requests',
         render: function(container) {
-            container.innerHTML = `<div class="uw-panel uw-panel-full"><h2 class="uw-panel-title">My Bond Requests</h2><div class="bond-requests-list" id="bond-requests-list"></div></div>`;
+            container.innerHTML = `<div class="uw-panel uw-panel-full"><h2 class="uw-panel-title">My Bond Requests <span class="sample-data-badge">Sample Data</span></h2><div class="bond-requests-list" id="bond-requests-list"></div></div>`;
         },
         postRender: function() {
             var maxBond = 3;
-            try { maxBond = getDashboardPrefs().config.bondRequestsMaxCount || 3; } catch(e) {}
-            var myBonds = sampleBondRequests.filter(b => b.assignee === currentUser.name).slice(0, maxBond);
+            try { var v = getDashboardPrefs().config.bondRequestsMaxCount; maxBond = v === 0 ? 0 : (v || 3); } catch(e) {}
+            var allBonds = sampleBondRequests.filter(b => b.assignee === currentUser.name);
+            var myBonds = maxBond === 0 ? allBonds : allBonds.slice(0, maxBond);
             renderBondRequests('bond-requests-list', myBonds);
-            if (sampleBondRequests.filter(b => b.assignee === currentUser.name).length > maxBond) {
+            if (maxBond !== 0 && allBonds.length > maxBond) {
                 var c = document.getElementById('bond-requests-list');
-                if (c) c.innerHTML += '<div style="text-align:center;padding:8px;color:#6b7280;font-size:12px;">Showing ' + maxBond + ' of ' + sampleBondRequests.filter(b => b.assignee === currentUser.name).length + ' requests &mdash; <a href="#" onclick="event.preventDefault();openDashboardSettings();" style="color:var(--accent-brand);">change limit</a></div>';
+                if (c) c.innerHTML += '<div style="text-align:center;padding:8px;color:#6b7280;font-size:12px;">Showing ' + maxBond + ' of ' + allBonds.length + ' requests &mdash; <a href="#" onclick="event.preventDefault();openDashboardSettings();" style="color:var(--accent-brand);">change limit</a></div>';
             }
         }
     },
@@ -1115,20 +1600,23 @@ function openDashboardSettings() {
     body += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
     body += '<div class="form-group"><label class="form-label" style="font-size:12px;">Max Action Items</label>';
     body += '<select id="dash-cfg-actionMax" class="form-select" style="font-size:13px;">';
-    [5, 10, 15, 20, 50].forEach(function(n) {
-        body += '<option value="' + n + '"' + (prefs.config.actionItemsMaxCount === n ? ' selected' : '') + '>' + n + '</option>';
+    [5, 10, 15, 20, 50, 0].forEach(function(n) {
+        var label = n === 0 ? 'All' : n;
+        body += '<option value="' + n + '"' + (prefs.config.actionItemsMaxCount === n ? ' selected' : '') + '>' + label + '</option>';
     });
     body += '</select></div>';
     body += '<div class="form-group"><label class="form-label" style="font-size:12px;">Max Account Reviews</label>';
     body += '<select id="dash-cfg-arrMax" class="form-select" style="font-size:13px;">';
-    [3, 5, 10, 15, 25].forEach(function(n) {
-        body += '<option value="' + n + '"' + (prefs.config.arrListMaxCount === n ? ' selected' : '') + '>' + n + '</option>';
+    [3, 5, 10, 15, 25, 0].forEach(function(n) {
+        var label = n === 0 ? 'All' : n;
+        body += '<option value="' + n + '"' + (prefs.config.arrListMaxCount === n ? ' selected' : '') + '>' + label + '</option>';
     });
     body += '</select></div>';
     body += '<div class="form-group"><label class="form-label" style="font-size:12px;">Max Bond Requests</label>';
     body += '<select id="dash-cfg-bondMax" class="form-select" style="font-size:13px;">';
-    [3, 5, 10, 15, 25].forEach(function(n) {
-        body += '<option value="' + n + '"' + (prefs.config.bondRequestsMaxCount === n ? ' selected' : '') + '>' + n + '</option>';
+    [3, 5, 10, 15, 25, 0].forEach(function(n) {
+        var label = n === 0 ? 'All' : n;
+        body += '<option value="' + n + '"' + (prefs.config.bondRequestsMaxCount === n ? ' selected' : '') + '>' + label + '</option>';
     });
     body += '</select></div>';
     body += '</div></div>';
@@ -1844,8 +2332,8 @@ function renderActionItems() {
 
     // Render with scrollable max-height
     var maxActions = 10;
-    try { maxActions = getDashboardPrefs().config.actionItemsMaxCount || 10; } catch(e) {}
-    var displayItems = items.slice(0, maxActions);
+    try { var v = getDashboardPrefs().config.actionItemsMaxCount; maxActions = v === 0 ? 0 : (v || 10); } catch(e) {}
+    var displayItems = maxActions === 0 ? items : items.slice(0, maxActions);
     container.innerHTML = displayItems.map(it => {
         const levelClass = it.level === 'urgent' ? 'action-urgent' : it.level === 'warning' ? 'action-warning' : 'action-info';
         const context = getAccountContext(it.account);
@@ -2019,8 +2507,8 @@ function renderARRList() {
     const myARRs = sampleARRs.filter(a => a.assignee === currentUser.name);
     const sorted = sortARRs(myARRs);
     var maxARR = 5;
-    try { maxARR = getDashboardPrefs().config.arrListMaxCount || 5; } catch(e) {}
-    const display = sorted.slice(0, maxARR);
+    try { var v = getDashboardPrefs().config.arrListMaxCount; maxARR = v === 0 ? 0 : (v || 5); } catch(e) {}
+    const display = maxARR === 0 ? sorted : sorted.slice(0, maxARR);
     const cols = [
         { key: 'account', label: 'Account' },
         { key: 'due', label: 'Due Date' },
@@ -2278,7 +2766,28 @@ function renderFinancials() {
     const thead = document.getElementById('financials-head');
     const tbody = document.getElementById('financials-table-body');
 
+    // Populate account filter dropdown
+    const filterEl = document.getElementById('fs-account-filter');
+    if (filterEl && filterEl.options.length <= 1) {
+        const accounts = [...new Set(sampleFinancials.map(f => f.account).filter(Boolean))].sort();
+        accounts.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a;
+            opt.textContent = a;
+            filterEl.appendChild(opt);
+        });
+    }
+
+    // Filter by selected account
+    const selectedAccount = filterEl ? filterEl.value : 'all';
+    const filtered = selectedAccount === 'all' ? sampleFinancials : sampleFinancials.filter(f => f.account === selectedAccount);
+
+    // Update subtitle
+    const label = document.getElementById('fs-account-label');
+    if (label) label.textContent = selectedAccount === 'all' ? filtered.length + ' statements across all accounts' : selectedAccount;
+
     const cols = [
+        { key: 'account', label: 'Account' },
         { key: 'id', label: 'Stmt #' },
         { key: 'statementType', label: 'Type' },
         { key: 'date', label: 'Date' },
@@ -2295,6 +2804,7 @@ function renderFinancials() {
     ];
 
     const comparators = {
+        account: (a, b) => (a.account || '').localeCompare(b.account || ''),
         id: (a, b) => a.id.localeCompare(b.id),
         statementType: (a, b) => (a.statementType || '').localeCompare(b.statementType || ''),
         date: (a, b) => parseDate(a.date) - parseDate(b.date),
@@ -2309,13 +2819,14 @@ function renderFinancials() {
         approved: (a, b) => (a.approved === b.approved ? 0 : a.approved ? -1 : 1)
     };
 
-    const st = getTableSort('financials', 'date');
-    const sorted = genericSort(sampleFinancials, st.col, st.asc, comparators);
+    const st = getTableSort('financials', 'account');
+    const sorted = genericSort(filtered, st.col, st.asc, comparators);
 
     if (thead) thead.innerHTML = buildSortableHeader('financials', cols, 'renderFinancials');
 
     tbody.innerHTML = sorted.map(fs => `
         <tr>
+            <td style="white-space:normal; min-width:140px;">${accountLink(fs.account)}</td>
             <td><span class="clickable-cell" onclick="openFSDetail('${fs.id}')">${fs.id}</span></td>
             <td><span class="fs-type-badge fs-type-${fs.statementType === 'Annual CPA' ? 'annual' : 'interim'}">${fs.statementType || '—'}</span></td>
             <td>${fs.date}</td>
@@ -2331,10 +2842,13 @@ function renderFinancials() {
             <td>
                 <button class="action-btn" onclick="openFSDetail('${fs.id}')">View</button>
                 <button class="action-btn" onclick="openFSNotes('${fs.id}')">Notes</button>
-                <button class="action-btn delete-btn" onclick="openDeleteConfirm('financial statement', '${fs.id}', 'deleteFinancial(\\\'${fs.id}\\\')')">Del</button>
             </td>
         </tr>
     `).join('');
+}
+
+function filterFinancialsByAccount(account) {
+    renderFinancials();
 }
 
 // ==================== RENDER: WIP ====================
@@ -4488,7 +5002,8 @@ function renderLOAView(filter) {
             const utilColor = utilPct > 80 ? 'var(--accent-red)' : utilPct > 60 ? 'var(--accent-orange)' : 'var(--accent-green)';
             const idx = sampleLOAData.indexOf(l);
             return `<tr>
-                <td>${accountLink(l.account)}</td>
+                <td style="white-space:normal; min-width:140px;">${accountLink(l.account)}</td>
+                <td>${l.assignedTo || '—'}</td>
                 <td>${l.type}</td>
                 <td><span class="branch-tag-sm">${l.branch}</span></td>
                 <td>${l.effDate}</td>
@@ -4497,7 +5012,7 @@ function renderLOAView(filter) {
                 <td>${fmt(l.aggregate)}</td>
                 <td>${fmt(l.used)}</td>
                 <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:6px; min-width:90px;">
                         <div class="loa-utilization-bar" style="flex:1;"><div class="loa-utilization-fill" style="width:${utilPct}%; background:${utilColor};"></div></div>
                         <span style="font-size:11px; font-weight:600; color:${utilColor};">${utilPct}%</span>
                     </div>
@@ -4808,18 +5323,32 @@ function renderExposureMap() {
     const bondTypeFilter = document.getElementById('exposure-bond-type-filter');
     const regionFilter = document.getElementById('exposure-region-filter');
     const bondType = bondTypeFilter ? bondTypeFilter.value : 'all';
-    const regionVal = regionFilter ? regionFilter.value : 'all';
 
-    // Populate region filter on first render — only territory-relevant regions
-    if (regionFilter && regionFilter.options.length <= 1) {
+    // Populate region filter — rebuild with only territory-relevant regions
+    if (regionFilter) {
         const filterableRegions = territoryRegionNames ? exposureRegions.filter(r => territoryRegionNames.includes(r.name)) : exposureRegions;
-        filterableRegions.forEach(r => {
-            const opt = document.createElement('option');
-            opt.value = r.name;
-            opt.textContent = r.name;
-            regionFilter.appendChild(opt);
-        });
+        // Preserve current selection if still valid
+        const prevVal = regionFilter.value;
+        // If user only has access to one region, hide the filter entirely
+        if (!canSeeAllTerritories() && filterableRegions.length <= 1) {
+            regionFilter.innerHTML = '<option value="all">' + (filterableRegions.length ? filterableRegions[0].name : 'No Region') + '</option>';
+            regionFilter.disabled = true;
+        } else {
+            regionFilter.disabled = false;
+            regionFilter.innerHTML = '<option value="all">All Regions</option>';
+            filterableRegions.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.name;
+                opt.textContent = r.name;
+                regionFilter.appendChild(opt);
+            });
+            if (prevVal !== 'all' && filterableRegions.some(r => r.name === prevVal)) {
+                regionFilter.value = prevVal;
+            }
+        }
     }
+
+    const regionVal = regionFilter ? regionFilter.value : 'all';
 
     const baseRegions = territoryRegionNames ? exposureRegions.filter(r => territoryRegionNames.includes(r.name)) : exposureRegions;
     const filtered = regionVal === 'all' ? baseRegions : baseRegions.filter(r => r.name === regionVal);
@@ -4863,9 +5392,11 @@ function renderExposureMap() {
     // Map Legend — show territory colors
     const legend = document.getElementById('map-legend');
     if (legend) {
-        const userTerritory = getUserTerritory();
-        const showTerritories = canSeeAllTerritories() ? sampleTerritories : (userTerritory ? [userTerritory] : sampleTerritories);
-        const levels = showTerritories.map(t => ({ label: t.name, color: territoryColors[t.name] || '#6b9dc2' }));
+        const userTerritories = getUserTerritories();
+        const showTerritories = canSeeAllTerritories() ? sampleTerritories : (userTerritories.length ? userTerritories : sampleTerritories);
+        // Deduplicate by territory name for the legend
+        const uniqueNames = [...new Set(showTerritories.map(t => t.name))];
+        const levels = uniqueNames.map(name => ({ label: name, color: territoryColors[name] || '#6b9dc2' }));
         if (!canSeeAllTerritories()) levels.push({ label: 'Other Territories', color: '#d1d5db' });
         legend.innerHTML = levels.map(l =>
             `<span class="map-legend-item"><span class="map-legend-swatch" style="background:${l.color}"></span>${l.label}</span>`
@@ -5307,41 +5838,184 @@ function openFSComplianceModal() {
 }
 
 function openFSDetail(fsId) {
-    const body = `
-        <div style="margin-bottom:16px; display:flex; justify-content:space-between;">
-            <div><strong>Statement:</strong> ${fsId} &nbsp; <strong>Date:</strong> 12/31/2023 &nbsp; <strong>Term:</strong> 12 Mo.</div>
-            <div><span class="status-badge balanced">Balanced</span></div>
-        </div>
-        <h3 style="font-size:14px; margin-bottom:10px;">Current Assets</h3>
-        <div class="table-container" style="margin-bottom:16px;">
-            <table class="data-table">
-                <thead><tr><th>Account #</th><th>GL Account</th><th>As Given</th><th>Adjustments</th><th>As Allowed</th><th>Notes</th></tr></thead>
-                <tbody>
-                    <tr><td>1010</td><td>Cash & Equivalents</td><td>$2,450,000</td><td>$0</td><td>$2,450,000</td><td><button class="action-btn">Note</button></td></tr>
-                    <tr><td>1020</td><td>Accounts Receivable</td><td>$4,800,000</td><td>($150,000)</td><td>$4,650,000</td><td><button class="action-btn">Note</button></td></tr>
-                    <tr><td>1030</td><td>Costs in Excess of Billings</td><td>$1,200,000</td><td>$0</td><td>$1,200,000</td><td><button class="action-btn">Note</button></td></tr>
-                    <tr><td>1050</td><td>Inventory / Materials</td><td>$380,000</td><td>$0</td><td>$380,000</td><td><button class="action-btn">Note</button></td></tr>
-                    <tr><td>1060</td><td>Prepaid Expenses</td><td>$220,000</td><td>$0</td><td>$220,000</td><td><button class="action-btn">Note</button></td></tr>
-                </tbody>
-                <tfoot><tr><td></td><td style="font-weight:700;">Total Current Assets</td><td style="font-weight:700;">$9,050,000</td><td style="font-weight:700;">($150,000)</td><td style="font-weight:700;">$8,900,000</td><td></td></tr></tfoot>
-            </table>
-        </div>
-        <h3 style="font-size:14px; margin-bottom:10px;">Fixed Assets</h3>
-        <div class="table-container">
-            <table class="data-table">
-                <thead><tr><th>Account #</th><th>GL Account</th><th>As Given</th><th>Adjustments</th><th>As Allowed</th><th>Notes</th></tr></thead>
-                <tbody>
-                    <tr><td>1510</td><td>Property, Plant & Equipment</td><td>$18,500,000</td><td>$0</td><td>$18,500,000</td><td><button class="action-btn">Note</button></td></tr>
-                    <tr><td>1520</td><td>Less: Accumulated Depreciation</td><td>($6,200,000)</td><td>$0</td><td>($6,200,000)</td><td><button class="action-btn">Note</button></td></tr>
-                    <tr><td>1550</td><td>Intangible Assets</td><td>$450,000</td><td>($450,000)</td><td>$0</td><td><button class="action-btn">Note</button></td></tr>
-                </tbody>
-                <tfoot><tr><td></td><td style="font-weight:700;">Total Fixed Assets</td><td style="font-weight:700;">$12,750,000</td><td style="font-weight:700;">($450,000)</td><td style="font-weight:700;">$12,300,000</td><td></td></tr></tfoot>
-            </table>
+    const fs = sampleFinancials.find(f => f.id === fsId);
+    if (!fs) return;
+
+    // Show detail, hide summary
+    document.getElementById('fs-summary-page').style.display = 'none';
+    document.getElementById('fs-detail-page').style.display = 'block';
+
+    // Header
+    document.getElementById('fs-detail-title').textContent = 'Financial Statement — ' + (fs.account || fsId);
+    document.getElementById('fs-detail-status').textContent = fs.balanced ? 'Balanced' : 'Unbalanced';
+    document.getElementById('fs-detail-status').className = 'status-badge ' + (fs.balanced ? 'balanced' : 'pending');
+
+    // Meta bar
+    document.getElementById('fs-detail-header').innerHTML = `
+        <div><span style="font-weight:600;">Statement ID:</span> ${fs.id}</div>
+        <div><span style="font-weight:600;">Date:</span> ${fs.date}</div>
+        <div><span style="font-weight:600;">Term:</span> ${fs.term} Mo.</div>
+        <div><span style="font-weight:600;">FYE:</span> ${fs.fye}</div>
+        <div><span style="font-weight:600;">Preparer:</span> ${fs.preparer}</div>
+        <div><span style="font-weight:600;">Audit Status:</span> ${fs.auditStatus}</div>
+        <div><span style="font-weight:600;">Currency:</span> USD</div>
+        <div><span style="font-weight:600;">Denomination:</span> Dollars</div>
+    `;
+
+    // Render full financial statement content (all sections at once)
+    const content = document.getElementById('fs-detail-content');
+    content.innerHTML = buildFSDetailHTML(fs);
+}
+
+function closeFSDetail() {
+    document.getElementById('fs-summary-page').style.display = 'block';
+    document.getElementById('fs-detail-page').style.display = 'none';
+}
+
+function buildFSDetailHTML(fs) {
+    const fmt = v => {
+        if (v == null) return '$0';
+        const neg = v < 0;
+        const abs = Math.abs(v);
+        const str = '$' + abs.toLocaleString();
+        return neg ? '(' + str + ')' : str;
+    };
+
+    // Sample GL accounts for the balance sheet sections
+    const sections = [
+        {
+            title: 'Current Assets',
+            accounts: [
+                { num: '010000', name: 'Cash', asGiven: 2450000, adj: 0 },
+                { num: '010010', name: 'Cash-In lieu of Retainage', asGiven: 180000, adj: 0 },
+                { num: '010300', name: 'Cash-Cash Equivalents', asGiven: 520000, adj: 0 },
+                { num: '011000', name: 'Accounts Receivable', asGiven: 4800000, adj: -150000 },
+                { num: '011100', name: 'Costs in Excess of Billings', asGiven: 1200000, adj: 0 },
+                { num: '011500', name: 'Retainage Receivable', asGiven: 890000, adj: 0 },
+                { num: '012000', name: 'Notes Receivable', asGiven: 0, adj: 0 },
+                { num: '013000', name: 'Inventory / Materials', asGiven: 380000, adj: 0 },
+                { num: '014000', name: 'Prepaid Expenses', asGiven: 220000, adj: 0 },
+                { num: '015000', name: 'Other Current Assets', asGiven: 95000, adj: 0 },
+            ]
+        },
+        {
+            title: 'Fixed Assets',
+            accounts: [
+                { num: '020000', name: 'Land', asGiven: 1500000, adj: 0 },
+                { num: '021000', name: 'Buildings', asGiven: 4200000, adj: 0 },
+                { num: '022000', name: 'Machinery & Equipment', asGiven: 8900000, adj: 0 },
+                { num: '022500', name: 'Vehicles', asGiven: 2100000, adj: 0 },
+                { num: '023000', name: 'Furniture & Fixtures', asGiven: 350000, adj: 0 },
+                { num: '025000', name: 'Less: Accumulated Depreciation', asGiven: -6200000, adj: 0 },
+                { num: '026000', name: 'Intangible Assets', asGiven: 450000, adj: -450000 },
+                { num: '027000', name: 'Other Fixed Assets', asGiven: 200000, adj: 0 },
+            ]
+        },
+        {
+            title: 'Other Assets',
+            accounts: [
+                { num: '030000', name: 'Goodwill', asGiven: 0, adj: 0 },
+                { num: '031000', name: 'Cash Value Life Insurance', asGiven: 320000, adj: 0 },
+                { num: '032000', name: 'Loans to Related Parties', asGiven: 0, adj: 0 },
+                { num: '033000', name: 'Other Non-Current Assets', asGiven: 150000, adj: 0 },
+            ]
+        },
+        {
+            title: 'Current Liabilities',
+            accounts: [
+                { num: '040000', name: 'Accounts Payable', asGiven: 3200000, adj: 0 },
+                { num: '040100', name: 'Billings in Excess of Costs', asGiven: 980000, adj: 0 },
+                { num: '041000', name: 'Accrued Expenses', asGiven: 1450000, adj: 0 },
+                { num: '042000', name: 'Current Portion of LTD', asGiven: 600000, adj: 0 },
+                { num: '043000', name: 'Notes Payable - Short Term', asGiven: 250000, adj: 0 },
+                { num: '044000', name: 'Taxes Payable', asGiven: 380000, adj: 0 },
+                { num: '045000', name: 'Other Current Liabilities', asGiven: 175000, adj: 0 },
+            ]
+        },
+        {
+            title: 'Long-Term Liabilities',
+            accounts: [
+                { num: '050000', name: 'Long-Term Debt', asGiven: 4500000, adj: 0 },
+                { num: '051000', name: 'Notes Payable - Long Term', asGiven: 1200000, adj: 0 },
+                { num: '052000', name: 'Deferred Tax Liabilities', asGiven: 680000, adj: 0 },
+                { num: '053000', name: 'Other Long-Term Liabilities', asGiven: 350000, adj: 0 },
+            ]
+        },
+        {
+            title: 'Equity / Net Worth',
+            accounts: [
+                { num: '060000', name: 'Common Stock', asGiven: 100000, adj: 0 },
+                { num: '061000', name: 'Additional Paid-In Capital', asGiven: 500000, adj: 0 },
+                { num: '062000', name: 'Retained Earnings', asGiven: 4850000, adj: 0 },
+                { num: '063000', name: 'Treasury Stock', asGiven: 0, adj: 0 },
+                { num: '064000', name: "Shareholder's Equity Adjustments", asGiven: -120000, adj: 0 },
+            ]
+        }
+    ];
+
+    let html = '';
+    sections.forEach(section => {
+        const totalGiven = section.accounts.reduce((s, a) => s + a.asGiven, 0);
+        const totalAdj = section.accounts.reduce((s, a) => s + a.adj, 0);
+        const totalAllowed = totalGiven + totalAdj;
+
+        html += `
+        <div style="margin-bottom:24px;">
+            <h3 style="font-size:14px; font-weight:700; color:#1f2937; margin-bottom:8px; padding-bottom:6px; border-bottom:2px solid var(--accent-brand);">${section.title}</h3>
+            <div class="table-container">
+                <table class="data-table compact-table">
+                    <thead>
+                        <tr>
+                            <th style="width:80px;">Account #</th>
+                            <th>GL Account</th>
+                            <th style="text-align:right; width:120px;">As Given</th>
+                            <th style="text-align:center; width:90px;">Adjustments</th>
+                            <th style="text-align:right; width:120px;">As Allowed</th>
+                            <th style="width:60px;">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${section.accounts.map(a => `
+                        <tr>
+                            <td style="font-family:monospace; font-size:12px; color:#6b7280;">${a.num}</td>
+                            <td>${a.name}</td>
+                            <td style="text-align:right;">${fmt(a.asGiven)}</td>
+                            <td style="text-align:center;">${a.adj !== 0 ? '<span style="color:var(--accent-brand); cursor:pointer;" title="View adjustments">&#9998; ' + fmt(a.adj) + '</span>' : '<span style="color:#9ca3af;">$0</span>'}</td>
+                            <td style="text-align:right; font-weight:600;">${fmt(a.asGiven + a.adj)}</td>
+                            <td style="text-align:center;"><button class="action-btn" style="padding:2px 6px; font-size:11px;">&#128221;</button></td>
+                        </tr>`).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr style="font-weight:700; background:#f9fafb;">
+                            <td></td>
+                            <td>Total ${section.title}</td>
+                            <td style="text-align:right;">${fmt(totalGiven)}</td>
+                            <td style="text-align:center;">${fmt(totalAdj)}</td>
+                            <td style="text-align:right;">${fmt(totalAllowed)}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>`;
-    const footer = `<button class="btn btn-outline" onclick="closeAllModals()">Close</button>`;
-    openModal('Financial Statement Detail — ' + fsId, body, footer);
-    // Widen modal for FS detail
-    document.getElementById('modal-container').style.maxWidth = '840px';
+    });
+
+    // Summary totals
+    const totalAssets = sections.slice(0, 3).reduce((s, sec) => s + sec.accounts.reduce((a, r) => a + r.asGiven + r.adj, 0), 0);
+    const totalLiabilities = sections.slice(3, 5).reduce((s, sec) => s + sec.accounts.reduce((a, r) => a + r.asGiven + r.adj, 0), 0);
+    const totalEquity = sections[5].accounts.reduce((s, a) => s + a.asGiven + a.adj, 0);
+
+    html += `
+    <div style="margin-top:24px; padding:16px 20px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;">
+        <h3 style="font-size:14px; font-weight:700; margin-bottom:12px; color:#0c4a6e;">Balance Sheet Summary</h3>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; font-size:13px;">
+            <div><span style="color:#6b7280;">Total Assets:</span> <strong>${fmt(totalAssets)}</strong></div>
+            <div><span style="color:#6b7280;">Total Liabilities:</span> <strong>${fmt(totalLiabilities)}</strong></div>
+            <div><span style="color:#6b7280;">Net Worth:</span> <strong>${fmt(totalEquity)}</strong></div>
+        </div>
+    </div>`;
+
+    return html;
 }
 
 function openCreateWIPModal() {
@@ -5650,8 +6324,9 @@ function submitNewRequest() {
         description: document.getElementById('nr-desc').value || type + ' request for ' + account
     });
     var maxBond = 3;
-    try { maxBond = getDashboardPrefs().config.bondRequestsMaxCount || 3; } catch(e) {}
-    renderBondRequests('bond-requests-list', sampleBondRequests.filter(b => b.assignee === currentUser.name).slice(0, maxBond));
+    try { var v = getDashboardPrefs().config.bondRequestsMaxCount; maxBond = v === 0 ? 0 : (v || 3); } catch(e) {}
+    var allBonds = sampleBondRequests.filter(b => b.assignee === currentUser.name);
+    renderBondRequests('bond-requests-list', maxBond === 0 ? allBonds : allBonds.slice(0, maxBond));
     renderBondRequests('bond-requests-full-list', sampleBondRequests);
     closeAllModals();
 }
@@ -7511,6 +8186,29 @@ function switchUser(username) {
     // Rebuild all data arrays for the new user
     buildUserData();
 
+    // Overlay live data if API is available
+    if (BondBoxAPI.isAvailable()) {
+        getUserBranches(currentUser.username).then(userBranches => {
+            let branchId = userBranches.branchIds;
+            let brCode = userBranches.branchCodes;
+            // Fallback: if UserBranches returned empty, match by branch name
+            if (!branchId) {
+                return BondBoxAPI.fetchJSON('/api/branches', { region: currentUser.division || 'Contract' }).then(branches => {
+                    const matched = branches.find(b => b.Name && b.Name.toUpperCase() === currentUser.branch.toUpperCase());
+                    branchId = matched ? String(matched.Id) : '';
+                    brCode = matched ? String(matched.Code) : '';
+                    return BondBoxAPI.loadDashboardData(branchId, brCode);
+                });
+            }
+            return BondBoxAPI.loadDashboardData(branchId, brCode);
+        }).then(liveData => {
+            if (liveData) {
+                buildUserDataFromAPI(liveData);
+                renderAllViews();
+            }
+        }).catch(() => {});
+    }
+
     // Reset all cached data variables so render functions use fresh data
     lastMyAccountsData = null;
     lastBondsData = null;
@@ -7587,24 +8285,38 @@ function renderAllViews() {
 }
 
 function openUserSwitcher() {
-    const body = USER_PROFILES.map(u => {
-        const isActive = u.username === currentUser.username;
-        return '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid ' + (isActive ? 'var(--accent-brand)' : '#e5e7eb') + ';border-radius:10px;margin-bottom:8px;cursor:' + (isActive ? 'default' : 'pointer') + ';background:' + (isActive ? 'var(--accent-blue-bg)' : '#fff') + ';" ' + (isActive ? '' : 'onclick="switchUser(\'' + u.username + '\')"') + '>' +
-            '<div class="user-avatar" style="width:40px;height:40px;font-size:14px;">' + u.avatar + '</div>' +
-            '<div style="flex:1;">' +
-                '<div style="font-weight:600;font-size:14px;color:#1f2937;">' + u.fullName + (isActive ? ' <span style="font-size:11px;color:var(--accent-brand);font-weight:500;">(current)</span>' : '') + '</div>' +
-                '<div style="font-size:12px;color:#6b7280;">' + u.role + ' &mdash; ' + u.branch + (u.division === 'Commercial' ? ' <span style="background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px;">Commercial</span>' : (!u.division || u.division === 'Contract') ? ' <span style="background:#f0fdf4;color:#166534;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px;">Contract</span>' : '') + '</div>' +
-            '</div>' +
-        '</div>';
-    }).join('');
+    // Group users by division
+    const divisions = [
+        { key: 'Admin', label: 'Admin / Corporate', color: '#6b7280' },
+        { key: 'Contract', label: 'Contract', color: '#166534' },
+        { key: 'Commercial', label: 'Commercial', color: '#1e40af' }
+    ];
+    let body = '';
+    divisions.forEach(div => {
+        const users = USER_PROFILES.filter(u => (u.division || 'Contract') === div.key);
+        if (users.length === 0) return;
+        body += '<div style="margin-bottom:16px;">';
+        body += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:' + div.color + ';padding:4px 0 8px;border-bottom:1px solid #e5e7eb;margin-bottom:8px;">' + div.label + ' (' + users.length + ')</div>';
+        users.forEach(u => {
+            const isActive = u.username === currentUser.username;
+            body += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid ' + (isActive ? 'var(--accent-brand)' : '#e5e7eb') + ';border-radius:10px;margin-bottom:6px;cursor:' + (isActive ? 'default' : 'pointer') + ';background:' + (isActive ? 'var(--accent-blue-bg)' : '#fff') + ';" ' + (isActive ? '' : 'onclick="switchUser(\'' + u.username + '\')"') + '>' +
+                '<div class="user-avatar" style="width:36px;height:36px;font-size:12px;">' + u.avatar + '</div>' +
+                '<div style="flex:1;">' +
+                    '<div style="font-weight:600;font-size:13px;color:#1f2937;">' + u.fullName + (isActive ? ' <span style="font-size:10px;color:var(--accent-brand);font-weight:500;">(current)</span>' : '') + '</div>' +
+                    '<div style="font-size:11px;color:#6b7280;">' + u.role + ' &mdash; ' + u.branch + '</div>' +
+                '</div>' +
+            '</div>';
+        });
+        body += '</div>';
+    });
     const footer = '<button class="btn btn-outline" onclick="closeAllModals()">Cancel</button>';
-    openModal('Switch User', '<div style="margin-bottom:8px;color:#6b7280;font-size:13px;">Select an underwriter to view their dashboard and data.</div>' + body, footer);
+    openModal('Switch User', '<div style="margin-bottom:8px;color:#6b7280;font-size:13px;">Select an underwriter to view their dashboard and data.</div><div style="max-height:60vh;overflow-y:auto;">' + body + '</div>', footer);
 }
 
 // ==================== INITIALIZATION ====================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Build data for default user
+    // Build data for default user (static baseline — always runs first)
     buildUserData();
 
     // Update sidebar with initial user
@@ -7621,8 +8333,88 @@ document.addEventListener('DOMContentLoaded', () => {
     const subtitle = document.getElementById('dashboard-subtitle');
     if (subtitle) subtitle.textContent = currentUser.branch + ' Branch \u2014 ' + (isCommercialUser() ? 'Commercial Surety Dashboard' : 'Contract Surety Underwriting Dashboard');
 
-    // Render all views
+    // Render all views with static data first (instant load)
     renderAllViews();
+
+    // Try to connect to BondBox API for live data (non-blocking)
+    BondBoxAPI.checkAvailability().then(available => {
+        if (available) {
+            console.log('[BondBox API] Connected — loading live data from ' + BondBoxAPI.getEnv().toUpperCase() + '...');
+            // Update data source indicator immediately on connection
+            const dsIndicator = document.getElementById('data-source-indicator');
+            const dsDot = document.getElementById('data-source-dot');
+            const dsLabel = document.getElementById('data-source-label');
+            if (dsIndicator && dsDot && dsLabel) {
+                dsLabel.textContent = BondBoxAPI.getEnv().toUpperCase() + ' — Connecting...';
+                dsDot.style.background = '#f59e0b';
+                dsIndicator.style.background = '#fef3c7';
+                dsIndicator.style.color = '#92400e';
+                dsIndicator.style.borderColor = '#fcd34d';
+            }
+            // Determine user's branch IDs from UserBranches table
+            getUserBranches(currentUser.username).then(userBranches => {
+                let branchId = userBranches.branchIds;
+                let brCode = userBranches.branchCodes;
+                // Fallback: if UserBranches returned empty, match by branch name
+                if (!branchId) {
+                    return BondBoxAPI.fetchJSON('/api/branches', { region: currentUser.division || 'Contract' }).then(branches => {
+                        const matched = branches.find(b => b.Name && b.Name.toUpperCase() === currentUser.branch.toUpperCase());
+                        branchId = matched ? String(matched.Id) : '';
+                        brCode = matched ? String(matched.Code) : '';
+                        return BondBoxAPI.loadDashboardData(branchId, brCode);
+                    });
+                }
+                return BondBoxAPI.loadDashboardData(branchId, brCode);
+            }).then(liveData => {
+                if (liveData) {
+                    buildUserDataFromAPI(liveData);
+                    renderAllViews();
+                    console.log('[BondBox API] Dashboard updated with live data.');
+                    // Update data source indicator to show live
+                    const dsIndicator2 = document.getElementById('data-source-indicator');
+                    const dsDot2 = document.getElementById('data-source-dot');
+                    const dsLabel2 = document.getElementById('data-source-label');
+                    if (dsIndicator2 && dsDot2 && dsLabel2) {
+                        dsLabel2.textContent = 'LIVE — ' + BondBoxAPI.getEnv().toUpperCase();
+                        dsDot2.style.background = '#059669';
+                        dsIndicator2.style.background = '#d1fae5';
+                        dsIndicator2.style.color = '#065f46';
+                        dsIndicator2.style.borderColor = '#6ee7b7';
+                    }
+                    // Show the env toggle once API is confirmed working
+                    const envToggleWrapper = document.getElementById('env-toggle-wrapper');
+                    const envToggle = document.getElementById('env-toggle');
+                    if (envToggleWrapper) {
+                        envToggleWrapper.style.display = 'inline-flex';
+                        if (envToggle) envToggle.value = BondBoxAPI.getEnv();
+                    }
+                    // Update prototype badge to show data source
+                    const badge = document.getElementById('demo-mode-banner');
+                    if (badge) {
+                        badge.innerHTML = '<span style="color:#059669;font-weight:700;">LIVE</span> ' + BondBoxAPI.getEnv().toUpperCase() + ' <span style="font-weight:400;">&bull; ' + USER_PROFILES.length + ' users</span> <span onclick="event.stopPropagation();this.parentElement.remove();" style="margin-left:6px;opacity:0.6;font-size:14px;">&times;</span>';
+                        badge.style.background = '#d1fae5';
+                        badge.style.borderColor = '#6ee7b7';
+                        badge.style.color = '#065f46';
+                    }
+                }
+            }).catch(err => {
+                console.warn('[BondBox API] Failed to load live data:', err.message);
+                // Revert indicator to show failure
+                const dsIndicator3 = document.getElementById('data-source-indicator');
+                const dsDot3 = document.getElementById('data-source-dot');
+                const dsLabel3 = document.getElementById('data-source-label');
+                if (dsIndicator3 && dsDot3 && dsLabel3) {
+                    dsLabel3.textContent = 'STATIC DATA (API error)';
+                    dsDot3.style.background = '#ef4444';
+                    dsIndicator3.style.background = '#fef2f2';
+                    dsIndicator3.style.color = '#991b1b';
+                    dsIndicator3.style.borderColor = '#fca5a5';
+                }
+            });
+        } else {
+            console.log('[BondBox API] Not available — using static data from data.js');
+        }
+    });
 
     // Init map tooltips (non-data-dependent)
     try { initMapTooltips(); } catch(e) { console.error('Init Map Tooltips:', e); }

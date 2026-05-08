@@ -6,74 +6,13 @@
 
 // ==================== USER PROFILES ====================
 const USER_PROFILES = [
-  {
-    "username": "dhellmann",
-    "fullName": "Doug Hellmann",
-    "branch": "KENTUCKY",
-    "role": "Financial Products Underwriting Manager",
-    "avatar": "DH"
-  },
-  {
-    "username": "jliggett",
-    "fullName": "Jake Liggett",
-    "branch": "CINCINNATI",
-    "role": "Financial Products Underwriting Specialist",
-    "avatar": "JL"
-  },
-  {
-    "username": "wwilson",
-    "fullName": "Wade Wilson",
-    "branch": "ORANGE",
-    "role": "Asst. Vice President - Underwriting",
-    "avatar": "WW"
-  },
-  {
-    "username": "kwittler",
-    "fullName": "Kathy Wittler",
-    "branch": "ORANGE",
-    "role": "Senior Financial Products Underwriter II",
-    "avatar": "KW"
-  },
-  {
-    "username": "jwhipkey",
-    "fullName": "Jonathon Whipkey",
-    "branch": "TENNESSEE",
-    "role": "Senior Financial Products Underwriting Manager",
-    "avatar": "JW"
-  },
-  {
-    "username": "akveton",
-    "fullName": "Adam Kveton",
-    "branch": "CHICAGO CONTRACT",
-    "role": "Financial Products Underwriting Manager",
-    "avatar": "AK"
-  },
-  {
-    "username": "pholland",
-    "fullName": "Patrick Holland",
-    "branch": "CAROLINA",
-    "role": "Senior Financial Products Underwriting Manager",
-    "avatar": "PH"
-  },
-  {
-    "username": "dbossen",
-    "fullName": "Doug Bossen",
-    "branch": "TWIN CITIES",
-    "role": "Senior Financial Products Underwriting Manager",
-    "avatar": "DB"
-  },
-  {
-    "username": "jmiller9",
-    "fullName": "Jake Miller",
-    "branch": "CINCINNATI",
-    "role": "Senior Financial Products Underwriting Manager",
-    "avatar": "JM"
-  },
+  // ==================== ADMIN / CORPORATE ====================
   {
     "username": "cwatson",
     "fullName": "Chris Watson",
     "branch": "ALL",
     "role": "Business Analysis Manager",
+    "division": "Admin",
     "avatar": "CW"
   },
   {
@@ -81,8 +20,179 @@ const USER_PROFILES = [
     "fullName": "Geoff Smith",
     "branch": "ALL",
     "role": "Financial Analysis Director",
+    "division": "Admin",
     "avatar": "GS"
   },
+  {
+    "username": "kbearley",
+    "fullName": "Ken Bearley",
+    "branch": "ALL",
+    "role": "Divisional/Subsidiary President",
+    "division": "Admin",
+    "avatar": "KB"
+  },
+  {
+    "username": "mmiller",
+    "fullName": "Max Miller",
+    "branch": "ALL",
+    "role": "Asst. Vice President - Underwriting",
+    "division": "Contract",
+    "avatar": "MM"
+  },
+  // ==================== CONTRACT ====================
+  {
+    "username": "jmiller9",
+    "fullName": "Jake Miller",
+    "branch": "CINCINNATI",
+    "role": "Senior Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "JM"
+  },
+  {
+    "username": "jliggett",
+    "fullName": "Jake Liggett",
+    "branch": "CINCINNATI",
+    "role": "Financial Products Underwriting Specialist",
+    "division": "Contract",
+    "avatar": "JL"
+  },
+  {
+    "username": "macarney",
+    "fullName": "Marc Carney",
+    "branch": "CINCINNATI",
+    "role": "Financial Products Underwriter",
+    "division": "Contract",
+    "avatar": "MaC"
+  },
+  {
+    "username": "dhellmann",
+    "fullName": "Doug Hellmann",
+    "branch": "KENTUCKY",
+    "role": "Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "DH"
+  },
+  {
+    "username": "akveton",
+    "fullName": "Adam Kveton",
+    "branch": "CHICAGO CONTRACT",
+    "role": "Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "AK"
+  },
+  {
+    "username": "cwtyson",
+    "fullName": "Chase Tyson",
+    "branch": "ATLANTA",
+    "role": "Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "CT"
+  },
+  {
+    "username": "pholland",
+    "fullName": "Patrick Holland",
+    "branch": "CAROLINA",
+    "role": "Senior Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "PH"
+  },
+  {
+    "username": "jwhipkey",
+    "fullName": "Jonathon Whipkey",
+    "branch": "TENNESSEE",
+    "role": "Senior Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "JW"
+  },
+  {
+    "username": "rweber",
+    "fullName": "Robert Weber",
+    "branch": "FLORIDA",
+    "role": "Senior Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "RW"
+  },
+  {
+    "username": "jacrawford",
+    "fullName": "Jim Crawford",
+    "branch": "TEXAS",
+    "role": "Senior Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "JC"
+  },
+  {
+    "username": "ramcdaniel",
+    "fullName": "Becky McDaniel",
+    "branch": "HOUSTON",
+    "role": "Financial Products Underwriting Director",
+    "division": "Contract",
+    "avatar": "BM"
+  },
+  {
+    "username": "sdean",
+    "fullName": "Suzi Dean",
+    "branch": "TULSA",
+    "role": "Senior Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "SD"
+  },
+  {
+    "username": "dbossen",
+    "fullName": "Doug Bossen",
+    "branch": "TWIN CITIES",
+    "role": "Senior Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "DB"
+  },
+  {
+    "username": "sdante",
+    "fullName": "Stephen Dante",
+    "branch": "DETROIT",
+    "role": "Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "StD"
+  },
+  {
+    "username": "jjbrowning",
+    "fullName": "John Browning",
+    "branch": "ROCKY MOUNTAIN",
+    "role": "Senior Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "JB"
+  },
+  {
+    "username": "derabe",
+    "fullName": "David Rabe",
+    "branch": "PACIFIC NORTHWEST",
+    "role": "Asst. Vice President - Underwriting",
+    "division": "Contract",
+    "avatar": "DR"
+  },
+  {
+    "username": "wwilson",
+    "fullName": "Wade Wilson",
+    "branch": "ORANGE",
+    "role": "Asst. Vice President - Underwriting",
+    "division": "Contract",
+    "avatar": "WW"
+  },
+  {
+    "username": "mtcaldwell",
+    "fullName": "Matthew Caldwell",
+    "branch": "ORANGE",
+    "role": "Senior Financial Products Underwriting Manager",
+    "division": "Contract",
+    "avatar": "MC"
+  },
+  {
+    "username": "kwittler",
+    "fullName": "Kathy Wittler",
+    "branch": "ORANGE",
+    "role": "Senior Financial Products Underwriter II",
+    "division": "Contract",
+    "avatar": "KW"
+  },
+  // ==================== COMMERCIAL ====================
   {
     "username": "dlewis",
     "fullName": "Dan Lewis",
@@ -92,12 +202,28 @@ const USER_PROFILES = [
     "avatar": "DL"
   },
   {
-    "username": "jlreed",
-    "fullName": "Janelle Reed",
-    "branch": "SERVICE TRANSACTIONAL GROUP",
-    "role": "Senior Underwriting Product Manager",
+    "username": "tsiejkowski",
+    "fullName": "Twanisha Siejkowski",
+    "branch": "COMMERCIAL SE",
+    "role": "Senior Financial Underwriting Manager",
     "division": "Commercial",
-    "avatar": "JR"
+    "avatar": "TS"
+  },
+  {
+    "username": "abuford",
+    "fullName": "Andre Buford",
+    "branch": "COMMERCIAL SW",
+    "role": "Senior Financial Products Underwriting Manager",
+    "division": "Commercial",
+    "avatar": "ABu"
+  },
+  {
+    "username": "nbuhrmester",
+    "fullName": "Nathan Buhrmester",
+    "branch": "COMMERCIAL NE",
+    "role": "Financial Products Underwriting Manager",
+    "division": "Commercial",
+    "avatar": "NB"
   },
   {
     "username": "akbeck",
@@ -106,6 +232,14 @@ const USER_PROFILES = [
     "role": "Financial Products Underwriter II",
     "division": "Commercial",
     "avatar": "AB"
+  },
+  {
+    "username": "jlreed",
+    "fullName": "Janelle Reed",
+    "branch": "SERVICE TRANSACTIONAL GROUP",
+    "role": "Senior Underwriting Product Manager",
+    "division": "Commercial",
+    "avatar": "JR"
   }
 ];
 
@@ -128,7 +262,7 @@ const USERNAME_MAP = {
   "jkwebster": "Kathy Wittler",
   "ramcdaniel": "Becky McDaniel",
   "jthielen": "Adam Kveton",
-  "jacrawford": "Henry McDowell",
+  "jacrawford": "Jim Crawford",
   "bwjohnson": "Brad Johnson",
   "jltaylor": "John  Taylor",
   "kbearley": "Jake Liggett",
@@ -138,9 +272,9 @@ const USERNAME_MAP = {
   "macarney": "Marc Carney",
   "jjbrowning": "John Browning",
   "cstrohauer": "Stephen Dante",
-  "rweber": "Davis Shockley",
+  "rweber": "Robert Weber",
   "mchirozzi": "Luke Weber",
-  "mtcaldwell": "Kathy Wittler",
+  "mtcaldwell": "Matthew Caldwell",
   "jmoriarty": "Elijah Gudroe",
   "jhemsley": "Joe Hemsley",
   "pmulligan": "Patrick Mulligan",
@@ -148,13 +282,13 @@ const USERNAME_MAP = {
   "dshockley": "Davis Shockley",
   "ssamels": "Sean Samels",
   "mmilewski": "Luke Weber",
-  "derabe": "Tim Morgan",
+  "derabe": "David Rabe",
   "edentremont": "Chris D'Entremont",
   "vtateo": "Vivian Tateo",
   "jholthaus": "Janet Holthaus",
   "cjmcdaniel": "Janet Holthaus",
   "tbrewka": "Janet Holthaus",
-  "sdean": "Amanda Baldridge",
+  "sdean": "Suzi Dean",
   "thartlieb": "Thomas Hartlieb",
   "trmorgan": "Tim Morgan",
   "jalessi": "Jonathon Whipkey",
@@ -164,7 +298,12 @@ const USERNAME_MAP = {
   "cuy": "Matthew Caldwell",
   "aadams": "Andrew Adams",
   "nwright": "Kathy Wittler",
-  "cmorris": "Christina Morris"
+  "cmorris": "Christina Morris",
+  "tsiejkowski": "Twanisha Siejkowski",
+  "abuford": "Andre Buford",
+  "nbuhrmester": "Nathan Buhrmester",
+  "mmiller": "Max Miller",
+  "kbearley": "Ken Bearley"
 };
 
 // ==================== ACCOUNT REVIEW RATINGS ====================
